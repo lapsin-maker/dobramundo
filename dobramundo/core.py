@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 import random
+import time
 from typing import Callable, List, Optional
 
 import pygame
@@ -22,7 +23,6 @@ import pygame
 from . import config as C
 from .audio import Audio
 from .content.biomes import BIOME_ORDER, BIOMES
-from .content.progress import plane_stats
 from .engine.assets import display_format, shared_assets
 from .engine.world_view import PlaneLook, WorldView
 from .game.world import World
@@ -86,16 +86,15 @@ class GameCore:
         self.view.high_contrast = self.options.alto_contraste
         self.view.contrast_scale = self.options.escala_contraste
         self.view.reduce_motion = self.options.reduzir_movimento
-        stats = plane_stats(self.profile.pecas)
         o = self.options
         self.input.position_control = o.controle_posicao
         self.input.auto_center = o.centralizar_sozinho
         self.input.invert_x = o.inverter_horizontal
         self.input.set_floor(*self.floor_setup())
         if self.profile.controle != self.input.segment_key:
-            self.input.set_segment(self.profile.controle, o.sensibilidade, stats.dead_zone, o.inverter_vertical)
+            self.input.set_segment(self.profile.controle, o.sensibilidade, 1.0, o.inverter_vertical)
         else:
-            self.input.configure(o.sensibilidade, stats.dead_zone, o.inverter_vertical, o.controle_posicao)
+            self.input.configure(o.sensibilidade, 1.0, o.inverter_vertical, o.controle_posicao)
 
     def floor_setup(self):
         """(localizador dos pés na imagem do jogo, token da calibração); None: sem chão calibrado."""
@@ -150,6 +149,7 @@ class GameCore:
 
         Os eventos já devem ter passado pelo InputHub (a plataforma faz isso).
         """
+        frame_started = time.perf_counter()
         self._switch()
         self.input.update(dt)
         self.view.update(dt)
@@ -158,10 +158,18 @@ class GameCore:
             scene.handle_event(event)
         scene.update(dt)
         scene.draw(self.canvas)
-        self.view.step_warm_up(6.0 if scene.idle_warm_up else 1.5)
+        self.input.note_rendered()  # idade do snapshot consumido até o canvas pronto
+        # Reservar folga para apresentação; não iniciar pré-carga num quadro caro.
+        elapsed_ms = (time.perf_counter() - frame_started) * 1000
+        spare_ms = max(0.0, 1000 / C.FPS - elapsed_ms - 2.0)
+        self.view.step_warm_up(min(6.0 if scene.idle_warm_up else 1.5, spare_ms))
         self.frame += 1
 
     def shutdown(self) -> None:
+        if self.scene is not None:
+            self.scene.settle_on_close()
+        if self.next_scene is not None and self.next_scene is not self.scene:
+            self.next_scene.settle_on_close()
         self.input.stop_camera()
         self.audio.stop()
         self.save()

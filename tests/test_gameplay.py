@@ -26,7 +26,7 @@ def place(run, x: float = 0.0, y: float = 60.0) -> None:
 
 
 # ----------------------------------------------------------------- colisões
-@pytest.mark.parametrize("altitude, hits", [(60.0, True), (117.0, True), (125.0, False), (150.0, False)])
+@pytest.mark.parametrize("altitude, hits", [(60.0, True), (112.0, True), (117.0, False), (150.0, False)])
 def test_obstaculo_baixo_pede_passar_por_cima(run, altitude, hits):
     place(run, y=altitude)
     obstacle(run, "low")
@@ -34,7 +34,7 @@ def test_obstaculo_baixo_pede_passar_por_cima(run, altitude, hits):
     assert (run.lives < C.MAX_LIVES) is hits
 
 
-@pytest.mark.parametrize("altitude, hits", [(30.0, False), (80.0, False), (88.0, True), (140.0, True)])
+@pytest.mark.parametrize("altitude, hits", [(30.0, False), (80.0, False), (88.0, False), (100.0, True), (140.0, True)])
 def test_portal_pede_passar_por_baixo(run, altitude, hits):
     place(run, y=altitude)
     obstacle(run, "gate")
@@ -88,10 +88,10 @@ def test_escudo_e_demonstracao_evitam_dano(run):
     assert run.lives == C.MAX_LIVES
 
 
-def test_estabilizador_encolhe_a_caixa_de_colisao():
+def test_pecas_mantem_a_mesma_tolerancia_de_colisao():
     plain = make_run().player.hitbox()
     tuned = make_run(parts={"estabilizador": 2}).player.hitbox()
-    assert (tuned.x_max - tuned.x_min) < (plain.x_max - plain.x_min)
+    assert tuned == plain
 
 
 # ------------------------------------------------------------------- coleta

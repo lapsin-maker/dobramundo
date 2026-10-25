@@ -59,6 +59,7 @@ class InputHub:
         self.floor_token: object = None
         self.settings = (1.0, 1.0, False)  # sensibilidade, zona morta e inverter subir/descer
         self.source_factory = webcam_source  # o console T-TEA troca pela fonte dele
+        self._pending_segment: Optional[str] = None
 
     # --------------------------------------------------------- corpo
     def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False) -> None:
@@ -69,17 +70,61 @@ class InputHub:
         anterior demorasse a terminar, abria uma segunda captura do mesmo dispositivo.
         """
         self.settings = (sensitivity, dead_scale, invert_y)
-        if key == self.segment_key and self.body is not None:
+        if key == self.segment_key and self.body is not None and self.body.error is None:
             return
         self.segment_key = key
         self.body = None
         if key not in SEGMENTS:
             self.stop_camera()
             return
+        if self.source is not None:
+            error = self.source.error
+            stopping = False
+            running = False
+            try:
+                running = self.source.running
+                stopping = self.source.stopping
+            except AttributeError:
+                # Fontes antigas (incluindo mocks e o cartucho) não têm thread desktop.
+                pass
+            if error is not None or stopping:
+                self.source.stop()
+                if running:
+                    self._pending_segment = key
+                    self.body = self.make_control(key)
+                    return
+                self.source = None
+            elif running:
+                self.body = self.make_control(key)
+                return
+        self._open_segment(key)
+
+    def _open_segment(self, key: str) -> None:
+        self._pending_segment = None
         if self.source is None:
             self.source = self.source_factory()
             self.source.start()
         self.body = self.make_control(key)
+
+    def retry_camera(self) -> None:
+        """Reabre a fonte após falha, sem esperar a thread/captura na interface."""
+        key = self.segment_key
+        if key not in SEGMENTS:
+            return
+        source = self.source
+        if source is not None:
+            source.stop()
+            running = False
+            try:
+                running = source.running
+            except AttributeError:
+                pass
+            if running:
+                self._pending_segment = key
+                return
+            self.source = None
+        self.body = None
+        self._open_segment(key)
 
     def make_control(self, key: str) -> BodyControl:
         """Pés sobre a projeção calibrada viram posição absoluta; o resto, relativo ao repouso."""
@@ -118,9 +163,17 @@ class InputHub:
     def stop_camera(self) -> None:
         """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""
         self.body = None
+        self._pending_segment = None
         if self.source is not None:
-            self.source.stop()
-            self.source = None
+            source = self.source
+            source.stop()
+            running = False
+            try:
+                running = source.running
+            except AttributeError:
+                pass
+            if not running:
+                self.source = None
 
     @property
     def uses_body(self) -> bool:
@@ -131,8 +184,30 @@ class InputHub:
         body = self.body
         return body is not None and body.error is None and body.calibrated and body.visible
 
+    def note_rendered(self) -> Optional[float]:
+        """Marca o fim da composição para a leitura corporal consumida."""
+        if self.body is None:
+            return None
+        try:
+            return self.body.note_rendered()
+        except AttributeError:
+            # Compatibilidade com controles simples usados por hosts/fixtures antigos.
+            return None
+
     def update(self, dt: float) -> None:
         self.mouse_moved += dt
+        if self._pending_segment is not None:
+            source = self.source
+            running = False
+            if source is not None:
+                try:
+                    running = source.running
+                except AttributeError:
+                    pass
+            if not running:
+                key = self._pending_segment
+                self.source = None
+                self._open_segment(key)
         if self.body is not None:
             self.body.poll(dt)
 
@@ -215,10 +290,20 @@ class InputHub:
         return self.mouse_pos
 
     def out_of_area(self) -> bool:
-        """O segmento saiu da área de captura (para a pausa automática)."""
+        """Falha da câmera pausa já; perda de pose usa a tolerância normal."""
         body = self.body
-        return body is not None and body.calibrated and body.error is None and body.missing_time >= AUTO_PAUSE_S
+        return body is not None and (body.error is not None or (body.calibrated and body.missing_time >= AUTO_PAUSE_S))
 
     def back_in_area(self) -> bool:
+        # Teclado é uma escolha explícita feita em calibração; falha de câmera não
+        # pode ser confundida com retorno de pose válida.
+        if self.segment_key == "teclado" and self.body is None:
+            return True
         body = self.body
-        return body is None or body.error is not None or body.seen_time >= RESUME_S
+        return (
+            body is not None
+            and body.error is None
+            and body.calibrated
+            and body.visible
+            and body.seen_time >= RESUME_S
+        )

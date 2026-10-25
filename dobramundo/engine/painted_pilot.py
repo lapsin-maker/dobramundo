@@ -761,7 +761,11 @@ class PaintedPilot:
         self.skin_key = skin_key
         self.shirt_key = shirt_key
         self.tolerance = tolerance
-        self.sprites = assets.folder(BASE_FOLDER)
+        # Pedir apenas as camadas do piloto: esta pasta também contém cenários
+        # grandes que pertencem a outras cenas e devem continuar sob demanda.
+        names = (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility",
+                 "front_standing", "back_standing", "front_seated", "back_seated")
+        self.sprites = dict(assets.folder(BASE_FOLDER, names=names))
         atlas = self.sprites.get(ATLAS_KEY)
         if atlas is not None:
             cell_w = atlas.get_width() // 2

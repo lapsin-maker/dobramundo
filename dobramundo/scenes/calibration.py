@@ -52,8 +52,11 @@ class CalibrationScene(Scene):
         )
 
     def restart(self) -> None:
-        if self.app.input.body is not None:
-            self.app.input.body.recalibrate()
+        body = self.app.input.body
+        if body is not None and body.error is not None:
+            self.app.input.retry_camera()
+        elif body is not None:
+            body.recalibrate()
         self.done_time = 0.0
         self.guided_index = -1
 
@@ -94,6 +97,10 @@ class CalibrationScene(Scene):
         super().handle_event(event)
 
     def options(self) -> None:
+        return_to, self.return_to = self.return_to, None
+        if return_to is not None:
+            # Ir às opções abandona este voo; creditá-lo agora evita perder o parcial.
+            return_to.settle_on_close()
         self.goto("opcoes")
 
     def keyboard(self) -> None:
@@ -192,12 +199,25 @@ class CalibrationScene(Scene):
         self.draw_menu(screen)
         mapper = body.mapper
         size = body.frame_size or (0, 0)
+        fps = f"{body.capture_fps:.0f}/{body.inference_fps:.0f} fps"
+        age = "—" if body.reading_age == float("inf") else f"{body.reading_age * 1000:.0f}ms"
+        rendered = "—" if body.capture_to_render_ms is None else f"{body.capture_to_render_ms:.0f}ms"
         diagnostic = (
-            f"Webcam {size[0]}×{size[1]} · pontos {body.valid_point_count}/{len(segment.landmarks) if segment else 0}"
+            f"Webcam {size[0]}×{size[1]} · inicialização {body.camera_startup_ms:.0f}ms"
+            f" · leitura/detector {fps} · inferência {body.inference_ms:.0f}ms"
+            f" · idade {age} · último quadro {rendered}"
+        )
+        detail = (
+            f"Pontos {body.valid_point_count}/{len(segment.landmarks) if segment else 0}"
             f" · confiança {body.confidence:.2f} · eixos {mapper.ax:+.2f}, {mapper.ay:+.2f}"
+            f" · descartes {body.stale_dropped} · falhas de leitura {body.read_failures}"
+            f" · erros {body.camera_errors}"
         )
         self.text.blit(
-            screen, diagnostic, (card.centerx, card.bottom - 24), T.SIZES["small"], T.MUTED, anchor="midbottom"
+            screen, diagnostic, (card.centerx, card.bottom - 46), T.SIZES["small"], T.MUTED, anchor="midbottom"
+        )
+        self.text.blit(
+            screen, detail, (card.centerx, card.bottom - 25), T.SIZES["small"], T.MUTED, anchor="midbottom"
         )
         if self.guided_message:
             self.text.blit(
@@ -208,3 +228,7 @@ class CalibrationScene(Scene):
                 T.NAVY,
                 anchor="midbottom",
             )
+
+    def settle_on_close(self) -> None:
+        if self.return_to is not None:
+            self.return_to.settle_on_close()

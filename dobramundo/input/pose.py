@@ -11,6 +11,7 @@ Este módulo não usa câmera nem bibliotecas de visão computacional.
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
@@ -19,6 +20,7 @@ MIN_VISIBILITY = 0.5
 HEAD_MIN_VISIBILITY = 0.35
 PREVIEW_SIZE = (160, 120)  # miniatura mostrada ao supervisor
 CAMERA_SIZE = (640, 480)
+MAX_READING_AGE_S = 0.35
 
 
 class Segment(NamedTuple):
@@ -274,6 +276,18 @@ class BodyControl:
         self._last_point: Optional[Point] = None
         self.confidence = 0.0
         self.valid_point_count = 0
+        self.capture_fps = 0.0
+        self.inference_fps = 0.0
+        self.capture_interval_ms = 0.0
+        self.inference_interval_ms = 0.0
+        self.camera_startup_ms = 0.0
+        self.inference_ms = 0.0
+        self.capture_to_publish_ms = 0.0
+        self.reading_captured_at: Optional[float] = None
+        self.capture_to_render_ms: Optional[float] = None
+        self.stale_dropped = 0
+        self.read_failures = 0
+        self.camera_errors = 0
 
     @property
     def error(self) -> Optional[str]:
@@ -298,31 +312,62 @@ class BodyControl:
     def poll(self, dt: float) -> None:
         """Consome a leitura nova da fonte, se houver (chamado a cada quadro)."""
         self._since_reading += dt
-        self.reading_age += dt
-        seq, landmarks, preview = self.source.snapshot()
+        captured_at = None
+        published_at = None
+        inference_ms = 0.0
+        try:
+            seq, landmarks, preview, captured_at, published_at, inference_ms = self.source.snapshot_with_metadata()
+        except AttributeError:
+            # Compatibilidade com fontes antigas e fixtures que só fornecem a tripla.
+            seq, landmarks, preview = self.source.snapshot()
         try:
             source_size = self.source.frame_size
         except AttributeError:
             source_size = None
         if source_size is not None:
             self.frame_size = source_size
+        try:
+            diagnostics = self.source.diagnostics()
+        except AttributeError:
+            diagnostics = {}
+        self.capture_fps = diagnostics.get("capture_fps", self.capture_fps)
+        self.inference_fps = diagnostics.get("inference_fps", self.inference_fps)
+        self.capture_interval_ms = diagnostics.get("capture_interval_ms", self.capture_interval_ms)
+        self.inference_interval_ms = diagnostics.get("inference_interval_ms", self.inference_interval_ms)
+        self.camera_startup_ms = diagnostics.get("startup_ms", self.camera_startup_ms) or 0.0
+        self.inference_ms = diagnostics.get("inference_ms", inference_ms)
+        self.stale_dropped = diagnostics.get("stale_dropped", self.stale_dropped)
+        self.read_failures = diagnostics.get("read_failures", self.read_failures)
+        self.camera_errors = diagnostics.get("errors", self.camera_errors)
+        if captured_at is not None:
+            # A idade usa relógio monotônico mesmo quando o seq não muda; dt do laço
+            # é suavizado/capado e pode esconder um travamento ou pausa longa.
+            self.reading_age = max(0.0, time.monotonic() - captured_at)
+        else:
+            self.reading_age += dt
         if seq != 0 and seq != self._seq:
             self._seq = seq
             self._frames += 1
             self.landmarks = landmarks
             self.preview = preview
+            self.reading_captured_at = captured_at
+            if captured_at is None:
+                self.capture_to_render_ms = None
             point = self.locate(landmarks)
-            self.reading_age = 0.0
-            self.visible = point is not None and self.reading_age <= 0.35
+            self.reading_age = max(0.0, time.monotonic() - captured_at) if captured_at is not None else 0.0
+            if captured_at is not None and published_at is not None:
+                self.capture_to_publish_ms = max(0.0, (published_at - captured_at) * 1000.0)
+            fresh = captured_at is None or self.reading_age <= MAX_READING_AGE_S
+            self.visible = point is not None and fresh
             threshold = HEAD_MIN_VISIBILITY if self.segment.key == "cabeca" else MIN_VISIBILITY
             self.valid_point_count = sum(
                 1 for i in self.segment.landmarks if landmarks and i < len(landmarks) and landmarks[i][2] >= threshold
             )
             confidences = [landmarks[i][2] for i in self.segment.landmarks if landmarks and i < len(landmarks)]
             self.confidence = sum(confidences) / len(confidences) if confidences else 0.0
-            self.feed(point, self._since_reading)
+            self.feed(point if fresh else None, self._since_reading)
             self._since_reading = 0.0
-        if self.reading_age > 0.35:
+        if self.reading_age > MAX_READING_AGE_S:
             self.visible = False
         if self.receiving:
             if self.visible:
@@ -365,6 +410,14 @@ class BodyControl:
 
     def feed(self, point: Optional[Point], elapsed: float) -> None:
         self.mapper.feed(point, elapsed)
+
+    def note_rendered(self) -> Optional[float]:
+        """Registra captura→quadro da leitura atualmente consumida, se houver timestamp."""
+        if self.reading_captured_at is None:
+            self.capture_to_render_ms = None
+            return None
+        self.capture_to_render_ms = max(0.0, (time.monotonic() - self.reading_captured_at) * 1000.0)
+        return self.capture_to_render_ms
 
     def axes(self) -> Tuple[float, float]:
         return self.mapper.axes()

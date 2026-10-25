@@ -1,4 +1,25 @@
-# Ferramentas de geração de assets
+# Ferramentas de desenvolvimento e geração de assets
+
+## Diagnóstico e validação da versão 1.5
+
+Execute a partir da raiz do repositório, sem builds/testes concorrentes para comparar tempos:
+
+```powershell
+python tools/benchmark_runtime.py --out build/benchmark --frames 600 --screenshots
+python tools/benchmark_runtime.py --out build/benchmark-camera --camera --paced
+python tools/benchmark_camera.py --seconds 8 --output build/camera.json
+python tools/check_routes.py --seeds 1000 --out build/rotas.json
+```
+
+`benchmark_runtime` mede abertura, memória residente no Windows, primeiro quadro, aquecimento e custo por quadro em dois biomas com/sem alto contraste. Usa CPU/SDL dummy; `--camera` abre a webcam para medir concorrência de inferência, com comandos de voo sintéticos. A idade do snapshot mais recente após a apresentação é distinta da métrica **captura→quadro consumido** da calibração integrada. Ambas começam no retorno da leitura e excluem exposição/buffering do sensor e latência física do monitor. Componentes estão aninhados e não devem ser somados.
+
+`benchmark_camera` separa até 15 segundos de preparação da janela de amostragem; exige pelo menos cinco resultados publicados e encerramento confirmado. Falta de amostras ou erro retorna código 2. Essas ferramentas salvam métricas; apenas `--screenshots` grava imagens sintéticas do jogo, nunca da webcam ou dos pontos do corpo.
+
+`check_routes` verifica sementes reproduzíveis, diversidade, auditoria completa de uma amostra, continuidade após avanço e tempos de inserção/geração. O contrato geométrico não substitui testes de controle corporal e conforto com a pessoa. Veja [condições e validação](../docs/ENTREGA_1_5.md).
+
+No benchmark, `--paced` cede CPU entre quadros para mirar 60 fps, excluindo esse sono dos tempos de processamento. Sem a opção, a execução é um teste de estresse sem limite de quadros. Registre a modalidade ao comparar resultados.
+
+## Geração de assets
 
 Os scripts desta pasta criam parte dos arquivos de `assets/` que o jogo carrega. O jogo não precisa das ferramentas para rodar: ele usa os PNG, OGG e JSON já gerados. Use-as para regenerar ou ajustar os assets indicados na tabela abaixo.
 

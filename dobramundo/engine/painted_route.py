@@ -21,6 +21,7 @@ from .sprites import SpriteCache, fog_level, project
 class PaintedGround(GroundRenderer):
     TILE_X = 1050.0
     TILE_Z = 1300.0
+    ROW_HEIGHT = 3
 
     def __init__(self, atlas: pygame.Surface) -> None:
         self.textures = {}
@@ -36,9 +37,9 @@ class PaintedGround(GroundRenderer):
             for x, y in ((0, 0), (512, 0), (0, 512), (512, 512)):
                 tile.blit(pygame.transform.flip(small, bool(x), bool(y)), (x, y))
             self.textures[name] = tile
-        # Faixas de dois pixels preservam perspectiva sem custar centenas de
+        # Faixas de três pixels preservam perspectiva sem custar centenas de
         # transformações extras; objetos/piloto continuam em resolução integral.
-        self.rows = compute_ground_rows()[::2]
+        self.rows = compute_ground_rows()[::self.ROW_HEIGHT]
         self.fog_cache = {}
         self.source_rows = {name: tuple(tile.subsurface((0, v, 1024, 1)) for v in range(1024))
                             for name, tile in self.textures.items()}
@@ -55,17 +56,17 @@ class PaintedGround(GroundRenderer):
         key = name, y
         buffer = self.line_buffers.get(key)
         if buffer is None:
-            buffer = [display_format(pygame.Surface((width, 2))), -1]
+            buffer = [display_format(pygame.Surface((width, self.ROW_HEIGHT))), -1]
             self.line_buffers[key] = buffer
         line = buffer[0]
         if buffer[1] != v:
-            pygame.transform.scale(self.source_rows[name][v], (width, 2), line)
+            pygame.transform.scale(self.source_rows[name][v], (width, self.ROW_HEIGHT), line)
             buffer[1] = v
         origin = cam * width / self.TILE_X - C.WIDTH / 2
         x, src = left, int(origin + left) % width
         while x < right:
             piece = min(width - src, right - x)
-            jobs.append((line, (x, y), (src, 0, piece, 2)))
+            jobs.append((line, (x, y), (src, 0, piece, self.ROW_HEIGHT)))
             x += piece
             src = 0
 
@@ -74,6 +75,11 @@ class PaintedGround(GroundRenderer):
         river = biome == "amazonia"
         half = C.ROAD_WIDTH / 2
         for y, z, _ in self.rows:
+            if not river:
+                # Na Caatinga as três regiões usam o mesmo solo: uma única faixa
+                # produz os mesmos pixels sem repetir recortes e trigonometria.
+                self.queue_line(jobs, "soil", y, z, 0, C.WIDTH, distance, cam)
+                continue
             scale = C.FOV / z
             # Pequenas curvas da margem não alteram as faixas de colisão.
             bend = math.sin((distance + z) / 1100) * 45 + math.sin((distance + z) / 140) * 18

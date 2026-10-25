@@ -58,7 +58,12 @@ class FlightRun:
         self.invincible = False  # modo de demonstração do supervisor (F2)
         self.game_over = False
         self.complete = False
+        # Um voo interrompido guarda as recompensas obtidas, mas não conclui a fase.
+        self.interrupted = False
         self.finished = False  # pronto para a tela de resultado
+        # Estado em memória do assentamento. Resultado pode ser reaberto ou salvo de novo.
+        self.settlement = None
+        self.settlement_callback_sent = False
         self.complete_timer = 0.0
         self.stars = 0
         self.stage = self.world.stage
@@ -253,6 +258,7 @@ class FlightRun:
             "fase": self.biome.key,
             "modo": self.mode,
             "concluida": int(self.complete),
+            "interrompida": int(self.interrupted),
             "transformacao": round(self.restoration, 1),
             "estrelas": self.stars,
             "pontos": self.score,

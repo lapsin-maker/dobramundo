@@ -184,7 +184,7 @@ def test_limites_fisicos_low_gate_tower_coincidem_com_a_manobra(run):
     run.player.x, run.player.y = 120.0, 100.0
     run.check_collisions()
     assert not tower.hit  # fora da silhueta lateral da torre
-    run.player.x = 100.0
+    run.player.x = 95.0  # intersecta a torre mesmo com a tolerância comum de colisão
     run.check_collisions()
     assert tower.hit
 

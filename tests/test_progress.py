@@ -27,14 +27,14 @@ def test_custos():
     assert missing({"papel": 1}, {"papel": 5, "vidro": 2}) == {"papel": 4, "vidro": 2}
 
 
-def test_pecas_melhoram_o_voo():
+def test_pecas_nao_compram_conforto_de_controle():
     stats = plane_stats({"estabilizador": 2, "leme": 2, "quilha": 2})
-    assert stats.response > 1 and stats.max_speed > 1 and stats.hitbox < 1 and stats.dead_zone < 1
+    assert stats == plane_stats({})
     quick = make_run(parts={"leme": 2})
     slow = make_run()
     advance(quick, 0.1, ix=1.0)
     advance(slow, 0.1, ix=1.0)
-    assert quick.player.x > slow.player.x
+    assert quick.player.x == slow.player.x
 
 
 def test_catalogo_de_melhorias_coerente():

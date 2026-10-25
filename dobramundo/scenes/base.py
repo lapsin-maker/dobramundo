@@ -63,6 +63,9 @@ class Scene:
     def leave(self) -> None:
         pass
 
+    def settle_on_close(self) -> None:
+        """Conclui efeitos pendentes antes do fechamento normal da plataforma."""
+
     def build(self) -> None:
         """Monta os botões da tela (chamado ao entrar e quando algo muda)."""
 

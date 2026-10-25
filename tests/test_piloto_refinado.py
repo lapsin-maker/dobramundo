@@ -49,9 +49,9 @@ class _FakeAssets:
     def __init__(self, sprites):
         self.sprites = sprites
 
-    def folder(self, name):
+    def folder(self, name, names=None):
         assert name == "watercolor"
-        return self.sprites
+        return {key: value for key, value in self.sprites.items() if names is None or key in names}
 
 
 def test_loader_de_poses_watercolor_recoloreia_mas_preserva_pigmento():

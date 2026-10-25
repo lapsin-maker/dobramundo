@@ -282,7 +282,7 @@ def test_torre_perto_da_borda_escolhe_o_outro_lado():
 
 
 def test_torre_larga_sem_lado_livre_devolve_none():
-    entity, _ = tower_at(0, width=300.0)  # não cabe nem à esquerda nem à direita
+    entity, _ = tower_at(0, width=2 * C.MAX_PLAYER_X)  # bloqueia a largura útil inteira
     assert choose_escape(entity, Player().hitbox(), (200.0, 60.0)) is None
 
 

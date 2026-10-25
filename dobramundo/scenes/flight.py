@@ -108,7 +108,7 @@ class FlightScene(Scene):
         buttons = [
             self.button(rects[0], texts.UI["continuar"], self.resume),
             self.button(rects[1], "Recalibrar", self.recalibrate, enabled=self.app.input.uses_body),
-            self.button(rects[2], "Voltar à vila", self.quit_to_village),
+            self.button(rects[2], "Encerrar voo", self.quit_to_village),
         ]
         self.menu.set_buttons(buttons, keep_focus=False)
 
@@ -132,7 +132,25 @@ class FlightScene(Scene):
         self.goto("calibracao", return_to=self)
 
     def quit_to_village(self) -> None:
-        self.goto("vila")
+        if not self.run.complete and not self.run.game_over:
+            self.run.interrupted = True
+        self.run.finished = True
+        self.goto("resultado", self.run)
+
+    def settle_on_close(self) -> None:
+        """Credita uma partida em andamento antes de a janela fechar; seguro para repetir."""
+        # Core também consulta a cena pendente no shutdown: ela pode ser um voo
+        # recém-agendado, que nunca entrou nem chegou a começar.
+        if not self.started:
+            return
+        if not self.run.complete and not self.run.game_over:
+            self.run.interrupted = True
+        self.run.finished = True
+        from .result import apply_run, notify_settlement
+
+        apply_run(self.app.profile, self.run)
+        self.app.save()
+        notify_settlement(self.app, self.run)
 
     def back(self) -> None:
         if self.paused:
@@ -160,6 +178,10 @@ class FlightScene(Scene):
     # ------------------------------------------------------------ quadro
     def update(self, dt: float) -> None:
         self.time += dt
+        if self.run.finished:
+            if self.app.next_scene is None:
+                self.goto("resultado", self.run)
+            return
         hub = self.app.input
         if not self.paused and hub.out_of_area():
             self.pause(auto=True)
@@ -172,6 +194,18 @@ class FlightScene(Scene):
                 self.countdown = 0.0
             if self.menu.update(dt, hub.pointer(), self.app.options.permanencia):
                 self.app.audio.play("sfx_selecao")
+            return
+        body = hub.body
+        if (
+            self.app.profile.controle != "teclado"
+            and body is not None
+            and body.calibrated
+            and body.error is None
+            and not body.visible
+            and not hub.held()
+        ):
+            # Durante a janela que antecede a pausa automática, um snapshot corporal
+            # perdido não deixa o avião estacionado receber uma colisão.
             return
         ix, iy, target = hub.flight_command()
         if hub.body_ready:
@@ -497,7 +531,7 @@ class FlightScene(Scene):
         if body.error:
             self.text.blit(
                 screen,
-                f"Câmera indisponível ({body.error}): use o teclado",
+                f"Câmera indisponível ({body.error}): voo pausado; tente Recalibrar",
                 (C.WIDTH // 2, C.HEIGHT - 30),
                 T.SIZES["small"],
                 T.WHITE,
@@ -519,7 +553,14 @@ class FlightScene(Scene):
         T.panel(screen, card, T.PAPER, T.NAVY, 250, 22, 4)
         if self.auto_paused:
             title = "Pausa automática"
-            if self.app.input.back_in_area():
+            body = self.app.input.body
+            if body is not None and body.error is not None:
+                sub = "A câmera parou. Recalibre; na calibração, escolha Teclado para continuar."
+            elif body is not None and not body.receiving:
+                sub = "Aguardando a câmera. Mantenha-se visível para continuar."
+            elif body is not None and not body.calibrated:
+                sub = "Calibre novamente para continuar com o corpo."
+            elif self.app.input.back_in_area():
                 left = max(0, math.ceil(RESUME_COUNTDOWN - self.countdown))
                 sub = f"Você voltou! Retomando em {left}..."
             else:

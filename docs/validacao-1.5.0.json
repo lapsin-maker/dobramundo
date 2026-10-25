@@ -1,0 +1,1291 @@
+{
+  "version": "1.5.0",
+  "source_commit": "9d8a7c7d1934013d9dcc8a87902cd41bec826b6b",
+  "date": "2026-10-25",
+  "self_test_source": "ok",
+  "self_test_executable": "ok",
+  "camera_test": "real local capture and inference; no human motion acceptance",
+  "physical_console_acceptance": "pending",
+  "packages": {
+    "Dobramundo-1.5.0-Galeria.zip": {
+      "bytes": 3099848,
+      "sha256": "770f3f964522c370ebf7bd9ab4fc908ca92a8b97f1f54f4e42e7da436f6359d3"
+    },
+    "Dobramundo-1.5.0-Windows.zip": {
+      "bytes": 229545987,
+      "sha256": "d096ee6ea1d85b6fa890e1a7306e139b271d6f84178b95dfd5601973baae5816"
+    },
+    "dobramundo-1.5.0.ttea": {
+      "bytes": 114329371,
+      "sha256": "7507f7faa0d4848d11a204344b6af8ceb48b30bac9e82f5cadba4589eee141f5"
+    }
+  },
+  "baseline_opening": {
+    "source_commit": "4a650b269717bfaec4a5143d500cc101f8505a90",
+    "startup_ms": 2793.9,
+    "rss_delta_bytes": 377925632,
+    "startup_watercolor_count": 39,
+    "startup_watercolor_bytes": 245378820
+  },
+  "tests": {
+    "full_suite": 446,
+    "result": "passed",
+    "ruff_check_all": "passed",
+    "git_diff_check": "passed"
+  },
+  "self_tests": {
+    "source": {
+      "version": "1.5.0",
+      "frozen": false,
+      "status": "ok",
+      "pose_detector": "ok",
+      "screens": [
+        "abertura",
+        "hangar",
+        "hangar_padrao",
+        "mapa",
+        "melhorias",
+        "melhorias_aviao",
+        "ods",
+        "opcoes",
+        "piloto",
+        "preparar",
+        "projecao",
+        "selecao",
+        "sobre",
+        "vila"
+      ],
+      "flight_frames": {
+        "amazonia": 1200,
+        "caatinga": 1200
+      }
+    },
+    "exe": {
+      "version": "1.5.0",
+      "frozen": true,
+      "status": "ok",
+      "pose_detector": "ok",
+      "screens": [
+        "abertura",
+        "hangar",
+        "hangar_padrao",
+        "mapa",
+        "melhorias",
+        "melhorias_aviao",
+        "ods",
+        "opcoes",
+        "piloto",
+        "preparar",
+        "projecao",
+        "selecao",
+        "sobre",
+        "vila"
+      ],
+      "flight_frames": {
+        "amazonia": 1200,
+        "caatinga": 1200
+      }
+    }
+  },
+  "cartridge": {
+    "sdk_check": "passed",
+    "portable_files": 505,
+    "crc": "passed",
+    "source_files_byte_identical": 68,
+    "physical_console": "not tested"
+  },
+  "routes": {
+    "contract": {
+      "origin": "center at START_ALTITUDE",
+      "reaction_margin_s": 0.35,
+      "reversal_margin_s": 0.15,
+      "dynamics": "minimum of saturated POSITION_RESPONSE and accelerating FLIGHT_RESPONSE displacement envelopes",
+      "movement_speed_fraction": 0.75,
+      "grid": "x=10 world units, y=11 world units plus start/rest/max",
+      "collision": "entity obstacle AABB expanded by baseline plane AABB",
+      "limitation": "deterministic reference route only; no claim of physical/user reachability"
+    },
+    "runs": {
+      "amazonia:normal": {
+        "seeds": 1000,
+        "routes_found": 1000,
+        "obstacles_requested": 5956,
+        "obstacles_kept": 5956,
+        "obstacles_adjusted": 3,
+        "obstacles_skipped": 0,
+        "keep_rate": 1.0,
+        "lanes": {
+          "-1": 2008,
+          "0": 1931,
+          "1": 2017
+        },
+        "kinds": {
+          "low": 2733,
+          "gate": 1714,
+          "tower": 1509
+        }
+      },
+      "amazonia:dificil": {
+        "seeds": 1000,
+        "routes_found": 1000,
+        "obstacles_requested": 5956,
+        "obstacles_kept": 5956,
+        "obstacles_adjusted": 232,
+        "obstacles_skipped": 0,
+        "keep_rate": 1.0,
+        "lanes": {
+          "-1": 2129,
+          "0": 1712,
+          "1": 2115
+        },
+        "kinds": {
+          "low": 2733,
+          "gate": 1714,
+          "tower": 1509
+        }
+      },
+      "caatinga:normal": {
+        "seeds": 1000,
+        "routes_found": 1000,
+        "obstacles_requested": 5956,
+        "obstacles_kept": 5956,
+        "obstacles_adjusted": 4,
+        "obstacles_skipped": 0,
+        "keep_rate": 1.0,
+        "lanes": {
+          "-1": 2008,
+          "0": 1932,
+          "1": 2016
+        },
+        "kinds": {
+          "low": 2733,
+          "gate": 1714,
+          "tower": 1509
+        }
+      },
+      "caatinga:dificil": {
+        "seeds": 1000,
+        "routes_found": 1000,
+        "obstacles_requested": 5956,
+        "obstacles_kept": 5956,
+        "obstacles_adjusted": 240,
+        "obstacles_skipped": 0,
+        "keep_rate": 1.0,
+        "lanes": {
+          "-1": 2125,
+          "0": 1710,
+          "1": 2121
+        },
+        "kinds": {
+          "low": 2733,
+          "gate": 1714,
+          "tower": 1509
+        }
+      }
+    },
+    "independent_full_validation": {
+      "checks": 100,
+      "passed": 100
+    },
+    "advancement_checks": {
+      "worlds": 80,
+      "cycles_per_world": 500,
+      "tutorial_failures": 0,
+      "empty_frontiers": 0
+    },
+    "timings_ms": {
+      "route_insert": {
+        "samples": 26081,
+        "p95": 1.805,
+        "p99": 6.547,
+        "max": 14.492
+      },
+      "spawn_pattern": {
+        "samples": 74894,
+        "p95": 1.296,
+        "p99": 2.254,
+        "max": 16.502
+      }
+    },
+    "failures": []
+  },
+  "route_optimization": {
+    "same_results_before_after": true,
+    "previous_timings_ms": {
+      "route_insert": {
+        "samples": 26081,
+        "p95": 29.064,
+        "p99": 36.771,
+        "max": 216.659
+      },
+      "spawn_pattern": {
+        "samples": 74894,
+        "p95": 19.189,
+        "p99": 31.895,
+        "max": 216.825
+      }
+    }
+  },
+  "runtime_no_camera_uncapped": {
+    "conditions": "CPU; SDL dummy; no camera; 1100x650; fresh process; 60 warmup frames per case",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "camera_clock_resolution_ms": 15.625,
+    "startup_ms": 3507.49,
+    "rss_before_bytes": 38965248,
+    "rss_after_bytes": 209334272,
+    "rss_delta_bytes": 170369024,
+    "startup_watercolor_count": 6,
+    "startup_watercolor_bytes": 37748428,
+    "flights": {
+      "amazonia_normal": {
+        "frame": {
+          "median_ms": 7.165,
+          "p95_ms": 11.362,
+          "p99_ms": 14.107,
+          "max_ms": 19.254
+        },
+        "scene_setup_ms": 7.689,
+        "warmup": {
+          "median_ms": 6.457,
+          "p95_ms": 10.349,
+          "p99_ms": 424.649,
+          "max_ms": 424.649
+        },
+        "first_frame_ms": 424.649,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9967,
+        "components": {
+          "horizon": {
+            "median_ms": 0.004,
+            "p95_ms": 1.451,
+            "p99_ms": 1.874,
+            "max_ms": 2.151
+          },
+          "ground": {
+            "median_ms": 3.784,
+            "p95_ms": 5.622,
+            "p99_ms": 7.607,
+            "max_ms": 9.166
+          },
+          "background": {
+            "median_ms": 5.344,
+            "p95_ms": 8.797,
+            "p99_ms": 10.84,
+            "max_ms": 12.863
+          },
+          "world": {
+            "median_ms": 6.122,
+            "p95_ms": 9.692,
+            "p99_ms": 11.531,
+            "max_ms": 15.519
+          },
+          "present": {
+            "median_ms": 0.262,
+            "p95_ms": 0.5,
+            "p99_ms": 0.672,
+            "max_ms": 1.383
+          }
+        },
+        "rss_bytes": 462635008
+      },
+      "amazonia_contrast": {
+        "frame": {
+          "median_ms": 9.542,
+          "p95_ms": 12.37,
+          "p99_ms": 15.343,
+          "max_ms": 18.444
+        },
+        "scene_setup_ms": 5.712,
+        "warmup": {
+          "median_ms": 9.484,
+          "p95_ms": 11.624,
+          "p99_ms": 41.763,
+          "max_ms": 41.763
+        },
+        "first_frame_ms": 41.763,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9967,
+        "components": {
+          "horizon": {
+            "median_ms": 0.004,
+            "p95_ms": 1.017,
+            "p99_ms": 1.588,
+            "max_ms": 1.898
+          },
+          "ground": {
+            "median_ms": 3.735,
+            "p95_ms": 4.792,
+            "p99_ms": 5.925,
+            "max_ms": 6.651
+          },
+          "desaturate": {
+            "median_ms": 1.693,
+            "p95_ms": 2.249,
+            "p99_ms": 3.356,
+            "max_ms": 3.84
+          },
+          "background": {
+            "median_ms": 6.639,
+            "p95_ms": 8.835,
+            "p99_ms": 10.79,
+            "max_ms": 12.868
+          },
+          "world": {
+            "median_ms": 8.514,
+            "p95_ms": 10.953,
+            "p99_ms": 14.456,
+            "max_ms": 15.504
+          },
+          "present": {
+            "median_ms": 0.26,
+            "p95_ms": 0.477,
+            "p99_ms": 0.639,
+            "max_ms": 0.905
+          }
+        },
+        "rss_bytes": 479465472
+      },
+      "caatinga_normal": {
+        "frame": {
+          "median_ms": 4.994,
+          "p95_ms": 7.57,
+          "p99_ms": 9.814,
+          "max_ms": 12.181
+        },
+        "scene_setup_ms": 5.482,
+        "warmup": {
+          "median_ms": 4.229,
+          "p95_ms": 7.524,
+          "p99_ms": 270.364,
+          "max_ms": 270.364
+        },
+        "first_frame_ms": 270.364,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 1.0,
+        "components": {
+          "horizon": {
+            "median_ms": 0.004,
+            "p95_ms": 1.259,
+            "p99_ms": 1.971,
+            "max_ms": 3.363
+          },
+          "ground": {
+            "median_ms": 1.61,
+            "p95_ms": 2.573,
+            "p99_ms": 3.066,
+            "max_ms": 4.645
+          },
+          "background": {
+            "median_ms": 3.231,
+            "p95_ms": 5.468,
+            "p99_ms": 7.11,
+            "max_ms": 10.033
+          },
+          "world": {
+            "median_ms": 4.004,
+            "p95_ms": 6.413,
+            "p99_ms": 8.415,
+            "max_ms": 10.984
+          },
+          "present": {
+            "median_ms": 0.262,
+            "p95_ms": 0.491,
+            "p99_ms": 0.753,
+            "max_ms": 0.99
+          }
+        },
+        "rss_bytes": 544681984
+      },
+      "caatinga_contrast": {
+        "frame": {
+          "median_ms": 7.808,
+          "p95_ms": 10.84,
+          "p99_ms": 12.926,
+          "max_ms": 14.93
+        },
+        "scene_setup_ms": 7.566,
+        "warmup": {
+          "median_ms": 6.81,
+          "p95_ms": 9.257,
+          "p99_ms": 10.213,
+          "max_ms": 10.213
+        },
+        "first_frame_ms": 9.288,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 1.0,
+        "components": {
+          "horizon": {
+            "median_ms": 0.004,
+            "p95_ms": 1.29,
+            "p99_ms": 1.853,
+            "max_ms": 2.929
+          },
+          "ground": {
+            "median_ms": 1.602,
+            "p95_ms": 2.371,
+            "p99_ms": 2.909,
+            "max_ms": 3.403
+          },
+          "desaturate": {
+            "median_ms": 1.68,
+            "p95_ms": 2.394,
+            "p99_ms": 3.142,
+            "max_ms": 4.459
+          },
+          "background": {
+            "median_ms": 4.935,
+            "p95_ms": 7.217,
+            "p99_ms": 9.075,
+            "max_ms": 12.016
+          },
+          "world": {
+            "median_ms": 6.823,
+            "p95_ms": 9.465,
+            "p99_ms": 11.421,
+            "max_ms": 13.763
+          },
+          "present": {
+            "median_ms": 0.264,
+            "p95_ms": 0.481,
+            "p99_ms": 0.686,
+            "max_ms": 0.916
+          }
+        },
+        "rss_bytes": 561881088
+      }
+    },
+    "status": "ok"
+  },
+  "runtime_camera_uncapped": {
+    "conditions": "CPU; SDL dummy; local camera inference running concurrently; 1100x650; fresh process; 60 warmup frames per case",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "camera_clock_resolution_ms": 15.625,
+    "startup_ms": 1304.25,
+    "rss_before_bytes": 38830080,
+    "rss_after_bytes": 208449536,
+    "rss_delta_bytes": 169619456,
+    "startup_watercolor_count": 6,
+    "startup_watercolor_bytes": 37748428,
+    "flights": {
+      "amazonia_normal": {
+        "frame": {
+          "median_ms": 8.382,
+          "p95_ms": 11.896,
+          "p99_ms": 14.34,
+          "max_ms": 17.975
+        },
+        "scene_setup_ms": 18.706,
+        "warmup": {
+          "median_ms": 7.405,
+          "p95_ms": 10.715,
+          "p99_ms": 532.262,
+          "max_ms": 532.262
+        },
+        "first_frame_ms": 532.262,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9967,
+        "components": {
+          "horizon": {
+            "median_ms": 0.005,
+            "p95_ms": 1.49,
+            "p99_ms": 2.072,
+            "max_ms": 2.374
+          },
+          "ground": {
+            "median_ms": 4.297,
+            "p95_ms": 6.597,
+            "p99_ms": 8.197,
+            "max_ms": 10.614
+          },
+          "background": {
+            "median_ms": 6.236,
+            "p95_ms": 9.088,
+            "p99_ms": 10.917,
+            "max_ms": 13.535
+          },
+          "world": {
+            "median_ms": 7.091,
+            "p95_ms": 10.344,
+            "p99_ms": 12.174,
+            "max_ms": 15.966
+          },
+          "present": {
+            "median_ms": 0.304,
+            "p95_ms": 0.563,
+            "p99_ms": 0.781,
+            "max_ms": 0.985
+          }
+        },
+        "rss_bytes": 666353664,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 46.0,
+          "p95_ms": 78.0,
+          "p99_ms": 93.0,
+          "max_ms": 94.0
+        },
+        "camera": {
+          "frames_read": 187,
+          "inferences": 186,
+          "published": 186,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 6281.000000002678,
+          "capture_fps": 29.92,
+          "inference_fps": 29.76,
+          "capture_interval_ms": 31.000000002677552,
+          "inference_interval_ms": 31.000000002677552,
+          "inference_ms": 16.00000000325963,
+          "result_age_ms": 31.000000002677552,
+          "last_result_age_ms": 16.00000000325963,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "amazonia_contrast": {
+        "frame": {
+          "median_ms": 11.119,
+          "p95_ms": 51.266,
+          "p99_ms": 66.936,
+          "max_ms": 75.375
+        },
+        "scene_setup_ms": 9.061,
+        "warmup": {
+          "median_ms": 9.723,
+          "p95_ms": 12.557,
+          "p99_ms": 47.987,
+          "max_ms": 47.987
+        },
+        "first_frame_ms": 47.987,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9067,
+        "components": {
+          "horizon": {
+            "median_ms": 0.005,
+            "p95_ms": 1.354,
+            "p99_ms": 7.372,
+            "max_ms": 8.091
+          },
+          "ground": {
+            "median_ms": 4.349,
+            "p95_ms": 19.879,
+            "p99_ms": 26.498,
+            "max_ms": 33.167
+          },
+          "desaturate": {
+            "median_ms": 1.915,
+            "p95_ms": 9.773,
+            "p99_ms": 12.717,
+            "max_ms": 19.719
+          },
+          "background": {
+            "median_ms": 7.659,
+            "p95_ms": 40.266,
+            "p99_ms": 52.589,
+            "max_ms": 58.041
+          },
+          "world": {
+            "median_ms": 9.893,
+            "p95_ms": 47.926,
+            "p99_ms": 63.273,
+            "max_ms": 70.26
+          },
+          "present": {
+            "median_ms": 0.309,
+            "p95_ms": 0.937,
+            "p99_ms": 1.241,
+            "max_ms": 1.466
+          }
+        },
+        "rss_bytes": 678719488,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 125.0,
+          "p99_ms": 187.0,
+          "max_ms": 204.0
+        },
+        "camera": {
+          "frames_read": 415,
+          "inferences": 414,
+          "published": 414,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 6281.000000002678,
+          "capture_fps": 26.453340132594445,
+          "inference_fps": 26.389597144323133,
+          "capture_interval_ms": 15.999999988707714,
+          "inference_interval_ms": 15.999999988707714,
+          "inference_ms": 15.999999988707714,
+          "result_age_ms": 46.999999991385266,
+          "last_result_age_ms": 15.999999988707714,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "caatinga_normal": {
+        "frame": {
+          "median_ms": 5.578,
+          "p95_ms": 8.558,
+          "p99_ms": 10.232,
+          "max_ms": 12.866
+        },
+        "scene_setup_ms": 9.632,
+        "warmup": {
+          "median_ms": 5.703,
+          "p95_ms": 8.063,
+          "p99_ms": 305.077,
+          "max_ms": 305.077
+        },
+        "first_frame_ms": 305.077,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 1.0,
+        "components": {
+          "horizon": {
+            "median_ms": 0.005,
+            "p95_ms": 1.515,
+            "p99_ms": 2.032,
+            "max_ms": 3.009
+          },
+          "ground": {
+            "median_ms": 1.815,
+            "p95_ms": 2.848,
+            "p99_ms": 3.46,
+            "max_ms": 4.593
+          },
+          "background": {
+            "median_ms": 3.611,
+            "p95_ms": 5.965,
+            "p99_ms": 7.431,
+            "max_ms": 10.052
+          },
+          "world": {
+            "median_ms": 4.441,
+            "p95_ms": 7.084,
+            "p99_ms": 8.452,
+            "max_ms": 11.436
+          },
+          "present": {
+            "median_ms": 0.286,
+            "p95_ms": 0.564,
+            "p99_ms": 0.794,
+            "max_ms": 0.965
+          }
+        },
+        "rss_bytes": 751288320,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 93.0,
+          "p99_ms": 109.0,
+          "max_ms": 110.0
+        },
+        "camera": {
+          "frames_read": 541,
+          "inferences": 540,
+          "published": 540,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 6281.000000002678,
+          "capture_fps": 27.240684793554085,
+          "inference_fps": 27.19033232628319,
+          "capture_interval_ms": 31.000000002677552,
+          "inference_interval_ms": 31.000000002677552,
+          "inference_ms": 31.000000002677552,
+          "result_age_ms": 47.00000000593718,
+          "last_result_age_ms": 31.000000002677552,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "caatinga_contrast": {
+        "frame": {
+          "median_ms": 9.693,
+          "p95_ms": 13.435,
+          "p99_ms": 15.092,
+          "max_ms": 19.452
+        },
+        "scene_setup_ms": 10.853,
+        "warmup": {
+          "median_ms": 8.423,
+          "p95_ms": 11.157,
+          "p99_ms": 13.806,
+          "max_ms": 13.806
+        },
+        "first_frame_ms": 12.696,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.995,
+        "components": {
+          "horizon": {
+            "median_ms": 0.005,
+            "p95_ms": 1.628,
+            "p99_ms": 2.129,
+            "max_ms": 2.829
+          },
+          "ground": {
+            "median_ms": 2.014,
+            "p95_ms": 3.154,
+            "p99_ms": 3.622,
+            "max_ms": 4.911
+          },
+          "desaturate": {
+            "median_ms": 1.99,
+            "p95_ms": 3.22,
+            "p99_ms": 3.886,
+            "max_ms": 4.201
+          },
+          "background": {
+            "median_ms": 6.146,
+            "p95_ms": 9.184,
+            "p99_ms": 10.364,
+            "max_ms": 12.429
+          },
+          "world": {
+            "median_ms": 8.451,
+            "p95_ms": 12.179,
+            "p99_ms": 13.874,
+            "max_ms": 17.822
+          },
+          "present": {
+            "median_ms": 0.316,
+            "p95_ms": 0.647,
+            "p99_ms": 0.958,
+            "max_ms": 2.294
+          }
+        },
+        "rss_bytes": 766210048,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 63.0,
+          "p99_ms": 79.0,
+          "max_ms": 110.0
+        },
+        "camera": {
+          "frames_read": 737,
+          "inferences": 737,
+          "published": 737,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 6281.000000002678,
+          "capture_fps": 27.909266482380588,
+          "inference_fps": 27.909266482380588,
+          "capture_interval_ms": 14.999999999417923,
+          "inference_interval_ms": 14.999999999417923,
+          "inference_ms": 16.00000000325963,
+          "result_age_ms": 31.999999991967343,
+          "last_result_age_ms": 16.00000000325963,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      }
+    },
+    "camera_start": {
+      "frames_read": 2,
+      "inferences": 1,
+      "published": 1,
+      "stale_dropped": 0,
+      "read_failures": 0,
+      "errors": 0,
+      "startup_ms": 6281.000000002678,
+      "capture_fps": 42.55319149716137,
+      "inference_fps": 21.276595748580686,
+      "capture_interval_ms": 31.999999991967343,
+      "inference_interval_ms": 31.999999991967343,
+      "inference_ms": 31.999999991967343,
+      "result_age_ms": 46.999999991385266,
+      "last_result_age_ms": 31.999999991967343,
+      "resolution": [
+        640,
+        480
+      ],
+      "error": null,
+      "stopping": false
+    },
+    "camera_ready": true,
+    "latency_basis": "read-return to present-call completion; excludes sensor buffering and physical display latency",
+    "camera_thread_stopped": true,
+    "camera_end": {
+      "frames_read": 738,
+      "inferences": 737,
+      "published": 737,
+      "stale_dropped": 0,
+      "read_failures": 0,
+      "errors": 0,
+      "startup_ms": 6281.000000002678,
+      "capture_fps": 27.285835767376607,
+      "inference_fps": 27.24886309018504,
+      "capture_interval_ms": 46.999999991385266,
+      "inference_interval_ms": 14.999999999417923,
+      "inference_ms": 16.00000000325963,
+      "result_age_ms": 671.9999999913853,
+      "last_result_age_ms": 16.00000000325963,
+      "resolution": [
+        640,
+        480
+      ],
+      "error": null,
+      "stopping": true
+    },
+    "status": "ok"
+  },
+  "runtime_camera_paced_60": {
+    "conditions": "CPU; SDL dummy; local camera inference running concurrently; 1100x650; fresh process; 60 warmup frames per case",
+    "pacing": "60 fps target, sleep excluded from frame timings",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "camera_clock_resolution_ms": 15.625,
+    "startup_ms": 1206.98,
+    "rss_before_bytes": 38670336,
+    "rss_after_bytes": 208969728,
+    "rss_delta_bytes": 170299392,
+    "startup_watercolor_count": 6,
+    "startup_watercolor_bytes": 37748428,
+    "flights": {
+      "amazonia_normal": {
+        "frame": {
+          "median_ms": 8.639,
+          "p95_ms": 12.659,
+          "p99_ms": 14.733,
+          "max_ms": 16.863
+        },
+        "scene_setup_ms": 9.146,
+        "warmup": {
+          "median_ms": 8.446,
+          "p95_ms": 20.904,
+          "p99_ms": 543.833,
+          "max_ms": 543.833
+        },
+        "first_frame_ms": 543.833,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9983,
+        "components": {
+          "horizon": {
+            "median_ms": 0.007,
+            "p95_ms": 1.47,
+            "p99_ms": 2.164,
+            "max_ms": 3.01
+          },
+          "ground": {
+            "median_ms": 4.362,
+            "p95_ms": 6.672,
+            "p99_ms": 7.624,
+            "max_ms": 8.804
+          },
+          "background": {
+            "median_ms": 6.355,
+            "p95_ms": 9.988,
+            "p99_ms": 11.178,
+            "max_ms": 12.522
+          },
+          "world": {
+            "median_ms": 7.325,
+            "p95_ms": 11.263,
+            "p99_ms": 12.72,
+            "max_ms": 14.51
+          },
+          "present": {
+            "median_ms": 0.31,
+            "p95_ms": 0.614,
+            "p99_ms": 0.924,
+            "max_ms": 1.606
+          }
+        },
+        "rss_bytes": 665931776,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 39.0,
+          "p95_ms": 78.0,
+          "p99_ms": 94.0,
+          "max_ms": 109.0
+        },
+        "camera": {
+          "frames_read": 352,
+          "inferences": 352,
+          "published": 352,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 5983.99999999674,
+          "capture_fps": 29.797680521472916,
+          "inference_fps": 29.797680521472916,
+          "capture_interval_ms": 31.000000002677552,
+          "inference_interval_ms": 31.000000002677552,
+          "inference_ms": 15.999999988707714,
+          "result_age_ms": 46.999999991385266,
+          "last_result_age_ms": 15.999999988707714,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "amazonia_contrast": {
+        "frame": {
+          "median_ms": 11.202,
+          "p95_ms": 16.069,
+          "p99_ms": 18.593,
+          "max_ms": 22.484
+        },
+        "scene_setup_ms": 6.275,
+        "warmup": {
+          "median_ms": 11.196,
+          "p95_ms": 22.602,
+          "p99_ms": 96.958,
+          "max_ms": 96.958
+        },
+        "first_frame_ms": 96.958,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.96,
+        "components": {
+          "horizon": {
+            "median_ms": 0.006,
+            "p95_ms": 1.153,
+            "p99_ms": 1.853,
+            "max_ms": 2.375
+          },
+          "ground": {
+            "median_ms": 4.301,
+            "p95_ms": 6.774,
+            "p99_ms": 8.417,
+            "max_ms": 9.354
+          },
+          "desaturate": {
+            "median_ms": 1.926,
+            "p95_ms": 3.338,
+            "p99_ms": 3.927,
+            "max_ms": 6.64
+          },
+          "background": {
+            "median_ms": 7.786,
+            "p95_ms": 11.889,
+            "p99_ms": 13.946,
+            "max_ms": 16.904
+          },
+          "world": {
+            "median_ms": 9.954,
+            "p95_ms": 14.629,
+            "p99_ms": 17.044,
+            "max_ms": 20.911
+          },
+          "present": {
+            "median_ms": 0.305,
+            "p95_ms": 0.626,
+            "p99_ms": 0.798,
+            "max_ms": 1.109
+          }
+        },
+        "rss_bytes": 682745856,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 78.0,
+          "p99_ms": 94.0,
+          "max_ms": 110.0
+        },
+        "camera": {
+          "frames_read": 689,
+          "inferences": 689,
+          "published": 689,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 5983.99999999674,
+          "capture_fps": 29.673973900688207,
+          "inference_fps": 29.673973900688207,
+          "capture_interval_ms": 16.00000000325963,
+          "inference_interval_ms": 16.00000000325963,
+          "inference_ms": 16.00000000325963,
+          "result_age_ms": 31.000000002677552,
+          "last_result_age_ms": 16.00000000325963,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "caatinga_normal": {
+        "frame": {
+          "median_ms": 5.949,
+          "p95_ms": 8.575,
+          "p99_ms": 9.899,
+          "max_ms": 11.986
+        },
+        "scene_setup_ms": 6.176,
+        "warmup": {
+          "median_ms": 4.771,
+          "p95_ms": 7.409,
+          "p99_ms": 278.348,
+          "max_ms": 278.348
+        },
+        "first_frame_ms": 278.348,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 1.0,
+        "components": {
+          "horizon": {
+            "median_ms": 0.006,
+            "p95_ms": 1.399,
+            "p99_ms": 2.131,
+            "max_ms": 2.936
+          },
+          "ground": {
+            "median_ms": 1.854,
+            "p95_ms": 2.953,
+            "p99_ms": 3.428,
+            "max_ms": 3.911
+          },
+          "background": {
+            "median_ms": 3.83,
+            "p95_ms": 6.095,
+            "p99_ms": 7.58,
+            "max_ms": 8.797
+          },
+          "world": {
+            "median_ms": 4.687,
+            "p95_ms": 7.104,
+            "p99_ms": 8.447,
+            "max_ms": 10.499
+          },
+          "present": {
+            "median_ms": 0.295,
+            "p95_ms": 0.587,
+            "p99_ms": 0.782,
+            "max_ms": 1.311
+          }
+        },
+        "rss_bytes": 749604864,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 78.0,
+          "p99_ms": 94.0,
+          "max_ms": 94.0
+        },
+        "camera": {
+          "frames_read": 1034,
+          "inferences": 1034,
+          "published": 1034,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 5983.99999999674,
+          "capture_fps": 29.768245285734352,
+          "inference_fps": 29.768245285734352,
+          "capture_interval_ms": 16.00000000325963,
+          "inference_interval_ms": 16.00000000325963,
+          "inference_ms": 14.999999999417923,
+          "result_age_ms": 31.000000002677552,
+          "last_result_age_ms": 14.999999999417923,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      },
+      "caatinga_contrast": {
+        "frame": {
+          "median_ms": 9.165,
+          "p95_ms": 14.119,
+          "p99_ms": 17.069,
+          "max_ms": 19.179
+        },
+        "scene_setup_ms": 10.147,
+        "warmup": {
+          "median_ms": 7.899,
+          "p95_ms": 10.882,
+          "p99_ms": 13.209,
+          "max_ms": 13.209
+        },
+        "first_frame_ms": 12.009,
+        "frames_measured": 600,
+        "within_60fps_budget_fraction": 0.9883,
+        "components": {
+          "horizon": {
+            "median_ms": 0.006,
+            "p95_ms": 1.49,
+            "p99_ms": 2.091,
+            "max_ms": 2.487
+          },
+          "ground": {
+            "median_ms": 1.864,
+            "p95_ms": 3.027,
+            "p99_ms": 3.652,
+            "max_ms": 4.664
+          },
+          "desaturate": {
+            "median_ms": 1.909,
+            "p95_ms": 3.161,
+            "p99_ms": 4.086,
+            "max_ms": 4.606
+          },
+          "background": {
+            "median_ms": 5.811,
+            "p95_ms": 9.219,
+            "p99_ms": 11.1,
+            "max_ms": 12.977
+          },
+          "world": {
+            "median_ms": 7.983,
+            "p95_ms": 12.535,
+            "p99_ms": 15.257,
+            "max_ms": 17.578
+          },
+          "present": {
+            "median_ms": 0.305,
+            "p95_ms": 0.608,
+            "p99_ms": 0.826,
+            "max_ms": 0.95
+          }
+        },
+        "rss_bytes": 766976000,
+        "latest_camera_result_age_at_present": {
+          "median_ms": 32.0,
+          "p95_ms": 79.0,
+          "p99_ms": 109.0,
+          "max_ms": 125.0
+        },
+        "camera": {
+          "frames_read": 1373,
+          "inferences": 1372,
+          "published": 1372,
+          "stale_dropped": 0,
+          "read_failures": 0,
+          "errors": 0,
+          "startup_ms": 5983.99999999674,
+          "capture_fps": 29.847826086956523,
+          "inference_fps": 29.82608695652174,
+          "capture_interval_ms": 31.000000002677552,
+          "inference_interval_ms": 31.000000002677552,
+          "inference_ms": 16.00000000325963,
+          "result_age_ms": 31.000000002677552,
+          "last_result_age_ms": 16.00000000325963,
+          "resolution": [
+            640,
+            480
+          ],
+          "error": null,
+          "stopping": false
+        }
+      }
+    },
+    "camera_start": {
+      "frames_read": 2,
+      "inferences": 1,
+      "published": 1,
+      "stale_dropped": 0,
+      "read_failures": 0,
+      "errors": 0,
+      "startup_ms": 5983.99999999674,
+      "capture_fps": 62.500000015688784,
+      "inference_fps": 31.250000007844392,
+      "capture_interval_ms": 31.999999991967343,
+      "inference_interval_ms": 31.999999991967343,
+      "inference_ms": 31.999999991967343,
+      "result_age_ms": 31.999999991967343,
+      "last_result_age_ms": 31.999999991967343,
+      "resolution": [
+        640,
+        480
+      ],
+      "error": null,
+      "stopping": false
+    },
+    "camera_ready": true,
+    "latency_basis": "read-return to present-call completion; excludes sensor buffering and physical display latency",
+    "camera_thread_stopped": true,
+    "camera_end": {
+      "frames_read": 1373,
+      "inferences": 1373,
+      "published": 1373,
+      "stale_dropped": 0,
+      "read_failures": 0,
+      "errors": 0,
+      "startup_ms": 5983.99999999674,
+      "capture_fps": 29.497067480186782,
+      "inference_fps": 29.497067480186782,
+      "capture_interval_ms": 31.000000002677552,
+      "inference_interval_ms": 31.000000002677552,
+      "inference_ms": 16.00000000325963,
+      "result_age_ms": 546.9999999913853,
+      "last_result_age_ms": 16.00000000325963,
+      "resolution": [
+        640,
+        480
+      ],
+      "error": null,
+      "stopping": true
+    },
+    "status": "ok"
+  },
+  "camera_standalone": {
+    "status": "ok",
+    "reason": null,
+    "device": 0,
+    "requested_seconds": 8.0,
+    "elapsed_seconds": 16.781,
+    "warmup_timeout_seconds": 15.0,
+    "time_to_first_result_seconds": 8.109,
+    "measurement_seconds": 8.0,
+    "measurement_window_complete": true,
+    "minimum_samples": 5,
+    "samples_in_window": 237,
+    "resolution": [
+      640,
+      480
+    ],
+    "frames_read": 238,
+    "inferences": 237,
+    "published": 237,
+    "published_total": 240,
+    "stale_dropped": 0,
+    "read_failures": 0,
+    "capture_fps": 29.75,
+    "inference_fps": 29.62,
+    "last_inference_ms": 31.0,
+    "startup_ms": 8031.0,
+    "capture_interval_ms": 16.0,
+    "inference_interval_ms": 16.0,
+    "last_result_age_ms": 31.0,
+    "last_published_age_ms": 687.0,
+    "error_count": 0,
+    "error": null,
+    "thread_still_running_after_stop": false,
+    "age_basis": "monotonic time immediately after VideoCapture.read returns",
+    "sensor_exposure_timestamp_available": false,
+    "image_or_landmarks_saved": false
+  },
+  "visual_checks": [
+    "Manaus normal",
+    "Petrolina alto contraste",
+    "resultado parcial",
+    "resultado falha de save"
+  ],
+  "limitations": [
+    "CPU SDL dummy; audio disabled; no physical display latency measurement",
+    "No camera images or landmarks saved; no human motion acceptance",
+    "Monotonic clock granularity 15.625 ms on this Python/Windows",
+    "First-use stalls, uncapped stress spikes and accumulated scene-cache memory remain documented",
+    "Children, projector and physical console acceptance pending"
+  ]
+}
