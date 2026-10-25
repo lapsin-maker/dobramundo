@@ -41,8 +41,12 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
     reports = ROOT / "build" / "desktop-selftest"
     reports.mkdir(parents=True, exist_ok=True)
     run_id = uuid.uuid4().hex
-    git_root = ROOT if (ROOT / ".git").exists() else Path(__file__).resolve().parents[1]
-    build_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=git_root, text=True).strip()
+    # Invalidate an earlier success before any fallible provenance/build step.
+    (reports / "self_test.json").write_text(
+        json.dumps({"status": "building", "run_id": run_id}) + "\n", encoding="utf-8"
+    )
+    require_linux_egl_runtime(require_camera)
+    build_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     github_sha = os.environ.get("GITHUB_SHA")
     ci_run_id = os.environ.get("GITHUB_RUN_ID")
     ci_attempt = os.environ.get("GITHUB_RUN_ATTEMPT")
@@ -58,7 +62,6 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
     )
     if github_sha and github_sha != build_commit:
         raise RuntimeError("GITHUB_SHA difere do checkout usado para gerar o executável")
-    require_linux_egl_runtime(require_camera)
     env = dict(os.environ, DOBRA_ONEFILE="1" if onefile else "0")
     subprocess.run(
         [
