@@ -20,16 +20,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def require_linux_egl_runtime(require_camera: bool) -> None:
-    """Confere a dependência de sistema usada pelo libmediapipe.so no Linux."""
+    """Confere as bibliotecas gráficas de sistema usadas pelo MediaPipe no Linux."""
     if not require_camera or not sys.platform.startswith("linux"):
         return
-    try:
-        ctypes.CDLL("libEGL.so.1")
-    except OSError as exc:
-        raise RuntimeError(
-            "O detector MediaPipe no Linux requer libEGL.so.1; instale o pacote de sistema libegl1 "
-            "(Debian/Ubuntu) antes do build e da execução."
-        ) from exc
+    requirements = (
+        ("libEGL.so.1", "libegl1"),
+        ("libGLESv2.so.2", "libgles2"),
+    )
+    for library, package in requirements:
+        try:
+            ctypes.CDLL(library)
+        except OSError as exc:
+            raise RuntimeError(
+                f"O detector MediaPipe no Linux requer {library}; instale o pacote de sistema {package} "
+                "(Debian/Ubuntu) antes do build e da execução."
+            ) from exc
 
 
 def build(onefile: bool = False, require_camera: bool = True) -> Path:

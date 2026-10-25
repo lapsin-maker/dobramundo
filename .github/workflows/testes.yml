@@ -79,13 +79,25 @@ jobs:
             requirements-webcam.txt
             requirements.txt
             constraints-build.txt
-      - name: Runtime EGL do MediaPipe no Linux
+      - name: Runtimes gráficos do MediaPipe no Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes libegl1
+          sudo apt-get install --yes libegl1 libgles2
       - name: Dependências fixadas do build
         run: python -m pip install -r requirements-webcam.txt pyinstaller -c constraints-build.txt
+      - name: Dependências nativas do MediaPipe
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          library="$(python -c 'import mediapipe, pathlib; print(pathlib.Path(mediapipe.__file__).parent / "tasks/c/libmediapipe.so")')"
+          test -f "$library"
+          dependencies="$(ldd "$library")"
+          printf '%s\n' "$dependencies"
+          if grep -q 'not found' <<< "$dependencies"; then
+            echo 'Dependência nativa ausente para libmediapipe.so' >&2
+            exit 1
+          fi
       - name: Gerar e testar executável com detector
         run: python tools/build_desktop.py
       - name: Empacotar Linux preservando permissão de execução
