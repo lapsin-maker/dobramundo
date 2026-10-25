@@ -48,7 +48,7 @@ class ConsentScene(Scene):
         logo = self.app.assets.sprite("ui", "logo")
         top = card.top + 20
         if logo is not None:
-            img = self.scaled(logo, (220, 110))
+            img = self.scaled(logo, (220, 123))
             screen.blit(img, img.get_rect(midtop=(card.centerx, top)))
             top += 116
         self.text.blit(screen, texts.CONSENT_TITLE, (card.centerx, top), T.SIZES["label"], T.NAVY, True, "midtop")

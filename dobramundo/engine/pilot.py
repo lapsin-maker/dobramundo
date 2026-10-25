@@ -22,12 +22,26 @@ from .assets import Assets
 from .cache import BoundedCache
 
 FOLDER = "pilot_layers"
+INK = (29, 36, 51)
 MIN_PILOT_SHARE = 0.27  # altura mínima do piloto em relação ao sprite do avião
 
 
 def tinted(layer: pygame.Surface, color) -> pygame.Surface:
     out = layer.copy()
     out.fill((*color, 255), special_flags=pygame.BLEND_RGBA_MULT)
+    return out
+
+
+def ink_outline(surface: pygame.Surface, color=INK, thickness: int = 2) -> pygame.Surface:
+    """Traço de tinta em volta do piloto (mesma linguagem dos sprites "papel e aquarela")."""
+    mask = pygame.mask.from_surface(surface, 40)
+    line = mask.to_surface(setcolor=(*color, 255), unsetcolor=(0, 0, 0, 0))
+    out = pygame.Surface((surface.get_width() + 2 * thickness, surface.get_height() + 2 * thickness), pygame.SRCALPHA)
+    for dx in range(-thickness, thickness + 1):
+        for dy in range(-thickness, thickness + 1):
+            if dx * dx + dy * dy <= thickness * thickness + 1:
+                out.blit(line, (thickness + dx, thickness + dy))
+    out.blit(surface, (thickness, thickness))
     return out
 
 
@@ -47,20 +61,22 @@ class PilotRenderer:
         cached = self.cache.get(key)
         if cached is not None:
             return cached
-        skin = self.layer(view, "skin")
+        hijab = look["cabelo"] == "hijab"
+        skin = (self.layer(view, "skin_hijab") if hijab else None) or self.layer(view, "skin")
         if skin is None:
             return None
         canvas = pygame.Surface(skin.get_size(), pygame.SRCALPHA)
         wheelchair = look["cadeira"] == "sim"
+        hair_color = find_option(HAIR_COLORS, look["cor_cabelo"]).color
         parts = [
             (skin, find_option(SKIN_TONES, look["pele"]).color),
             (self.layer(view, "base"), None),
             (self.layer(view, "shirt"), find_option(SHIRT_COLORS, look["roupa"]).color),
         ]
-        if look["cabelo"] != "raspado":
-            parts.append(
-                (self.layer(view, f"hair_{look['cabelo']}"), find_option(HAIR_COLORS, look["cor_cabelo"]).color)
-            )
+        if hijab:
+            parts.append((self.layer(view, "hijab"), hair_color))  # a "cor do cabelo" vira a cor do lenço
+        elif look["cabelo"] != "raspado":
+            parts.append((self.layer(view, f"hair_{look['cabelo']}"), hair_color))
         if look["aparelho"] == "sim":
             parts.append((self.layer(view, "hearing"), None))
         if find_option(GLASSES, look["oculos"]).key != "nenhum":
@@ -73,6 +89,7 @@ class PilotRenderer:
             if surface is None:
                 continue
             canvas.blit(tinted(surface, color) if color is not None else surface, (0, 0))
+        canvas = ink_outline(canvas)
         self.cache[key] = canvas
         return canvas
 

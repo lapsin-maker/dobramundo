@@ -109,8 +109,8 @@ class OptionsScene(Scene):
             "perm",
             "Tempo de permanência nos botões",
             f"{o.permanencia:.1f} s",
-            lambda: self.adjust("permanencia", -0.2, 0.6, 3.0),
-            lambda: self.adjust("permanencia", 0.2, 0.6, 3.0),
+            lambda: self.adjust("permanencia", -0.25, 1.0, 3.5),
+            lambda: self.adjust("permanencia", 0.25, 1.0, 3.5),
         )
         y += ROW_H + GAP
         s_index = SURFACES.index(o.superficie)

@@ -187,6 +187,7 @@ CREDITS = (
     ("Tecnologia", "Python, pygame, OpenCV e MediaPipe Pose"),
     ("Modelo de pose", "MediaPipe Pose Landmarker Lite, do Google (licença Apache 2.0)"),
     ("Música e efeitos", "Sintetizados pelo projeto"),
+    ("Fontes", "Fredoka, Nunito e Patrick Hand (Google Fonts, licença OFL)"),
     ("Evento", "3ª ExerGame JAM LARVA/UDESC 2026"),
     ("Licença", "Creative Commons Atribuição 4.0 (CC BY 4.0), código aberto"),
 )

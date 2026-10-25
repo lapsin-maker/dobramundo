@@ -50,7 +50,7 @@ class Options:
     espelhar: bool = False  # inverte a imagem na horizontal (projeção por trás)
     rotacao: int = 0  # 0, 90, 180 ou 270 graus no sentido horário (projetor no teto, chão, mesa)
     tela_cheia: bool = False
-    permanencia: float = 1.2  # segundos parado sobre um botão para selecioná-lo
+    permanencia: float = 2.0  # segundos parado sobre um botão para selecioná-lo (padrão do console)
     sensibilidade: float = 1.0  # alcance do movimento corporal (maior = movimento menor basta)
     inverter_vertical: bool = False  # câmera vista de cima (chão, mesa): subir e descer trocados
     inverter_horizontal: bool = False  # imagem da câmera sem espelho: esquerda e direita trocadas
@@ -70,6 +70,7 @@ class Profile:
     consentimento: bool = False  # supervisor leu o aviso de uso e privacidade
     consentimento_em: str = ""  # data e hora (ISO) da confirmação do supervisor
     abertura_vista: bool = False
+    piloto_montado: bool = False  # a criança já montou o personagem (primeira tela do jogo)
     modo: str = "normal"
     controle: str = "teclado"
     estrelas: Dict[str, int] = field(default_factory=dict)
@@ -133,7 +134,7 @@ class Profile:
         o.rotacao = o.rotacao if o.rotacao in (0, 90, 180, 270) else 0
         o.alvo_frente = max(0.0, min(0.35, float(o.alvo_frente)))
         o.chao_pontos = _floor_points(o.chao_pontos)
-        o.permanencia = max(0.6, min(3.0, float(o.permanencia)))
+        o.permanencia = max(1.0, min(3.5, float(o.permanencia)))
         o.sensibilidade = max(0.5, min(2.0, float(o.sensibilidade)))
         return self
 

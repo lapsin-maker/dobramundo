@@ -25,6 +25,11 @@ SKIN_TONES: List[Option] = [
     Option("pele4", "Tom 4", rgb("a0673f")),
     Option("pele5", "Tom 5", rgb("7a4a2a")),
     Option("pele6", "Tom 6", rgb("4f2f1b")),
+    # tons de fantasia: a criança pode ser da cor que quiser
+    Option("roxo", "Roxo", rgb("a97bdc")),
+    Option("azul", "Azul", rgb("6fb3e8")),
+    Option("verde", "Verde", rgb("7ccf86")),
+    Option("rosa", "Rosa", rgb("f4a3bf")),
 ]
 HAIR_STYLES: List[Option] = [
     Option("curto", "Curto"),
@@ -33,6 +38,11 @@ HAIR_STYLES: List[Option] = [
     Option("longo", "Longo"),
     Option("trancas", "Tranças"),
     Option("coque", "Coque"),
+    Option("franja", "Franja"),
+    Option("chiquinhas", "Maria-chiquinha"),
+    Option("puffs", "Afro puffs"),
+    Option("moicano", "Moicano"),
+    Option("hijab", "Lenço (hijab)"),
     Option("raspado", "Raspado"),
 ]
 HAIR_COLORS: List[Option] = [
@@ -43,6 +53,9 @@ HAIR_COLORS: List[Option] = [
     Option("grisalho", "Grisalho", rgb("b8b8b8")),
     Option("azul", "Azul", rgb("3a7bd5")),
     Option("rosa", "Rosa", rgb("e86aa6")),
+    Option("verde", "Verde", rgb("3fae5a")),
+    Option("roxo", "Roxo", rgb("8e5ad1")),
+    Option("branco", "Branco", rgb("f2f2f2")),
 ]
 SHIRT_COLORS: List[Option] = [
     Option("amarela", "Amarela", rgb("f9c22e")),
@@ -51,6 +64,8 @@ SHIRT_COLORS: List[Option] = [
     Option("vermelha", "Vermelha", rgb("e2483d")),
     Option("roxa", "Roxa", rgb("8e5ad1")),
     Option("laranja", "Laranja", rgb("f07c2a")),
+    Option("rosa", "Rosa", rgb("f06292")),
+    Option("turquesa", "Turquesa", rgb("1fb0a8")),
 ]
 GLASSES: List[Option] = [
     Option("nenhum", "Sem óculos"),
@@ -64,6 +79,9 @@ ACCESSORIES: List[Option] = [
     Option("lenco", "Lenço"),
     Option("abafador", "Abafador de ruído"),
     Option("capacete", "Capacete de aviador"),
+    Option("flor", "Flor"),
+    Option("tiara", "Tiara"),
+    Option("coroa", "Coroa de papel"),
 ]
 # Itens assistivos: opções comuns, sem destaque especial no menu.
 HEARING_AID: List[Option] = [Option("nao", "Sem aparelho auditivo"), Option("sim", "Aparelho auditivo")]

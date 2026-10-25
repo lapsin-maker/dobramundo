@@ -74,6 +74,7 @@ class Biome(NamedTuple):
     map_point: Tuple[float, float]  # longitude, latitude da cidade (mapa)
     required_parts: Dict[str, int]  # peças do avião exigidas para a 3ª estrela
     music: str  # prefixo das trilhas em assets/audio
+    industrial_skyline: SkylineLayout = ()  # silhuetas regionais no horizonte do estágio industrial
 
 
 # ------------------------------------------------------------- kit industrial
@@ -129,7 +130,13 @@ def industrial_mid(regional: Specs) -> Specs:
             extra = next(regional_iter, None)
             if extra is not None:
                 mixed.append(extra)
-    return mixed
+    # uma peça regional a cada duas do kit: a cidade aparece desde o começo da fase
+    out: Specs = []
+    for i, item in enumerate(base):
+        out.append(item)
+        if i % 2 == 1 and regional:
+            out.append(regional[(i // 2) % len(regional)])
+    return out
 
 
 INDUSTRIAL_OBSTACLES_COMMON = (
@@ -155,12 +162,12 @@ AMAZONIA = Biome(
     stages=(
         StageLook(
             "Manaus industrial",
-            rgb("1c1613"),
-            rgb("4a3222"),
-            rgb("261e18"),
-            rgb("2b2a22"),
-            rgb("25241d"),
-            rgb("6b6440"),
+            rgb("2a3340"),  # céu de chumbo, úmido
+            rgb("7d7366"),  # névoa cinza-amarelada baixa sobre o rio
+            rgb("2a2622"),
+            rgb("23272a"),  # rio escuro com óleo
+            rgb("1f2326"),
+            rgb("5c6a5a"),
             rgb("ff7043"),
         ),
         StageLook(
@@ -184,7 +191,8 @@ AMAZONIA = Biome(
             rgb("ffd54f"),
         ),
     ),
-    polluted_haze=(88, 58, 34),
+    polluted_haze=(96, 92, 84),  # fumaça úmida, cinza
+    industrial_skyline=[("AM_GuindastePorto", 118), ("AM_Termeletrica", 86), ("AM_Containers", 44)],
     industrial_mid=industrial_mid([("AM_Termeletrica", 270.0), ("AM_GuindastePorto", 380.0), ("AM_Containers", 150.0)]),
     industrial_margin=INDUSTRIAL_MARGIN,
     industrial_obstacles=obstacle_table(
@@ -287,12 +295,12 @@ CAATINGA = Biome(
     stages=(
         StageLook(
             "Petrolina industrial",
-            rgb("22170f"),
-            rgb("5a3a1e"),
-            rgb("2a2018"),
-            rgb("2b2623"),
-            rgb("211d1a"),
-            rgb("8d5b32"),
+            rgb("8a6a3a"),  # céu de poeira, sol forte
+            rgb("d9b57a"),  # horizonte ocre lavado
+            rgb("6b5436"),
+            rgb("5a4a3a"),  # asfalto empoeirado
+            rgb("52432f"),
+            rgb("b48a4a"),
             rgb("ff8a3d"),
         ),
         StageLook(
@@ -316,7 +324,8 @@ CAATINGA = Biome(
             rgb("ffd54f"),
         ),
     ),
-    polluted_haze=(104, 66, 32),
+    polluted_haze=(176, 140, 86),  # poeira ocre, seca
+    industrial_skyline=[("CA_TorreTransmissao", 130), ("CA_CaixaDagua", 96), ("CA_Galpao", 58)],
     industrial_mid=industrial_mid([("CA_Galpao", 170.0), ("CA_TorreTransmissao", 420.0), ("CA_CaixaDagua", 300.0)]),
     industrial_margin=INDUSTRIAL_MARGIN,
     industrial_obstacles=obstacle_table(

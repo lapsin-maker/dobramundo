@@ -15,9 +15,9 @@ executável (app.py: App)       cartucho do T-TEA (cartridge.py: ConsoleCore, Do
                         |
 scenes/ ........ telas do jogo (menus, calibração, voo, resultado)
    |
-ui/ ............ tema, botões e seleção por permanência
+ui/ ............ tema (fontes e cartões de papel), botões e seleção por permanência
 input/ ......... teclado, mouse e pontos do corpo (webcam em camera.py; console em console.py)
-engine/ ........ desenho pseudo-3D: céu, chão, pista, objetos, avião, piloto, orientação
+engine/ ........ desenho pseudo-3D: céu, chão, pista, objetos, avião, piloto, orientação, formas de papel
    |
 game/ .......... regras do voo: mundo, avião, vidas, pontos, estrelas, momento de foco, eventos
    |
@@ -74,10 +74,11 @@ Os relógios do momento de foco correm em tempo real (`real_dt`). Por isso a jan
 
 Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por permanência e a barra de recursos. A troca de cena é sempre no fim do quadro, com `GameCore.go(scene)`.
 
-Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente; a abertura só aparece na primeira vez:
+Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente, e cada tela de primeira vez só entra enquanto a condição do perfil não foi cumprida:
 
 ```
-IntroScene (1ª execução) -> ConsentScene (se o aviso ainda não foi aceito)
+PilotScene (1ª vez: piloto_montado)  -> IntroScene (1ª vez: abertura_vista)
+           -> ConsentScene (1ª vez: consentimento)
            -> CalibrationScene (se houver controle corporal)
            -> VillageScene
 ```
@@ -147,17 +148,19 @@ Em `WorldView.draw_track`, a pista também se purifica em forma de onda (`wave_z
 
 `WorldView` (em `engine/world_view.py`) desenha uma fase na ordem do fundo para a frente:
 
-1. **Céu** (`SkyRenderer.draw`): degradê do céu; panorama do kit, com transparência conforme a poluição; nuvens de fumaça e nuvens limpas (12 níveis de transparência pré-calculados); silhuetas do horizonte em duas fileiras (fundo e frente), com paralaxe de 0,55 e 1,0 e transição de 0,6 segundo; decoração móvel (dirigível, balões e pássaros); e o barco (Amazônia) ou o bonde (Caatinga) na linha do horizonte. As silhuetas são montadas em faixas de 2 200 pixels, em pedaços que cabem em 1,5 ms por quadro.
+1. **Céu** (`SkyRenderer.draw`): degradê do céu; panorama do kit tingido pelo bioma (`tint_panorama`, com `polluted_haze`), com transparência conforme a poluição; sol de papel com halo (`draw_sun`); nuvens de fumaça e nuvens de papel recortado (`paper_cloud`) no céu limpo, com 12 níveis de transparência pré-calculados; silhuetas do horizonte em duas fileiras (fundo e frente), com a fileira de fundo misturando as silhuetas regionais (`industrial_skyline`), com paralaxe de 0,55 e 1,0 e transição de 0,6 segundo; decoração móvel (dirigível, balões e pássaros); e o barco (Amazônia) ou o bonde (Caatinga) na linha do horizonte. As silhuetas são montadas em faixas de 2 200 pixels, em pedaços que cabem em 1,5 ms por quadro.
 2. **Neblina**: faixa de cor sólida abaixo da linha do horizonte.
 3. **Chão** (`GroundRenderer.draw`): textura por faixas de linha. Linhas de escala parecida compartilham a mesma faixa reduzida. O chão é concreto no estágio industrial, solo do bioma no despertar e prado no solarpunk. Depois vêm as juntas das placas de concreto e a névoa final.
 4. **Pista**: um polígono por trecho, do horizonte ao avião, com cor do estágio, neblina pela distância e variações: o rio da Amazônia (Rio Negro e encontro das águas), o piso drenante da Caatinga no estágio final e as faixas da pista.
-5. **Margens** (`WorldView.margins`): duas fileiras por lado em cada trecho. A fileira de fundo fica em `MID_ROW_X` (paralaxe 0,5), e a borda, em `MARGIN_X` (paralaxe 0,8, alternando de lado a cada trecho). A cada fileira, as peças cruzam o fade conforme a transformação do trecho.
+5. **Margens** (`WorldView.margins`): a fileira de fundo fica em `MID_ROW_X` (paralaxe 0,5), e a borda, em `MARGIN_X` (paralaxe 0,8). O cenário é em quarteirões: a cada 6 trechos, 2 ficam vazios de cada lado, com o lado direito deslocado em 3 trechos. A borda alterna de lado a cada trecho, tem um vão a cada quatro pares de trechos e some depois de `MARGIN_MAX_Z`. No estágio industrial, `industrial_mid` intercala peças regionais às do kit. Em cada fileira, as peças cruzam o fade conforme a transformação do trecho, e a peça de um estágio afunda enquanto a do seguinte cresce.
 6. **Objetos atrás do avião** (`z >= PLAYER_Z`), em ordem de profundidade.
 7. **Avião** (`draw_player`): sombra, piscada depois de colisão, rotação pela inclinação, tremular de papel (`PAPER_FLUTTER_DEG`), nariz para cima ao subir (`PITCH_STRETCH`), manobras, escudo e ímã.
 8. **Objetos à frente do avião**, com halos no solarpunk do Difícil e alertas de chão antes dos obstáculos que colidem.
 9. **Feixes de coleta** e **textos flutuantes** ("+65", "ESCUDO").
 
 `FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), tudo o que vem antes dos objetos é dessaturado (`desaturate`), e objetos e avião ganham contorno espesso.
+
+**Papel e aquarela.** `engine/paper.py` desenha as formas de papel por código (`ink_polygon`, `blob`, `shadow`, `hill_points`, `ribbon`, `bezier`, `tree`, `person`, `wave_lines`, `smoke` e `sparkles`), usadas pela vila e pela abertura. Ao coletar, o `Beam` (em `game/entities.py`) leva a cor do resíduo, e `WorldView.splash` desenha o respingo de aquarela durante `SPLASH_S` (0,55 s, em `game/run.py`).
 
 A paralaxe usa `player.cam_x`, que segue `CAMERA_FOLLOW` (35%) do deslocamento lateral do avião. Cada camada anda uma fração diferente desse deslocamento (`SKY_SHIFT_PX`, `CLOUD_SHIFT_PX`, `FAR_SHIFT_PX`, `MID_PARALLAX`, `MARGIN_PARALLAX`).
 
@@ -191,10 +194,10 @@ O piloto é composto por camadas PNG em `assets/pilot_layers/`, geradas por `too
 
 - `skin`, `shirt`: tons de cinza. Recebem a cor escolhida por multiplicação (`tinted`).
 - `base`: calça, tênis e olhos, com cor fixa.
-- `hair_<estilo>`: cinza. Recebe a cor do cabelo. O estilo `raspado` não tem camada.
+- `hair_<estilo>` e `hijab`: cinza. Recebem a cor do cabelo (no lenço, a cor do cabelo vira a cor do lenço). O estilo `raspado` não tem camada. Com o lenço, `skin_hijab` substitui `skin`, porque o lenço muda o recorte da pele.
 - `glasses_<estilo>`, `acc_<estilo>`, `hearing`, `chair`: com cor fixa.
 
-`PilotRenderer.compose` monta as camadas na ordem: pele, base, camisa, cabelo, aparelho auditivo, óculos, acessório e cadeira. Essa ordem resolve o que fica na frente.
+`PilotRenderer.compose` monta as camadas na ordem: pele, base, camisa, cabelo (ou lenço), aparelho auditivo, óculos, acessório e cadeira. Essa ordem resolve o que fica na frente. Depois, `ink_outline` põe um contorno de tinta na composição inteira, e o resultado fica em cache por aparência (`PilotRenderer.cache`). As opções, com as cores de pele, cabelo, roupa e os itens, ficam em `content/pilot.py`, e são validadas em `normalize_pilot`.
 
 `assets/pilot_layers/anchors.json` tem a ancoragem do piloto:
 
@@ -215,13 +218,15 @@ O perfil fica num único JSON (`dobramundo_perfil.json`) e é modelado pela data
 - **Importação do protótipo:** se não houver perfil, `import_legacy` lê `eco_runner_recorde.json` e `eco_runner_config.json` das pastas do protótipo (ver `legacy_data_dirs` em `paths.py`).
 - **Versão 1.2:** `voos_fase` e `historico` entram no perfil sem mudar `SCHEMA_VERSION` (continua 1). Campos ausentes em perfis antigos recebem o valor padrão.
 - **Versão 1.3:** a opção booleana `girar` vira `rotacao` (0, 90, 180 ou 270). Perfis com `girar` verdadeiro viram `rotacao = 180` (`persistence.py`). `SCHEMA_VERSION` continua 1, e campos novos, como `chao_pontos`, `alvo_frente` e `centralizar_sozinho`, recebem o valor padrão em perfis antigos.
+- **Versão 1.4:** o campo `piloto_montado` entra no perfil. Perfis antigos recebem `False`, e a tela Piloto aparece na primeira execução. A permanência padrão passa a 2,0 s (faixa de 1,0 a 3,5 s, em `persistence.py`), mas perfis que já têm o campo mantêm o valor salvo. `SCHEMA_VERSION` continua 1.
 
 ## 10. Como adicionar um novo bioma
 
 O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprites. Os passos seguem a ordem do código.
 
 1. **Dados da fase** em `content/biomes.py`. Crie um `Biome(...)` com:
-   - três `StageLook` (industrial, despertar e solarpunk), `polluted_haze` e `river`;
+   - três `StageLook` (industrial, despertar e solarpunk), `polluted_haze` (cor da fumaça, que tinge o céu) e `river`;
+   - `industrial_skyline` (silhuetas regionais do horizonte) e, no estágio industrial, `industrial_mid` e `industrial_margin`, sendo que `industrial_mid(regional)` intercala as peças regionais às do kit;
    - as listas de cenário (`industrial_mid`, `industrial_margin`, `green_mid`, `green_margin`, `restored`, `green_skyline`, `solar_mid`, `solar_margin`, `landmark`, `solar_skyline`), em pares (nome do sprite, altura no mundo);
    - as tabelas de obstáculos (`industrial_obstacles` e `solar_obstacles`), com `obstacle_table(...)` e as funções `low`, `gate` e `tower`;
    - `green_ground`, `solar_ground`, `solar_road`, `horizon_vehicle`, `sky_decor`, `map_point` (longitude e latitude), `required_parts` e `music` (prefixo das trilhas).
@@ -262,6 +267,8 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - Se o JSON do perfil estiver ilegível, `load_profile` guarda o arquivo como `dobramundo_perfil.corrompido.json` e recomeça com o perfil padrão (e a importação do protótipo).
 - A abertura completa aparece só na primeira execução (`abertura_vista`); depois ela fica em Opções > "Ver a abertura".
 - O mapa (`scenes/map.py`) tem posições fixas para duas fases; uma terceira fase pede reorganizar os botões.
+- O `Dobramundo.spec` empacota as extensões `.png`, `.json`, `.ogg`, `.wav`, `.task`, `.ico`, `.ttf` e `.txt` de `assets/`; se uma fonte faltar, `theme.load_font` cai para `SysFont` e o visual do texto muda.
+- `tools/stylize.py` sobrescreve os PNG de `assets/`; o git guarda os originais.
 
 ## Mudanças da versão 1.1
 
@@ -291,3 +298,16 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - **Conforto:** `RECENTER_S` em `input/hub.py`, `AxisMapper.settle` (o repouso só vale com o segmento parado) e as opções `centralizar_sozinho` e `inverter_horizontal` ("Trocar lados").
 - **Seleção:** `HOLD_MARGIN` (30 px) e `LEAVE_TOLERANCE` (0,5 s) em `ui/widgets.py`.
 - **Cartucho:** `tools/build_cartridge.py` monta `build/cartucho/` sem `app.py`, `main.py`, `selftest.py`, `input/camera.py` e o modelo de pose, gera `CREDITOS.md` e roda `tsdk check` e `tsdk build`. `PLATFORM_KEYS` (ESC, P e F2) fica com o console, e `PLAYER_OPTIONS` define as opções que acompanham a criança registrada.
+
+## Mudanças da versão 1.4
+
+- **Fontes e cartões** (`ui/theme.py`): `FONT_FILES` carrega Fredoka (títulos e botões), Nunito (leitura) e Patrick Hand (legendas à mão, com `hand=True`) de `assets/fonts`, com `SysFont` como reserva. `panel` desenha cartões de papel com sombra (`SHADOW_OFFSET`), grão (`paper_grain`, de ruído fixo) e borda de tinta, em cache por tamanho e cor.
+- **Filtro de papel** (`tools/stylize.py`): `stylize_image` aplica degraus de claridade, traço nas quebras internas, contorno de tinta azul-marinho e grão. `FOLDERS` lista as pastas de sprites, e `LIGHT_INK_FOLDERS` (aviões) recebe um traço mais fino e cinza-azulado. `tools/build_assets.py` aplica o filtro em cada sprite gerado, com `params_for`. As camadas do piloto não passam por ele.
+- **Formas de papel** (`engine/paper.py`): desenho por código das formas de papel, usado pela vila e pela abertura (ver seção 6).
+- **Vila em diorama** (`scenes/village.py`): `draw_ground` desenha morros (`HILLS`), rio, ponte, caminhos (`PATH_LEFT`, `PATH_RIGHT`) e o largo (`SQUARE`). `HOUSES` tem cinco casas que trocam de sprite industrial para solar em ordem, conforme o progresso. `SLOTS` posiciona as melhorias em três núcleos. `TREES` e `PEOPLE` dão a vida da cena, e `paper.smoke` e `paper.sparkles` variam com o progresso.
+- **Céu** (`engine/sky.py`): `draw_sun`, `paper_cloud` e `tint_panorama`, que tinge o panorama com `polluted_haze` do bioma.
+- **Fases** (`content/biomes.py`, `engine/world_view.py`): `industrial_mid` intercala peças regionais a cada duas do kit; `industrial_skyline` alimenta o horizonte (`skyline_base("back")`); `WorldView.margins` monta quarteirões com vãos; `Beam` tem cor, e `WorldView.splash` desenha o respingo.
+- **Piloto** (`content/pilot.py`, `tools/lowpoly/pilot.py`, `engine/pilot.py`, `scenes/pilot.py`): proporções de criança, novas opções, contorno `ink_outline`, a tela com balão de fala, o botão "Surpresa!" e o campo `piloto_montado` no perfil.
+- **Fluxo inicial** (`core.first_scene`): piloto, abertura, aviso, calibração e vila.
+- **Abertura em páginas** (`scenes/intro.py`): `PAGES` define quatro páginas, com viradas de `TURN_S`; a dobradura usa `FOLD_STEPS` numa mesa de papel, e o rastro usa as cores de `TRAIL`, as da logo.
+- **Voo, opções e padrões**: HUD mais fino em `scenes/flight.py`; `DEFAULT_PATTERN = "liso"` em `content/planes.py`; permanência padrão de 2,0 s, com faixa de 1,0 a 3,5 s em `persistence.py` e `scenes/options.py`.

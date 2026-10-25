@@ -23,6 +23,7 @@ from lowpoly import models_amazonia, models_caatinga, models_common  # noqa: E40
 from lowpoly.kit import REGISTRY  # noqa: E402
 from lowpoly.raster import render  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
+from stylize import params_for, stylize_image  # noqa: E402
 
 ASSETS = ROOT / "assets"
 
@@ -62,7 +63,7 @@ def main() -> None:
     for name in names:
         spec = REGISTRY[name]
         start = time.perf_counter()
-        image = render(spec.build(), **spec.render)
+        image = stylize_image(render(spec.build(), **spec.render), name, **params_for(spec.folder))
         folder = ASSETS / spec.folder
         folder.mkdir(parents=True, exist_ok=True)
         image.save(folder / f"{name}.png", optimize=True)

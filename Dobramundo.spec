@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(SPECPATH).resolve()
 ONEFILE = os.environ.get("DOBRA_ONEFILE") == "1"
 CONSOLE = os.environ.get("DOBRA_CONSOLE") == "1"
-ASSET_EXTS = {".png", ".json", ".ogg", ".wav", ".task", ".ico"}
+ASSET_EXTS = {".png", ".json", ".ogg", ".wav", ".task", ".ico", ".ttf", ".txt"}  # .ttf/.txt: fontes e licenças OFL
 
 datas = []
 for file in sorted((ROOT / "assets").rglob("*")):

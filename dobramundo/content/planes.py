@@ -77,7 +77,7 @@ PLANE_PATTERNS: List[Tuple[str, str]] = [
 ]
 PLANE_PATTERN_KEYS = [key for key, _ in PLANE_PATTERNS]
 FREE_PATTERNS = frozenset({"liso", "jornal"})
-DEFAULT_PATTERN = "jornal"
+DEFAULT_PATTERN = "liso"  # papel branco limpo (o "jornal" pesado escondia as dobras)
 
 # Loja de padrões (colecionismo): paga com os pontos somados de todos os voos.
 PATTERN_PRICES: Dict[str, int] = {
