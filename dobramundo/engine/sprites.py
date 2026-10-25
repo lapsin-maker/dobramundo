@@ -18,6 +18,9 @@ from .cache import BoundedCache
 Size = Tuple[int, int]
 MIP_CACHE_LIMIT = 600  # ~120 sprites de cenário x 2 lados + aparências do avião
 OUTLINE_CACHE_LIMIT = 200
+SCALED_CACHE_BYTES = 28 * 1024 * 1024
+MIP_CACHE_BYTES = 72 * 1024 * 1024
+OUTLINE_CACHE_BYTES = 20 * 1024 * 1024
 
 
 def project(x: float, y: float, z: float, cam: float) -> Tuple[float, float, float]:
@@ -58,9 +61,9 @@ def outline_surface(sprite: pygame.Surface, color: Color, thickness: int) -> pyg
 
 class SpriteCache:
     def __init__(self) -> None:
-        self.scaled = BoundedCache(C.SPRITE_CACHE_LIMIT)  # reescalas, neblina e miniaturas
-        self.mips = BoundedCache(MIP_CACHE_LIMIT)  # versões pré-reduzidas por sprite
-        self.outlines = BoundedCache(OUTLINE_CACHE_LIMIT)  # alto contraste, em resolução cheia
+        self.scaled = BoundedCache(C.SPRITE_CACHE_LIMIT, SCALED_CACHE_BYTES)
+        self.mips = BoundedCache(MIP_CACHE_LIMIT, MIP_CACHE_BYTES)
+        self.outlines = BoundedCache(OUTLINE_CACHE_LIMIT, OUTLINE_CACHE_BYTES)
         self.fog_color: Color = (92, 54, 26)
 
     def put(self, key: tuple, value: pygame.Surface) -> None:

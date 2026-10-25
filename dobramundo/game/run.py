@@ -7,8 +7,10 @@ para som, mensagens e efeitos.
 
 from __future__ import annotations
 
+import hashlib
 import math
 import random
+import secrets
 from typing import Dict, List, Mapping, Optional, Tuple
 
 from .. import config as C
@@ -37,15 +39,52 @@ class FlightRun:
         rng: Optional[random.Random] = None,
         intro: bool = False,
         focus: bool = True,
+        seed: Optional[int] = None,
+        session_limit_s: int = 0,
+        exploration: bool = False,
+        predictable_assistance: bool = False,
+        community_challenge: bool = False,
+        mission_preferred_waste: Optional[str] = None,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.parts = dict(parts or {})
-        self.world = World(biome, mode, rng, intro)
+        if seed is None:
+            if rng is None:
+                seed = secrets.randbits(32)
+            else:
+                # Deriva uma seed reproduzível do estado sem avançar o RNG fornecido.
+                state = repr(rng.getstate()).encode("ascii")
+                seed = int.from_bytes(hashlib.blake2s(state, digest_size=4).digest(), "big")
+        self.seed = int(seed) & 0xFFFFFFFF
+        self.intro = bool(intro)
+        self.world = World(
+            biome,
+            mode,
+            random.Random(self.seed),
+            self.intro,
+            challenge_seed=self.seed if community_challenge else None,
+        )
+        self.community_challenge = self.world.challenge_theme is not None
         self.focus = FocusMoment(mode, focus)
-        self.missions = MissionTracker(mode, random.Random(self.world.rng.random()))
+        self.mission_preferred_waste = (
+            mission_preferred_waste if mission_preferred_waste in WASTE_KEYS and self.community_challenge else None
+        )
+        self.missions = MissionTracker(
+            mode,
+            random.Random(self.world.rng.random()),
+            intro=intro,
+            preferred_waste=self.mission_preferred_waste,
+        )
         self.player = Player(plane_stats(self.parts), maneuvers)
-        self.lives = C.MAX_LIVES
+        self.exploration = bool(exploration)
+        self.predictable_assistance = bool(predictable_assistance)
+        self.max_lives = C.ASSISTED_MAX_LIVES if self.predictable_assistance else C.MAX_LIVES
+        self.invulnerable_duration = C.ASSISTED_INVULNERABLE_S if self.predictable_assistance else C.INVULNERABLE_S
+        self.lives = self.max_lives
+        requested_limit = max(0, int(session_limit_s))
+        self.session_limit_s = requested_limit if requested_limit in C.SESSION_LIMITS_S else 0
+        self.timeout = False
         self.score = 0
         self.resources: Dict[str, int] = {k: 0 for k in WASTE_KEYS}
         self.combo = 1
@@ -77,6 +116,9 @@ class FlightRun:
         self.body_time = 0.0  # segundos com o corpo controlando
         self.last_command: Optional[Tuple[float, float]] = None
         self.hits = 0
+        self.waste_collected = 0
+        self.pause_count = 0
+        self.pause_duration_s = 0.0
         self.player.start_maneuver(START_MANEUVER)
 
     # --------------------------------------------------------------- regras
@@ -123,6 +165,7 @@ class FlightRun:
         if entity.collected:
             return
         entity.collected = True
+        self.waste_collected += 1
         normal = self.mode == "normal"
         value = C.NORMAL_TRASH_POINTS if normal else C.HARD_TRASH_POINTS * self.combo
         self.score += value
@@ -152,7 +195,7 @@ class FlightRun:
         elif entity.kind == "magnet":
             self.magnet_timer = max(self.magnet_timer, C.MAGNET_S)
             label = "ÍMÃ"
-        elif self.lives < C.MAX_LIVES:
+        elif self.lives < self.max_lives:
             self.lives += 1
             label = "+1 VIDA"
         else:  # reparo com vidas cheias: transforma a cidade
@@ -170,13 +213,16 @@ class FlightRun:
             return
         self.lives = max(0, self.lives - 1)
         self.hits += 1
-        self.invulnerable_timer = C.INVULNERABLE_S
+        self.invulnerable_timer = self.invulnerable_duration
         self.hit_flash_timer = C.HIT_FLASH_S
         self.combo = 1
         self.streak = 0
         self.combo_timer = 0.0
         self.emit("hit", self.lives)
-        if self.lives == 0:
+        if self.lives == 0 and self.exploration:
+            self.lives = self.max_lives
+            self.emit("exploration_continue", self.hits)
+        elif self.lives == 0:
             self.game_over = True
             self.finished = True
             self.emit("game_over", self.stars)
@@ -195,6 +241,15 @@ class FlightRun:
         if self.finished:
             return
         real_dt = min(dt, C.MAX_DT)
+        if self.session_limit_s:
+            remaining = max(0.0, self.session_limit_s - self.flight_time)
+            if remaining <= 1e-9:
+                self.timeout = True
+                self.interrupted = not self.complete
+                self.finished = True
+                self.emit("session_end", self.flight_time)
+                return
+            real_dt = min(real_dt, remaining)
         self.flight_time += real_dt
         player = self.player
         aim = None if target is None else player.command_target(*target)
@@ -218,7 +273,12 @@ class FlightRun:
         self.announce_lessons()
         self.check_collisions()
         self.count_passes()
-        self.missions.update(dt)
+        if self.missions.current is None and self.missions.wait <= dt:
+            expired = self.missions.update(dt, self.mission_supply())
+        else:
+            expired = self.missions.update(dt)
+        if expired:
+            self.emit("mission_expired")
         self.world.prune()
         for beam in self.beams:
             beam.z -= self.speed * dt
@@ -232,6 +292,29 @@ class FlightRun:
             self.complete_timer += dt
             if self.complete_timer >= COMPLETE_GLIDE_S:
                 self.finished = True
+        if self.session_limit_s and self.flight_time >= self.session_limit_s - 1e-9 and not self.finished:
+            self.timeout = True
+            self.interrupted = not self.complete
+            self.finished = True
+            self.emit("session_end", self.flight_time)
+
+    def mission_supply(self) -> Dict[str, object]:
+        """Oferta concreta à frente do avião para evitar metas sem alvo no percurso."""
+        cutoff = C.PLAYER_Z + max(120.0, self.speed * 3.0)
+        supply: Dict[str, object] = {"coletar": {}, "desviar": 0, "portal": 0, "powerup": 0}
+        collect = supply["coletar"]
+        for entity in self.world.entities:
+            if entity.collected or entity.passed or entity.z <= cutoff:
+                continue
+            if entity.kind == "waste":
+                collect[entity.sprite] = collect.get(entity.sprite, 0) + 1
+            elif entity.kind in ("shield", "magnet", "repair"):
+                supply["powerup"] += 1
+            elif entity.spec is not None:
+                supply["desviar"] += 1
+                if entity.kind == "gate":
+                    supply["portal"] += 1
+        return supply
 
     def announce_lessons(self) -> None:
         """Legenda de cada objeto da abertura didática, LESSON_LEAD_S antes de ele chegar."""
@@ -257,12 +340,30 @@ class FlightRun:
         return {
             "fase": self.biome.key,
             "modo": self.mode,
+            "abertura_didatica": int(self.intro),
+            "desafio_comunitario": int(self.community_challenge),
+            "material_preferido_missao": self.mission_preferred_waste or "",
+            "exploracao": int(self.exploration),
+            "assistencia_previsivel": int(self.predictable_assistance),
+            "limite_s": self.session_limit_s,
+            "semente": self.seed,
+            "tempo_esgotado": int(self.timeout),
+            "vidas_maximas": self.max_lives,
+            "vidas_finais": self.lives,
             "concluida": int(self.complete),
             "interrompida": int(self.interrupted),
             "transformacao": round(self.restoration, 1),
             "estrelas": self.stars,
             "pontos": self.score,
             "batidas": self.hits,
+            "coletas": self.waste_collected,
+            "recursos_total": sum(self.resources.values()),
+            "recurso_papel": self.resources["papel"],
+            "recurso_plastico": self.resources["plastico"],
+            "recurso_metal": self.resources["metal"],
+            "recurso_vidro": self.resources["vidro"],
+            "pausas": self.pause_count,
+            "pausa_s": round(self.pause_duration_s, 1),
             "foco_acertos": self.focus.successes,
             "foco_total": self.focus.total,
             "duracao_s": round(self.flight_time, 1),

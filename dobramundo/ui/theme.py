@@ -5,7 +5,8 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Dict, List, Optional, Tuple
+from functools import lru_cache
+from typing import Dict, List, Tuple
 
 import pygame
 
@@ -37,12 +38,43 @@ SIZES = {"small": 16, "body": 20, "label": 24, "title": 34, "hero": 46}
 SHADOW = (31, 44, 80)  # sombra azulada dos cartões (tinta diluída)
 
 
+def elide_text(value: str, font: pygame.font.Font, max_width: int) -> str:
+    """Mantém texto inteiro se couber, ou corta em limite medido com reticências."""
+    if max_width <= 0:
+        return ""
+    if font.size(value)[0] <= max_width:
+        return value
+    suffix = "…"
+    if font.size(suffix)[0] > max_width:
+        return ""
+    low, high = 0, len(value)
+    while low < high:
+        middle = (low + high + 1) // 2
+        if font.size(value[:middle].rstrip() + suffix)[0] <= max_width:
+            low = middle
+        else:
+            high = middle - 1
+    return value[:low].rstrip() + suffix
+
+
+def fit_text(
+    text: Text, value: str, max_width: int, size: int = 20, minimum: int = 16, bold: bool = False
+) -> Tuple[str, int]:
+    """Reduz até um piso legível e então abrevia; devolve (texto, tamanho)."""
+    minimum = max(1, min(minimum, size))
+    for candidate in range(size, minimum - 1, -1):
+        font = text.font(candidate, bold)
+        if font.size(value)[0] <= max_width:
+            return value, candidate
+    return elide_text(value, text.font(minimum, bold), max_width), minimum
+
+
 class Text:
     """Fontes por tamanho e superfícies de texto em cache (o HUD não re-renderiza a cada quadro)."""
 
     def __init__(self) -> None:
-        self.fonts: Dict[Tuple[int, bool], pygame.font.Font] = {}
-        self.cache = BoundedCache(600)  # superfícies de texto prontas
+        self.fonts: Dict[Tuple[int, bool, bool], pygame.font.Font] = {}
+        self.cache = BoundedCache(600, 16 * 1024 * 1024)  # superfícies de texto prontas
         self.wrapped = BoundedCache(200)  # quebras de linha por (texto, largura, tamanho)
 
     def font(self, size: int, bold: bool = False, hand: bool = False) -> pygame.font.Font:
@@ -138,25 +170,23 @@ class Text:
 _panels: Dict[tuple, pygame.Surface] = {}
 
 
-_grain: Optional[pygame.Surface] = None
 SHADOW_OFFSET = 5
 
 
+@lru_cache(maxsize=1)
 def paper_grain() -> pygame.Surface:
     """Grão de papel (ruído claro, multiplicado sobre os cartões), feito uma vez."""
-    global _grain
-    if _grain is None:
-        rng = random.Random(7)
-        size = 256
-        _grain = pygame.Surface((size, size))
-        _grain.fill((255, 255, 255))
-        px = pygame.PixelArray(_grain)
-        for y in range(size):
-            for x in range(size):
-                v = 255 - rng.randrange(0, 14)
-                px[x, y] = (v, v, v)
-        del px
-    return _grain
+    rng = random.Random(7)
+    size = 256
+    grain = pygame.Surface((size, size))
+    grain.fill((255, 255, 255))
+    px = pygame.PixelArray(grain)
+    for y in range(size):
+        for x in range(size):
+            v = 255 - rng.randrange(0, 14)
+            px[x, y] = (v, v, v)
+    del px
+    return grain
 
 
 def panel(
@@ -259,6 +289,20 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
         pygame.draw.polygon(surface, ink, points([(-15, -12), (15, -12), (15, 12), (-15, 12)]), 3)
         pygame.draw.line(surface, TEAL, points([(-12, -4)])[0], points([(12, -4)])[0], 2)
         pygame.draw.line(surface, ORANGE, points([(-12, 3)])[0], points([(8, 3)])[0], 2)
+    elif kind == "clock":
+        pygame.draw.circle(surface, ink, (cx, cy), int(16 * s), max(2, int(3 * s)))
+        pygame.draw.lines(surface, ink, False, points([(0, -10), (0, 0), (9, 5)]), max(2, int(3 * s)))
+    elif kind == "back":
+        pygame.draw.polygon(surface, ink, points([(17, -6), (-4, -6), (-4, -15), (-19, 0), (-4, 15), (-4, 6), (17, 6)]))
+    elif kind == "plane":
+        pygame.draw.polygon(surface, PAPER, points([(-19, 13), (17, -15), (8, 18), (-2, 7)]))
+        pygame.draw.polygon(surface, ink, points([(-19, 13), (17, -15), (8, 18), (-2, 7)]), max(2, int(2 * s)))
+        pygame.draw.line(surface, ORANGE, points([(-2, 7)])[0], points([(17, -15)])[0], max(2, int(3 * s)))
+    elif kind == "map":
+        route = points([(-15, 13), (-8, 0), (4, 6), (14, -13)])
+        pygame.draw.lines(surface, ink, False, route, max(2, int(3 * s)))
+        for point in (route[0], route[-1]):
+            pygame.draw.circle(surface, ORANGE, point, max(3, int(5 * s)))
     elif kind in {"dodge", "desviar", "next"}:
         pygame.draw.polygon(surface, ink, points([(-17, -6), (4, -6), (4, -15), (19, 0), (4, 15), (4, 6), (-17, 6)]))
     elif kind in {"portal", "gate"}:
@@ -270,22 +314,27 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
             2 * math.pi,
             max(3, int(5 * s)),
         )
-        pygame.draw.line(surface, ink, points([(-17, 0)])[0], points([(-17, 15)])[0], max(3, int(5*s)))
-        pygame.draw.line(surface, ink, points([(17, 0)])[0], points([(17, 15)])[0], max(3, int(5*s)))
-        pygame.draw.line(surface, TEAL, points([(-17, 14)])[0], points([(17, 14)])[0], max(2, int(3*s)))
+        pygame.draw.line(surface, ink, points([(-17, 0)])[0], points([(-17, 15)])[0], max(3, int(5 * s)))
+        pygame.draw.line(surface, ink, points([(17, 0)])[0], points([(17, 15)])[0], max(3, int(5 * s)))
+        pygame.draw.line(surface, TEAL, points([(-17, 14)])[0], points([(17, 14)])[0], max(2, int(3 * s)))
     elif kind == "magnet":
-        pygame.draw.lines(surface, ink, False, points([(-12, -15), (-12, 7), (-6, 15), (6, 15), (12, 7), (12, -15)]),
-                          max(5, int(8 * s)))
-        pygame.draw.line(surface, ORANGE, points([(-12, -15)])[0], points([(-12, -5)])[0], max(5, int(8*s)))
-        pygame.draw.line(surface, TEAL, points([(12, -15)])[0], points([(12, -5)])[0], max(5, int(8*s)))
+        pygame.draw.lines(
+            surface,
+            ink,
+            False,
+            points([(-12, -15), (-12, 7), (-6, 15), (6, 15), (12, 7), (12, -15)]),
+            max(5, int(8 * s)),
+        )
+        pygame.draw.line(surface, ORANGE, points([(-12, -15)])[0], points([(-12, -5)])[0], max(5, int(8 * s)))
+        pygame.draw.line(surface, TEAL, points([(12, -15)])[0], points([(12, -5)])[0], max(5, int(8 * s)))
     elif kind in {"powerup", "shield", "repair"}:
         pygame.draw.polygon(surface, ink, points([(0, -18), (16, -11), (13, 7), (0, 18), (-13, 7), (-16, -11)]))
-        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 9)])[0], max(2, int(3*s)))
+        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 9)])[0], max(2, int(3 * s)))
         if kind == "repair":
-            pygame.draw.line(surface, (255, 255, 255), points([(-8, 0)])[0], points([(8, 0)])[0], max(2, int(3*s)))
+            pygame.draw.line(surface, (255, 255, 255), points([(-8, 0)])[0], points([(8, 0)])[0], max(2, int(3 * s)))
     elif kind in {"stabilizer", "keel", "rudder", "part"}:
         pygame.draw.polygon(surface, ink, points([(-18, 9), (0, -13), (18, 9), (0, 4)]))
-        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 8)])[0], max(2, int(3*s)))
+        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 8)])[0], max(2, int(3 * s)))
         if kind == "rudder":
             pygame.draw.polygon(surface, ORANGE, points([(0, 5), (12, -14), (13, 8)]))
     elif kind in {"star", "reward"}:
@@ -304,7 +353,7 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
             max(2, int(3 * s)),
         )
         for ox, oy, shade in ((-8, -5, ORANGE), (3, -8, TEAL), (9, 3, SUN), (-4, 8, GREEN)):
-            pygame.draw.circle(surface, shade, (cx + int(ox*s), cy + int(oy*s)), max(2, int(4*s)))
+            pygame.draw.circle(surface, shade, (cx + int(ox * s), cy + int(oy * s)), max(2, int(4 * s)))
     elif kind == "pattern":
         rect = pygame.Rect(cx - int(15 * s), cy - int(15 * s), int(30 * s), int(30 * s))
         pygame.draw.rect(surface, ink, rect, max(2, int(3 * s)), border_radius=max(2, int(5 * s)))
@@ -324,10 +373,10 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
             ink,
             points([(-18, -2), (0, -17), (18, -2), (14, -2), (14, 15), (-14, 15), (-14, -2)]),
         )
-        pygame.draw.rect(surface, PAPER, pygame.Rect(cx - int(4*s), cy + int(2*s), int(8*s), int(13*s)))
+        pygame.draw.rect(surface, PAPER, pygame.Rect(cx - int(4 * s), cy + int(2 * s), int(8 * s), int(13 * s)))
     else:
         pygame.draw.polygon(surface, ink, points([(-17, 0), (14, -12), (7, 0), (14, 12)]))
-        pygame.draw.line(surface, PAPER, points([(-3, 0)])[0], points([(2, -1)])[0], max(2, int(2*s)))
+        pygame.draw.line(surface, PAPER, points([(-3, 0)])[0], points([(2, -1)])[0], max(2, int(2 * s)))
     _icons[key] = surface
     return surface
 

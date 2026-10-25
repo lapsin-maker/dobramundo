@@ -27,6 +27,7 @@ class RegionalLife:
                 cell = atlas.subsurface((col * w // 3, row * h // 2, w // 3, h // 2))
                 bounds = cell.get_bounding_rect(min_alpha=40)
                 self.frames.append(display_format(cell.subsurface(bounds).copy(), True) if bounds.w else None)
+        assets.release_folder("watercolor", ("fauna_sprint3",))
 
     @staticmethod
     def quiet_share(world):
@@ -71,6 +72,9 @@ class RegionalLife:
         opacity = smoothstep(clamp((1500 - z) / 220, 0.0, 1.0))
         opacity *= smoothstep(clamp((z - 260) / 160, 0.0, 1.0))
         opacity *= smoothstep(clamp((world.visual - 25) / 10, 0.0, 1.0))
+        theme = world.challenge_theme
+        if theme is not None and "fauna" in theme.decorations:
+            opacity = min(1.0, opacity * 1.15)
         return x, y, z, pair, mix, opacity * self._quiet, side
 
     def draw(self, screen, world, cam, reduced):

@@ -21,6 +21,7 @@ from ..content.biomes import Biome
 from ..content.items import OBSTACLE_KINDS, POWERUP_KINDS, WASTE_KEYS, ObstacleSpec
 from ..content.progress import plane_stats
 from ..util import clamp, smoothstep
+from .challenges import ChallengeTheme, challenge_theme_for
 from .entities import Entity
 
 GOLDEN = 0.6180339887498949  # ordem espalhada em que os trechos viram verdes
@@ -372,10 +373,12 @@ class World:
         rng: Optional[random.Random] = None,
         intro: bool = False,
         restoration: Optional[float] = None,
+        challenge_seed: Optional[int] = None,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.intro = intro  # abertura didática: uma coisa por vez antes do sorteio
+        self.challenge_theme: Optional[ChallengeTheme] = challenge_theme_for(biome.key, challenge_seed)
         self.rng = rng or random.Random()
         self.route_planner = RoutePlanner(mode)
         self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
@@ -650,13 +653,22 @@ class World:
             if self.waste_allowed():
                 self.entities.append(Entity(z + 45.0, lane2, "waste", y2, self.next_waste()))
         if rng.random() < 0.35 + self.difficulty * 0.30:
-            roll = rng.random()
-            kind = "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
+            kind = self.choose_obstacle_kind(rng.random())
             solar = self.spawn_is_solar(z)
             self.add_reachable_obstacle(z, rng.choice(available), kind, solar)
         if rng.random() < 0.13:
             kind = rng.choice(POWERUP_KINDS)
             self.entities.append(Entity(z + 30.0, rng.choice(lanes), kind, rng.choice(C.TRASH_HEIGHTS)))
+
+    def choose_obstacle_kind(self, roll: float) -> str:
+        """Desafios regionais inclinam a sequência sem remover variedades nem planner."""
+        if self.challenge_theme is None:
+            return "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
+        preferred = self.challenge_theme.preferred_obstacle
+        alternatives = [kind for kind in OBSTACLE_KINDS if kind != preferred]
+        if roll < 0.55:
+            return preferred
+        return alternatives[0] if roll < 0.55 + 0.225 else alternatives[1]
 
     # -------------------------------------------------------------- avanço
     def advance(self, dt: float, dz: float) -> None:

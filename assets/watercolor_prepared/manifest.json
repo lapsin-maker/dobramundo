@@ -1,0 +1,914 @@
+{
+  "schema": 1,
+  "generator": "tools/prepare_assets.py",
+  "generated_with": "pygame 2.6.1",
+  "provenance": {
+    "credit_file": "assets/watercolor/CREDITOS.txt",
+    "generation_metadata": [
+      {
+        "file": "generation-pilot-sprint2.json",
+        "sha256": "b8ed28ae61fd8b89608b15ceed464474dfbc1a6f65c9527948db6ccdcee4f2f3"
+      },
+      {
+        "file": "generation-sprint2.json",
+        "sha256": "bf20b6b201c5cbebb834a194d2ed8225cf70131f508b960093e0fef0e133a91c"
+      },
+      {
+        "file": "generation-sprint3.json",
+        "sha256": "2079c96c91f5324b4aa1b68a3ceaf7094640fd06cd478d1354a53c192a3b800f"
+      },
+      {
+        "file": "generation.json",
+        "sha256": "7a889ef29780c7940d50c924152e354b751f5c2066bd434ce7ac4fe13e702578"
+      }
+    ],
+    "method": "project-integrated image generation; local metadata is recorded, but is not a pixel-level source map"
+  },
+  "license": "CC BY 4.0 project package; see root LICENSE and assets/watercolor/CREDITOS.txt.",
+  "logical_canvas": [
+    1100,
+    650
+  ],
+  "prepared_sizes": {
+    "amazonia_0": [
+      1132,
+      650
+    ],
+    "amazonia_1": [
+      1132,
+      650
+    ],
+    "amazonia_2": [
+      1132,
+      650
+    ],
+    "caatinga_0": [
+      1132,
+      650
+    ],
+    "caatinga_1": [
+      1132,
+      650
+    ],
+    "caatinga_2": [
+      1132,
+      650
+    ],
+    "planes_flight_a": [
+      768,
+      512
+    ],
+    "planes_flight_a_clean": [
+      768,
+      512
+    ],
+    "planes_flight_b": [
+      768,
+      512
+    ],
+    "planes_flight_c": [
+      768,
+      512
+    ],
+    "planes_menu_a": [
+      768,
+      512
+    ],
+    "planes_menu_b": [
+      768,
+      512
+    ],
+    "planes_menu_c": [
+      768,
+      512
+    ]
+  },
+  "backdrop_target": [
+    1132,
+    650
+  ],
+  "backdrop_method": "pygame.transform.smoothscale; same raster operation as runtime fallback",
+  "assets": [
+    {
+      "file": "amazonia_0.png",
+      "sha256": "378c3a0045a8c168e5cb6f058bdcf05acaa9aa7dd8b3281169b0215634df3eda",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2904085,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/amazonia_0.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "980aa42f504072fcf995c5c8b86b41fd4aa03967a606cb44c78ebd6ad76f512c",
+        "bytes": 1273858
+      }
+    },
+    {
+      "file": "amazonia_1.png",
+      "sha256": "14688f31748ac59a57d57d0b7265add3a7f850f5367a48d011414b25b1e43985",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2960187,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/amazonia_1.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "5771f31aa0b7a89df244ee8ed95cc1b96ed8188df334f4fd38cec0da6afd66ae",
+        "bytes": 1318216
+      }
+    },
+    {
+      "file": "amazonia_2.png",
+      "sha256": "b4325d933f998e17ce152b65b49d177ec34a739e7cd5669510eb916c455230a6",
+      "dimensions": [
+        1631,
+        964
+      ],
+      "source_bytes": 2893819,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/amazonia_2.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "0919dcee147c179af1209bf5cb16d02e93800dfc1f19c9a90983d628695cc4b2",
+        "bytes": 1281663
+      }
+    },
+    {
+      "file": "banks_amazonia.png",
+      "sha256": "4d9820b3e3cdab536823e08e7173513f809dac9315d10568bfbe7eb18a843bd8",
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "source_bytes": 3069673,
+      "alpha_bounds": [
+        0,
+        0,
+        1448,
+        1086
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          3
+        ],
+        "pivot": "cell bottom-center",
+        "use": "river margins"
+      }
+    },
+    {
+      "file": "banks_caatinga.png",
+      "sha256": "83f8ee3c51fba9ad90f5c2d6a4368f6c7acf7515711f92cc2281231cf055b011",
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "source_bytes": 2706432,
+      "alpha_bounds": [
+        0,
+        13,
+        1448,
+        1073
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          3
+        ],
+        "pivot": "cell bottom-center",
+        "use": "desert margins"
+      }
+    },
+    {
+      "file": "caatinga_0.png",
+      "sha256": "e3d574b22882edcf411c20657d59095c0a73204c2da1ccaeb5da552bf81b8f1f",
+      "dimensions": [
+        1631,
+        964
+      ],
+      "source_bytes": 2874699,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/caatinga_0.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "843f517d80b986c1ca12997e18ad12bbae151e584a34073c5e72d2c6af56ce2b",
+        "bytes": 1272481
+      }
+    },
+    {
+      "file": "caatinga_1.png",
+      "sha256": "ced9b5f31f620a653a42c8fd8acde7b16176e403237e862502a2a761904c1d94",
+      "dimensions": [
+        1631,
+        964
+      ],
+      "source_bytes": 2855673,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/caatinga_1.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "f9ccc5191b81c22072088d0830b5eeb413f5ffe868c091a2d2f5d8578f820c27",
+        "bytes": 1294012
+      }
+    },
+    {
+      "file": "caatinga_2.png",
+      "sha256": "ed7160eed01d3de42c64f82b340321099a283d9d4aa68d62abe3c71e929a9838",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2906194,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/caatinga_2.png",
+        "dimensions": [
+          1132,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "f0926a421b6e853fdee5e7d53f557bb44bd939f26a138b46ad7e1ac3288f782f",
+        "bytes": 1277906
+      }
+    },
+    {
+      "file": "fauna_sprint3.png",
+      "sha256": "3624ba306d6f413609815cf02b24c5e0b2e82f5cae91d8e939cacb1252f29db0",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 1390714,
+      "alpha_bounds": [
+        15,
+        11,
+        1616,
+        953
+      ],
+      "atlas": {
+        "grid": [
+          3,
+          2
+        ],
+        "pivot": "cell bottom-center",
+        "use": "non-colliding distant fauna"
+      }
+    },
+    {
+      "file": "items_refined.png",
+      "sha256": "2f9b1e70b3d2090dee45f2afebaf934b1991968545b742a2a26f747fd5fc8e56",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "source_bytes": 1675791,
+      "alpha_bounds": [
+        32,
+        6,
+        1710,
+        864
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          2
+        ],
+        "order": [
+          "paper",
+          "plastic",
+          "metal",
+          "glass",
+          "shield",
+          "magnet",
+          "repair",
+          "blank"
+        ],
+        "pivot": "cell center",
+        "use": "collectibles and power-ups"
+      }
+    },
+    {
+      "file": "obstacles_refined.png",
+      "sha256": "de3929f79a87144fd414bbd1da6dfa5584ab7ca52f096a265e3135034c173bb4",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 2066398,
+      "alpha_bounds": [
+        23,
+        0,
+        1479,
+        1024
+      ],
+      "atlas": {
+        "grid": [
+          3,
+          2
+        ],
+        "order": [
+          "industrial low",
+          "industrial gate",
+          "industrial tower",
+          "solar low",
+          "solar gate",
+          "solar tower"
+        ],
+        "pivot": "bottom-center; gate crop ends at physical beam edge",
+        "use": "collision visuals"
+      }
+    },
+    {
+      "file": "pilot_base.png",
+      "sha256": "866891039c27117b6b978ded5d49cc2cc96c538f1a49e9af15167990a7b7e513",
+      "dimensions": [
+        1214,
+        1295
+      ],
+      "source_bytes": 951838,
+      "alpha_bounds": [
+        33,
+        0,
+        1163,
+        1295
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "row_split": "710/1295 of source height",
+        "pivot": "cropped pose origin",
+        "use": "customizable pilot"
+      }
+    },
+    {
+      "file": "pilot_hair_back.png",
+      "sha256": "9a5cf5a95e779a846ce1349d33880263b1b7b2a34125a32e76d854e224971151",
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "source_bytes": 2102613,
+      "alpha_bounds": [
+        0,
+        19,
+        1448,
+        1067
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          3
+        ],
+        "pivot": "fitted to pilot head anchor",
+        "use": "back hair layer"
+      }
+    },
+    {
+      "file": "pilot_hair_front.png",
+      "sha256": "f0fef3ccaece02c170f40535e95c272809ea0c6de1aa38def1ef9ebbdb1d9b22",
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "source_bytes": 1555743,
+      "alpha_bounds": [
+        0,
+        15,
+        1448,
+        1071
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          3
+        ],
+        "pivot": "fitted to pilot head anchor",
+        "use": "front hair layer"
+      }
+    },
+    {
+      "file": "pilot_mobility.png",
+      "sha256": "077e8468476db68acf1aedcb5c38abb1753031dd51324eba9d29907e5f380f22",
+      "dimensions": [
+        1215,
+        1295
+      ],
+      "source_bytes": 1425260,
+      "alpha_bounds": [
+        0,
+        21,
+        1207,
+        1274
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "pilot pose origin",
+        "use": "mobility aids"
+      }
+    },
+    {
+      "file": "planes_flight_a.png",
+      "sha256": "af6a0a727a0f26ba4dfeaf1b4732bbc4c1078bc1f0dec5ecf9478863924d1cf8",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1868641,
+      "alpha_bounds": [
+        17,
+        15,
+        1505,
+        1009
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "flight aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_flight_a.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "bf6f242e6422a6f7771df0ee7266037c3db39d8870b804650d343ed586173688",
+        "bytes": 491210
+      }
+    },
+    {
+      "file": "planes_flight_a_clean.png",
+      "sha256": "821d383eab93b8d28b59fb152d960df6e01900679273482851af9b8e9ae60859",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1782497,
+      "alpha_bounds": [
+        50,
+        47,
+        1472,
+        907
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "flight aircraft fallback"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_flight_a_clean.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "a3b288864a3ae2cc8ba836046bb915f88082378586e15094783130bd4e721718",
+        "bytes": 479609
+      }
+    },
+    {
+      "file": "planes_flight_b.png",
+      "sha256": "cae9f9d6c64762af22b2640c222bda2008a1c2960247dc7d2d2f4c883ac37109",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1845699,
+      "alpha_bounds": [
+        35,
+        9,
+        1489,
+        1015
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "flight aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_flight_b.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "0f68853797723409dc569b53036edd23f69be69f79df4d6583bcdddd645d52f9",
+        "bytes": 489038
+      }
+    },
+    {
+      "file": "planes_flight_c.png",
+      "sha256": "d22b6b0e5d0d083f87e72f33c09325f6b16636210cb65fab3c49d7223c76311f",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1679184,
+      "alpha_bounds": [
+        14,
+        17,
+        1521,
+        921
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "flight aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_flight_c.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "2c8e0ceee783655c6f7c6d0d308e370f7941c17fe35f0341ea9d0cf7d69c4027",
+        "bytes": 451095
+      }
+    },
+    {
+      "file": "planes_menu_a.png",
+      "sha256": "4f7095b985ed8b415b681f2100e7b3e44206d899f213dde438cd0b2b71dd8931",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1983178,
+      "alpha_bounds": [
+        0,
+        23,
+        1518,
+        961
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "menu aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_menu_a.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "812dc2746b003467bcfd7db25172f126bc9a46019eda2233bcff857c990240d2",
+        "bytes": 534877
+      }
+    },
+    {
+      "file": "planes_menu_b.png",
+      "sha256": "4493bd4179a628a8d4e281c1edfc7b4506ded78a40f312e5352a0405313ddf40",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1911546,
+      "alpha_bounds": [
+        0,
+        21,
+        1496,
+        979
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "menu aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_menu_b.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "2d567cc624db593f90bf00e339089dbeafe967a008fc83a20b11b33400941f5a",
+        "bytes": 506630
+      }
+    },
+    {
+      "file": "planes_menu_c.png",
+      "sha256": "1c559f8ae0df8f4dcd25ddaddbc7ba61af6faf81ced069b9fb663d2b83cd72f3",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 1856635,
+      "alpha_bounds": [
+        0,
+        14,
+        1514,
+        972
+      ],
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "plane center",
+        "use": "menu aircraft"
+      },
+      "runtime_variant": {
+        "file": "watercolor_prepared/planes_menu_c.png",
+        "dimensions": [
+          768,
+          512
+        ],
+        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "b37612b4146c0eba4e48a09396accdd32f3c8fb8e8c95ffb5988bdfc668d5f9b",
+        "bytes": 496830
+      }
+    },
+    {
+      "file": "story_city.png",
+      "sha256": "c48038c928e02d5858188bd8a33a200f467391f0463d5caaa766c4ffda138912",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3328924,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "story_fold.png",
+      "sha256": "0679719dafd431b089daa93e64ea53f46a4b7e308fff5987859bb4d924ab3321",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2731740,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "story_launch.png",
+      "sha256": "cd45a6e5ab98a9a79a3ff73eec9c5956b5dba3eaf238b0984fddeea1ea35e229",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2928390,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "story_newspaper.png",
+      "sha256": "5bd37d7d82b4cc09976185797feb68ea9a7a8538808ad3b861e5150761ccc137",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3288084,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "terrain_tiles.png",
+      "sha256": "e2d194ebdbcb985f837450cc2dd4627da1d0196648c78d70d4cf5cd57cce8ba0",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "source_bytes": 3293927,
+      "alpha_bounds": null,
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "repeating tile",
+        "use": "legacy ground fallback"
+      }
+    },
+    {
+      "file": "terrain_tiles_v3.png",
+      "sha256": "8a8010969960038d6f3ab7f23bdc0792119bfc432cd82f1a3c3f00341c203490",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 2594430,
+      "alpha_bounds": null,
+      "atlas": {
+        "grid": [
+          2,
+          2
+        ],
+        "pivot": "repeating tile",
+        "use": "ground materials"
+      }
+    },
+    {
+      "file": "travel_amazonia.png",
+      "sha256": "fe19f35b74cf02a068b077a0112f8332857716b286bf3aea677316b94af7a677",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 3101371,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "travel_caatinga.png",
+      "sha256": "aced248bcea5757dabef88ff3fb63407811c0b168268d3d38dffdf02b2b532c2",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3401828,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_clean.png",
+      "sha256": "db444a6831426531bb294c9bfe1995aadd9810812e2578c939d2710ecefe8d5b",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3095653,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_final.png",
+      "sha256": "0c522d5efc506701f281c24cdd451353d4837579dfecaf75e8546dc7d60aeca1",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3329833,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_industrial_v3.png",
+      "sha256": "94ab9fc34cdae157b8c1a86c762838e259b2c44a0554156b7fb72ef70355c114",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3237767,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_intermediate.png",
+      "sha256": "723da0aeb1fb5dd63966fb35d02ab29f521df5c7151f502e530244359518b829",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3164562,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_props.png",
+      "sha256": "4e0a985e34b78a734d0019e700c04a668ea4ba159d551161b85f45e0738fd378",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "source_bytes": 2626170,
+      "alpha_bounds": [
+        0,
+        9,
+        1764,
+        878
+      ],
+      "atlas": {
+        "grid": [
+          4,
+          2
+        ],
+        "pivot": "cell bottom-center",
+        "use": "community upgrades"
+      }
+    },
+    {
+      "file": "village_start.png",
+      "sha256": "a44f77bc17b87ea24911dfa64c2e78b0f371c0dfc9a869730a02f5298ca4e31b",
+      "dimensions": [
+        1632,
+        964
+      ],
+      "source_bytes": 3184460,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_start_v2.png",
+      "sha256": "2df5bc32ba6402a8722e445ff810a2ab9b9bba55307a1f1e80be0ce41900d9f7",
+      "dimensions": [
+        1631,
+        964
+      ],
+      "source_bytes": 3175159,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "village_transition_v3.png",
+      "sha256": "4baca37cc7bf7ea44979e1a31ea428a61e3a78b9b72b2a3c633994b3785c33e1",
+      "dimensions": [
+        1630,
+        965
+      ],
+      "source_bytes": 3226916,
+      "alpha_bounds": null,
+      "atlas": null
+    },
+    {
+      "file": "villagers_sprint3.png",
+      "sha256": "77281d4fa3b409dd3af3e6d6cd688e7b412183a0bf78bf8cd1cdd4756096993d",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "source_bytes": 2286679,
+      "alpha_bounds": [
+        0,
+        0,
+        1518,
+        1008
+      ],
+      "atlas": {
+        "grid": [
+          3,
+          2
+        ],
+        "pivot": "cropped cell bottom-center",
+        "use": "village residents"
+      }
+    }
+  ]
+}

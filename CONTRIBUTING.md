@@ -4,7 +4,7 @@ Use uma branch própria e descreva o problema e o comportamento final. Preserve 
 
 ## Ambiente e validação
 
-O pacote exige Python >=3.8; o build desktop usa 3.12. Instale `requirements.txt` para teclado/mouse, `pytest`, `ruff` e `Pillow` para desenvolver/testar. Para webcam, `pip install -e ".[webcam]"`. Use um ambiente separado para o TSDK, que exige Python 3.14.
+O pacote declara Python >=3.8; a matriz de CI da entrega cobre 3.8/3.12 quando executada, e o build desktop usa 3.12. Instale `requirements.txt` para teclado/mouse, `pytest`, `ruff` e `Pillow` para desenvolver/testar. Para webcam, `pip install -e ".[webcam]"`. Use um ambiente separado para o TSDK, que exige Python 3.14.
 
 ```text
 python -m pytest -q
@@ -12,7 +12,7 @@ ruff check .
 python -m dobramundo --self-test 1200 --exigir-camera
 ```
 
-O pytest isola dados em diretório temporário. Se o temporário padrão estiver inacessível, passe `--basetemp` apontando para uma **nova pasta de teste descartável**. Nunca use pasta de dados do jogador: pytest pode limpar o basetemp.
+O pytest isola dados em diretório temporário. Se o temporário padrão estiver inacessível, passe `--basetemp` apontando para uma **nova pasta de teste descartável**. Nunca use pasta de dados do jogador: pytest pode limpar o basetemp. Perfis e recuperação devem ser testados com diretórios temporários injetados; não leia nem altere perfis reais durante os testes.
 
 `--exigir-camera` verifica a carga do detector; não captura vídeo. Para benchmark, use as ferramentas de `tools/` e registre condições, versão e equipamento. Não compare tempos enquanto outro build/teste pesado usa a mesma CPU.
 
@@ -31,4 +31,4 @@ O lint ativo exclui `tools/legado`. Não formate todo o repositório dentro de u
 
 Mantenha originais e procedência. O runtime usa PNGs locais, sem geração por IA durante o jogo. Não converter formatos sem testar o suporte no console. Pintado → papel → lógico é uma cadeia de fallback, não código duplicado para apagar automaticamente.
 
-Confira `__version__`, self-test do executável, check/build do TSDK e hashes dos pacotes antes da release. Registre o commit do código usado no build. Preserve releases históricas, branches compartilhadas e histórico Git sem limpeza destrutiva não solicitada.
+Confira `__version__`, self-test do executável, check/build do TSDK e hashes dos pacotes antes da release. A versão do código é 1.6.0; isso, por si só, não confirma build nem publicação. Registre o commit do código usado no build e substitua apenas os campos explicitamente pendentes em `docs/ENTREGA_1_6.md` após produzir evidência. Preserve releases históricas, branches compartilhadas e histórico Git sem limpeza destrutiva não solicitada.

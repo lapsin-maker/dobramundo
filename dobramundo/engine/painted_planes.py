@@ -27,7 +27,7 @@ class PaintedPlanes:
         self._bases: Dict[Tuple[str, str], Optional[pygame.Surface]] = {}
         self._paper_masks: Dict[str, pygame.Surface] = {}
         self._patterns: Dict[str, Optional[pygame.Surface]] = {}
-        self._cache = BoundedCache(96)
+        self._cache = BoundedCache(96, 40 * 1024 * 1024)
 
     @staticmethod
     def _atlas_index(plane: str) -> Optional[int]:
@@ -42,9 +42,13 @@ class PaintedPlanes:
             return None
         group, cell_index = divmod(index, 4)
         names = MENU_ATLASES if view == "menu" else FLIGHT_ATLASES
-        atlas = self.assets.sprite("watercolor", names[group])
+        atlas = self.assets.sprite("watercolor_prepared", names[group])
+        if atlas is None:
+            atlas = self.assets.sprite("watercolor", names[group])
         if atlas is None and view == "menu":
-            atlas = self.assets.sprite("watercolor", FLIGHT_ATLASES[group])
+            atlas = self.assets.sprite("watercolor_prepared", FLIGHT_ATLASES[group])
+            if atlas is None:
+                atlas = self.assets.sprite("watercolor", FLIGHT_ATLASES[group])
         if atlas is None:
             return None
         cell_w, cell_h = atlas.get_width() // 2, atlas.get_height() // 2

@@ -113,6 +113,7 @@ class PaintedRoute:
             atlas = assets.sprite("watercolor", "terrain_tiles")
         valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
         self.ground = PaintedGround(atlas) if valid else None
+        assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
         self.banks = {}
         self.cache = SpriteCache()
         self.assets = assets
@@ -135,7 +136,12 @@ class PaintedRoute:
                         break  # pacote parcial: o chamador usa o cenário procedural completo
                     sprites.append(display_format(cell.subsurface(bounds).copy(), True))
             self.banks[biome] = tuple(sprites)
+            self.assets.release_folder("watercolor", ("banks_" + biome,))
         return self.banks[biome]
+
+    def release_biome(self, biome: str) -> None:
+        self.banks.pop(biome, None)
+        self.cache = SpriteCache()
 
     def ready(self, biome: str) -> bool:
         return self.ground is not None and len(self.load(biome)) == 12

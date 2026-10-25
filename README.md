@@ -17,13 +17,13 @@
 
 1. Abra a [última versão](https://github.com/lapsin-maker/dobramundo/releases/latest) e baixe o pacote **Windows**.
 2. Extraia **toda** a pasta; mantenha o executável junto da pasta `_internal`.
-3. Abra **Jogar-Dobramundo.bat**. Não é necessário instalar Python. O lançador da versão 1.5 usa um perfil separado para não apagar os testes anteriores.
+3. Abra **Jogar-Dobramundo.bat**. Não é necessário instalar Python. A versão 1.6 mantém o perfil principal legado e oferece slots locais independentes para outros pilotos.
 
-A release também oferece o cartucho `.ttea`, a galeria e hashes SHA-256. [Entrega 1.5.0 e validação](docs/ENTREGA_1_5.md) · [Histórico](CHANGELOG.md).
+A release também oferece o cartucho `.ttea`, a galeria e hashes SHA-256, quando publicados junto ao pacote. [Entrega 1.6.0 e validação pendente](docs/ENTREGA_1_6.md) · [Histórico](CHANGELOG.md).
 
 ## O jogo
 
-Para crianças de 6 a 10 anos, incluindo crianças neurodiversas e com deficiência, em uso mediado. A primeira personalização parte de um boneco neutro e inclui pele, cabelos, olhos, roupa, óculos, aparelho auditivo, cadeira de rodas e andador.
+Projetado para crianças de 6 a 10 anos, com uso mediado e opções de controle e apresentação ajustáveis. A adequação e o conforto precisam de aceite presencial; este texto não afirma eficácia clínica. A primeira personalização parte de um boneco neutro e inclui pele, cabelos, olhos, roupa, óculos, aparelho auditivo, cadeira de rodas e andador.
 
 O ciclo é **piloto → vila → mapa → voo → resultado → obras e hangar**. A vila começa colorida, industrial e poluída; a coleta e as obras integram natureza, água, energia e alimentos. Manaus e Petrolina mantêm referências de seus biomas e construções nos três estágios.
 
@@ -38,7 +38,7 @@ Detalhes de fases, ODS, regras e referências: [guia do jogo](docs/GUIA_DO_JOGO.
 - **Supervisor:** mouse e teclado, setas/WASD, pausa com Esc/P; recalibração e encerramento parcial no menu de pausa.
 - **Saída:** chão, mesa, parede ou monitor; rotação e espelho. Pés na projeção exigem calibrar seus quatro cantos.
 
-Em **Opções → Preparar**, escolha conforto, contraste, treino e calibração. Calibre o neutro e os quatro alcances confortáveis com confirmação do supervisor. A ampliação no alto contraste vai de 1 a 1,6×.
+Em **Opções → Preparar**, escolha exploração sem eliminação, duração (livre ou 120/180/240 s), assistência previsível, contraste, treino e calibração. O editor usa 3 segundos por padrão, ajustável. Calibre o neutro e os quatro alcances confortáveis com confirmação do supervisor. A ampliação no alto contraste vai de 1 a 1,6×.
 
 ## Acessibilidade e privacidade
 
@@ -46,7 +46,7 @@ O jogo oferece permanência ajustável, cores e formas distintas, movimento redu
 
 A câmera é processada localmente; o jogo não grava vídeo nem envia imagens para serviços de IA. O diagnóstico exporta métricas técnicas. As ilustrações de IA são arquivos já incluídos no pacote.
 
-Testes automatizados não substituem o ensaio da pessoa com a câmera, da projeção a 2–3 m e do conforto em sessão mediada. Consulte as condições e limitações nas notas da entrega.
+Testes automatizados não substituem o ensaio da pessoa com a câmera, da projeção a 2–3 m e do conforto em sessão mediada. A CI e a validação presencial desta entrega permanecem pendentes; veja [o roteiro presencial](docs/VALIDACAO_PRESENCIAL.md) e as [notas da entrega](docs/ENTREGA_1_6.md).
 
 ## Console T-TEA
 

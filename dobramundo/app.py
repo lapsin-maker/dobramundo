@@ -10,18 +10,32 @@ mouse é convertido de volta para as coordenadas lógicas.
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import pygame
 
 from . import APP_NAME
 from . import config as C
 from .core import GameCore
-from .persistence import Profile, load_profile
+from .persistence import (
+    Profile,
+    create_profile_slot,
+    list_profile_slots,
+    load_active_profile,
+    load_profile_with_notice,
+    profile_read_blocked,
+    save_profile,
+    set_active_profile_slot,
+)
 
 
 class App(GameCore):
-    def __init__(self, audio: bool = True, profile: Optional[Profile] = None) -> None:
+    def __init__(
+        self,
+        audio: bool = True,
+        profile: Optional[Profile] = None,
+        scene_factory: Optional[Callable] = None,
+    ) -> None:
         pygame.init()
         pygame.display.set_caption(APP_NAME)
         if audio and not pygame.mixer.get_init():
@@ -30,15 +44,96 @@ class App(GameCore):
             except pygame.error:
                 pass  # sem dispositivo de áudio: o jogo segue em silêncio
         self.display = self.open_window()
-        super().__init__(profile or load_profile(), audio, canvas=pygame.Surface((C.WIDTH, C.HEIGHT)).convert())
+        if profile is None:
+            selected_profile, self.profile_slot, self.storage_notice = load_active_profile()
+        else:
+            selected_profile, self.profile_slot, self.storage_notice = profile, "principal", None
+        super().__init__(
+            selected_profile,
+            audio,
+            save=self._save_selected_profile,
+            canvas=pygame.Surface((C.WIDTH, C.HEIGHT)).convert(),
+            scene_factory=scene_factory,
+        )
         icon = self.assets.sprite("ui", "icone")
         if icon is not None:
             pygame.display.set_icon(icon)
         self.clock = pygame.time.Clock()
         self.smooth_dt = 1.0 / C.FPS
         self.apply_options()
-        if self.profile.opcoes.tela_cheia:
+
+    def apply_options(self) -> None:
+        super().apply_options()
+        self._sync_fullscreen()
+
+    def _sync_fullscreen(self) -> None:
+        display = pygame.display.get_surface()
+        if display is None:
+            return
+        fullscreen = bool(display.get_flags() & pygame.FULLSCREEN)
+        if self.options.tela_cheia != fullscreen:
             self.toggle_fullscreen()
+
+    def _save_selected_profile(self, profile: Profile) -> bool:
+        return save_profile(profile, self.profile_slot)
+
+    def list_profiles(self) -> list:
+        """Slots locais anônimos disponíveis para esta instalação desktop."""
+        return list_profile_slots()
+
+    def dismiss_storage_notice(self) -> None:
+        self.storage_notice = None
+
+    def _activate_profile(self, slot_id: str) -> bool:
+        profile, notice = load_profile_with_notice(slot_id)
+        if profile_read_blocked(slot_id):
+            self.storage_notice = notice or "Não consegui ler este piloto. O perfil atual continua aberto."
+            return False
+        if not set_active_profile_slot(slot_id):
+            self.storage_notice = "Não consegui salvar a escolha deste piloto. O perfil atual continua aberto."
+            return False
+        self.profile_slot = slot_id
+        self.profile = profile
+        self.storage_notice = notice
+        self.save_failed = False
+        self.input.clear_keys()
+        self.input.mouse_pos = None
+        self.apply_options()
+        body = self.input.body
+        if body is not None:
+            body.recalibrate()
+            if hasattr(body, "point"):
+                body.point = None
+        from .core import first_scene
+
+        self.go(first_scene(self))
+        return True
+
+    def select_profile(self, slot_id: str) -> bool:
+        """Salva o piloto atual antes de abrir outro; falha de escrita cancela a troca."""
+        if self.platform != "desktop" or slot_id == self.profile_slot:
+            return slot_id == self.profile_slot
+        if not any(slot.id == slot_id for slot in self.list_profiles()):
+            return False
+        self.save()
+        if self.save_failed:
+            self.storage_notice = "Não foi possível salvar este piloto. A troca foi cancelada."
+            return False
+        return self._activate_profile(slot_id)
+
+    def create_profile(self) -> bool:
+        """Cria um slot anônimo e o abre sem pedir nome ou dado pessoal."""
+        if self.platform != "desktop":
+            return False
+        self.save()
+        if self.save_failed:
+            self.storage_notice = "Não foi possível salvar este piloto. O novo piloto não foi criado."
+            return False
+        slot = create_profile_slot()
+        if slot is None:
+            self.storage_notice = "Não consegui criar outro piloto. Confira o espaço disponível."
+            return False
+        return self._activate_profile(slot.id)
 
     def floor_setup(self):
         """Pés sobre a projeção só com a superfície "chão" e os 4 cantos calibrados."""

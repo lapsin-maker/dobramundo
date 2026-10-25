@@ -29,13 +29,32 @@ class WatercolorWorld:
 
     def load(self, biome: str) -> tuple:
         if biome not in self.backdrops:
-            images = self.assets.folder("watercolor", tuple(f"{biome}_{stage}" for stage in range(3)))
-            layers = [images.get(f"{biome}_{stage}") for stage in range(3)]
-            self.backdrops[biome] = (
-                tuple(display_format(pygame.transform.smoothscale(image, (C.WIDTH + 32, C.HEIGHT)))
-                      for image in layers) if all(image is not None for image in layers) else ()
-            )
+            names = tuple(f"{biome}_{stage}" for stage in range(3))
+            prepared = self.assets.folder("watercolor_prepared", names)
+            layers = [prepared.get(name) for name in names]
+            if all(image is not None for image in layers):
+                result = tuple(display_format(image) for image in layers)
+            else:
+                original = self.assets.folder("watercolor", names)
+                layers = [original.get(name) for name in names]
+                result = (
+                    tuple(
+                        display_format(pygame.transform.smoothscale(image, (C.WIDTH + 32, C.HEIGHT)))
+                        for image in layers
+                    )
+                    if all(image is not None for image in layers)
+                    else ()
+                )
+                self.assets.release_folder("watercolor", names)
+            self.assets.release_folder("watercolor_prepared", names)
+            self.backdrops[biome] = result
         return self.backdrops[biome]
+
+    def release_biome(self, biome: str) -> None:
+        self.backdrops.pop(biome, None)
+        if self.composite_key is not None and self.composite_key[0] == biome:
+            self.composite_key = None
+            self.composite = None
 
     @staticmethod
     def stage_mix(visual: float) -> tuple[int, int, int]:

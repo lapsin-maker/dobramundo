@@ -14,6 +14,7 @@ from datetime import datetime
 import pygame
 import pytest
 from conftest import DT, make_run
+from helpers import CAL_READINGS, FakeSource, calibrated, landmarks
 
 from dobramundo import config as C
 from dobramundo.content.biomes import BIOMES
@@ -22,49 +23,17 @@ from dobramundo.game.focus import choose_escape
 from dobramundo.game.player import Player
 from dobramundo.game.run import FlightRun
 from dobramundo.input.hub import InputHub
-from dobramundo.input.pose import SEGMENTS, AxisMapper
 from dobramundo.persistence import Profile
 from dobramundo.scenes.result import apply_run
 
 SEED = 7
 # leituras suficientes para calibrar (2 s a 30 leituras por segundo, com folga)
-CAL_READINGS = 70
 
 
-def landmarks(points: dict, visibility: float = 0.9):
-    data = [(0.5, 0.5, 0.0)] * 33
-    for index, (x, y) in points.items():
-        data[index] = (x, y, visibility)
-    return data
 
 
-class FakeSource:
-    """Fonte de câmera falsa: devolve os pontos que o teste definir."""
-
-    def __init__(self) -> None:
-        self.error = None
-        self.seq = 0
-        self.points = None
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def show(self, points) -> None:
-        self.seq += 1
-        self.points = points
-
-    def snapshot(self):
-        return self.seq, self.points, None
 
 
-def calibrated(segment: str = "tronco_pe") -> AxisMapper:
-    mapper = AxisMapper(SEGMENTS[segment])
-    for _ in range(CAL_READINGS):
-        mapper.feed((0.5, 0.5))
-    return mapper
 
 
 def threat_run(top: float | None = None, focus: bool = True) -> tuple:

@@ -28,6 +28,7 @@ from .map import MapScene  # noqa: E402
 from .options import OptionsScene  # noqa: E402
 from .pilot import PilotScene  # noqa: E402
 from .preparation import PreparationScene  # noqa: E402
+from .profiles import ProfilesScene  # noqa: E402
 from .projection import ProjectionScene  # noqa: E402
 from .result import ResultScene  # noqa: E402
 from .tutorial import DwellPracticeScene, TutorialScene  # noqa: E402
@@ -47,6 +48,7 @@ SCENES.update(
         "dwell_treino": DwellPracticeScene,
         "hangar": HangarScene,
         "piloto": PilotScene,
+        "perfis": ProfilesScene,
         "melhorias": UpgradesScene,
         "opcoes": OptionsScene,
         "preparar": PreparationScene,

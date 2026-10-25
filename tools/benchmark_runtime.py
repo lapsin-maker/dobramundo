@@ -23,6 +23,12 @@ sys.path.insert(0, str(ROOT))
 
 def resident_bytes() -> int:
     if os.name != "nt":
+        try:
+            # Linux: páginas residentes, não o espaço virtual reservado.
+            pages = int(Path("/proc/self/statm").read_text(encoding="ascii").split()[1])
+            return pages * os.sysconf("SC_PAGE_SIZE")
+        except (OSError, ValueError, IndexError, AttributeError):
+            pass
         return 0  # indisponível nesta medição; não significa consumo zero
     from ctypes import wintypes
 
@@ -189,6 +195,7 @@ def main() -> int:
                 "within_60fps_budget_fraction": round(sum(v <= 1000 / 60 for v in values) / len(values), 4),
                 "components": {k: stats(v) for k, v in samples.items()},
                 "rss_bytes": resident_bytes(),
+                "renderer_caches": app.view.cache_stats(),
             }
             if camera is not None:
                 report["flights"][label]["latest_camera_result_age_at_present"] = stats(camera_age)

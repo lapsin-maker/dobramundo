@@ -16,7 +16,7 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..engine.orientation import ROTATIONS, standing, unrotate_point
-from ..input.floor import TARGETS, FloorMap
+from ..input.api import TARGETS, FloorMap
 from ..ui import theme as T
 from ..ui.widgets import row
 from .base import Scene

@@ -382,49 +382,18 @@ def _painterly_finish(surface: pygame.Surface, view: str, look: dict) -> pygame.
     return pygame.transform.scale(image, SIZE)
 
 
-def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
-    """High-resolution native-Pygame illustration; all measurements are logical pixels."""
-    q = 3
-    image = pygame.Surface((SIZE[0] * q, SIZE[1] * q), pygame.SRCALPHA)
-    ink = (31, 53, 93)
-    face = find_option(SKIN_CHOICES, look["pele"]).color or (247, 229, 198)
-    shirt = find_option(SHIRT_COLORS, look["roupa"]).color or (239, 226, 194)
-    hair_color = find_option(HAIR_COLORS, look["cor_cabelo"]).color or (218, 211, 193)
-    eye_color = find_option(EYE_COLORS, look["olhos"]).color or (83, 66, 52)
-
-    def rect(x, y, w, h):
-        return pygame.Rect(round(x * q), round(y * q), round(w * q), round(h * q))
-
-    def ellipse(box, color, border=ink, width=2):
-        outer = rect(*box).inflate(width * 2 * q, width * 2 * q)
-        pygame.draw.ellipse(image, border, outer)
-        pygame.draw.ellipse(image, color, rect(*box))
-
-    def stroke(points, color, width=3, outline=ink):
-        pts = [(round(x * q), round(y * q)) for x, y in points]
-        if outline and width > 1:
-            pygame.draw.lines(image, outline, False, pts, round((width + 2.3) * q))
-        pygame.draw.lines(image, color, False, pts, max(1, round(width * q)))
-        for x, y in (pts[0], pts[-1]):
-            pygame.draw.circle(image, color, (x, y), max(1, round(width * q / 2)))
-
-    def polygon(points, color, border=ink, width=2):
-        pts = [(round(x * q), round(y * q)) for x, y in points]
-        if border:
-            pygame.draw.polygon(image, border, pts)
-        pygame.draw.polygon(image, color, pts)
-        if border and width > 1:
-            pygame.draw.lines(image, border, True, pts, width * q)
-
-    def wash_ellipse(box, color):
-        layer = pygame.Surface(image.get_size(), pygame.SRCALPHA)
-        pygame.draw.ellipse(layer, color, rect(*box))
-        image.blit(layer, (0, 0))
-
-    def wash_arc(box, color, start, stop, width):
-        layer = pygame.Surface(image.get_size(), pygame.SRCALPHA)
-        pygame.draw.arc(layer, color, rect(*box), start, stop, width * q)
-        image.blit(layer, (0, 0))
+def _draw_paper_body(canvas):
+    image = canvas['image']
+    look = canvas['look']
+    rect = canvas['rect']
+    q = canvas['q']
+    ink = canvas['ink']
+    ellipse = canvas['ellipse']
+    stroke = canvas['stroke']
+    polygon = canvas['polygon']
+    wash_arc = canvas['wash_arc']
+    face = canvas['face']
+    shirt = canvas['shirt']
 
     # Soft landing shadow and assistive device are placed behind the body.
     pygame.draw.ellipse(image, (50, 65, 77, 42), rect(25, 212, 140, 14))
@@ -511,6 +480,17 @@ def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
     polygon([(88, 163), (108, 170), (91, 176)], (255, 248, 228), None)
     stroke([(88, 163), (91, 176)], ink, 1.4, None)
 
+def _draw_paper_hair_silhouette(canvas):
+    image = canvas['image']
+    look = canvas['look']
+    rect = canvas['rect']
+    ellipse = canvas['ellipse']
+    stroke = canvas['stroke']
+    polygon = canvas['polygon']
+    q = canvas['q']
+    ink = canvas['ink']
+    hair_color = canvas['hair_color']
+
     # Hair silhouette behind the head, with shape-specific volume and strand rhythm.
     style = look["cabelo"]
     if style not in (UNSELECTED, "raspado"):
@@ -560,6 +540,23 @@ def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
                 polygon([(70, 55), (92, 5), (117, 55)], hair_color, ink, 2)
             elif style == "franja":
                 polygon([(51, 43), (68, 38), (82, 54), (98, 39), (114, 54), (133, 39), (140, 50)], hair_color, ink, 1)
+    return style
+
+def _draw_paper_face(canvas):
+    image = canvas['image']
+    view = canvas['view']
+    look = canvas['look']
+    face = canvas['face']
+    eye_color = canvas['eye_color']
+    hair_color = canvas['hair_color']
+    rect = canvas['rect']
+    ellipse = canvas['ellipse']
+    polygon = canvas['polygon']
+    wash_ellipse = canvas['wash_ellipse']
+    stroke = canvas['stroke']
+    q = canvas['q']
+    ink = canvas['ink']
+    style = canvas['style']
 
     # Head, cheek volume, ears and face-facing/away expressions.
     if view == "flight":
@@ -670,6 +667,15 @@ def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
             ellipse((136, 76, 9, 11), (45, 146, 157), width=1)
             pygame.draw.ellipse(image, (247, 213, 124), rect(139, 78, 3, 4))
 
+def _draw_paper_gesture(canvas):
+    view = canvas['view']
+    face = canvas['face']
+    shirt = canvas['shirt']
+    ellipse = canvas['ellipse']
+    polygon = canvas['polygon']
+    stroke = canvas['stroke']
+    ink = canvas['ink']
+
     # Poses: a paper plane close to the chest, or an arm raised to launch it.
     if view == "segura":
         polygon([(77, 157), (111, 157), (117, 178), (75, 178)], (252, 246, 228), ink, 2)
@@ -681,6 +687,13 @@ def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
         stroke([(132, 150), (146, 132), (160, 115)], shirt, 10)
         ellipse((154, 108, 17, 18), face, width=1)
         polygon([(158, 104), (168, 87), (170, 107)], (255, 248, 228), ink, 1)
+
+def _finish_paper_pilot(canvas):
+    image = canvas['image']
+    view = canvas['view']
+    look = canvas['look']
+    face = canvas['face']
+    style = canvas['style']
 
     # Paper fibers and pigment blooms are clipped to the character silhouette.
     grain = pygame.Surface(image.get_size(), pygame.SRCALPHA)
@@ -705,6 +718,59 @@ def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
         for point in ((76, 72), (114, 72), (95, 103)):
             final.set_at(point, face)
     return final
+
+
+def _draw_pilot_painted(view: str, look: dict) -> pygame.Surface:
+    """High-resolution native-Pygame illustration; all measurements are logical pixels."""
+    q = 3
+    image = pygame.Surface((SIZE[0] * q, SIZE[1] * q), pygame.SRCALPHA)
+    ink = (31, 53, 93)
+    face = find_option(SKIN_CHOICES, look["pele"]).color or (247, 229, 198)
+    shirt = find_option(SHIRT_COLORS, look["roupa"]).color or (239, 226, 194)
+    hair_color = find_option(HAIR_COLORS, look["cor_cabelo"]).color or (218, 211, 193)
+    eye_color = find_option(EYE_COLORS, look["olhos"]).color or (83, 66, 52)
+
+    def rect(x, y, w, h):
+        return pygame.Rect(round(x * q), round(y * q), round(w * q), round(h * q))
+
+    def ellipse(box, color, border=ink, width=2):
+        outer = rect(*box).inflate(width * 2 * q, width * 2 * q)
+        pygame.draw.ellipse(image, border, outer)
+        pygame.draw.ellipse(image, color, rect(*box))
+
+    def stroke(points, color, width=3, outline=ink):
+        pts = [(round(x * q), round(y * q)) for x, y in points]
+        if outline and width > 1:
+            pygame.draw.lines(image, outline, False, pts, round((width + 2.3) * q))
+        pygame.draw.lines(image, color, False, pts, max(1, round(width * q)))
+        for x, y in (pts[0], pts[-1]):
+            pygame.draw.circle(image, color, (x, y), max(1, round(width * q / 2)))
+
+    def polygon(points, color, border=ink, width=2):
+        pts = [(round(x * q), round(y * q)) for x, y in points]
+        if border:
+            pygame.draw.polygon(image, border, pts)
+        pygame.draw.polygon(image, color, pts)
+        if border and width > 1:
+            pygame.draw.lines(image, border, True, pts, width * q)
+
+    def wash_ellipse(box, color):
+        layer = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+        pygame.draw.ellipse(layer, color, rect(*box))
+        image.blit(layer, (0, 0))
+
+    def wash_arc(box, color, start, stop, width):
+        layer = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+        pygame.draw.arc(layer, color, rect(*box), start, stop, width * q)
+        image.blit(layer, (0, 0))
+
+    canvas = locals()
+
+    _draw_paper_body(canvas)
+    canvas["style"] = _draw_paper_hair_silhouette(canvas)
+    _draw_paper_face(canvas)
+    _draw_paper_gesture(canvas)
+    return _finish_paper_pilot(canvas)
 
 
 def draw_pilot(view: str, raw_look: dict) -> pygame.Surface:

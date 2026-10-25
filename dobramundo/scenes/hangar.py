@@ -210,8 +210,13 @@ class HangarScene(Scene):
 
     # ------------------------------------------------------------ desenho
     def draw(self, screen: pygame.Surface) -> None:
-        app = self.app
-        profile = app.profile
+        self._draw_header(screen)
+        self._draw_plane_preview(screen)
+        self._draw_selection(screen)
+        self.toast.draw(screen, self.text, (C.WIDTH // 2 + 120, 600))
+
+    def _draw_header(self, screen: pygame.Surface) -> None:
+        profile = self.app.profile
         T.watercolor_backdrop(screen, "sky")
         self.title(screen, "Hangar de papel")
         wallet_box = pygame.Rect(C.WIDTH - 254, 18, 226, 50)
@@ -226,6 +231,10 @@ class HangarScene(Scene):
             True,
             "midleft",
         )
+
+    def _draw_plane_preview(self, screen: pygame.Surface) -> None:
+        app = self.app
+        profile = app.profile
         card = pygame.Rect(24, 84, 516, 472)
         T.panel(screen, card, T.PAPER, T.NAVY, 250, 22, 2)
         skin = app.view.skin
@@ -275,6 +284,9 @@ class HangarScene(Scene):
             screen, "desviar", (card.left + 176, card.bottom - 48), T.SIZES["small"], T.INK, anchor="midleft"
         )
 
+    def _draw_selection(self, screen: pygame.Surface) -> None:
+        profile = self.app.profile
+        skin = self.app.view.skin
         self.text.blit(
             screen,
             dict(TABS)[self.tab],
@@ -312,8 +324,7 @@ class HangarScene(Scene):
                 else:
                     self.text.blit(screen, "Liso", image_rect.center, T.SIZES["small"], T.INK, True, "center")
                 label = pattern_label(key)
-                if self.text.font(T.SIZES["small"], True).size(label)[0] > button.rect.width - 12:
-                    label = label[:17] + "…"
+                label = T.elide_text(label, self.font("small", True), button.rect.width - 12)
                 self.text.blit(
                     screen,
                     label,
@@ -343,4 +354,3 @@ class HangarScene(Scene):
                 True,
                 "center",
             )
-        self.toast.draw(screen, self.text, (C.WIDTH // 2 + 120, 600))

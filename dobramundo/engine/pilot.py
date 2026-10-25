@@ -18,7 +18,6 @@ from .painted_pilot import PaintedPilot
 from .paper_pilot import draw_pilot
 
 FOLDER = "pilot_layers"
-INK = (29, 36, 51)
 MIN_PILOT_SHARE = 0.32  # leitura do piloto acima da escala do avião durante o voo
 EXPRESSIONS = {"curious", "focused", "happy", "recover"}
 
@@ -103,25 +102,6 @@ def _expression_layer(size: Tuple[int, int], look: dict, pose: str, expression: 
     return pygame.transform.smoothscale(layer, size)
 
 
-def tinted(layer: pygame.Surface, color) -> pygame.Surface:
-    out = layer.copy()
-    out.fill((*color, 255), special_flags=pygame.BLEND_RGBA_MULT)
-    return out
-
-
-def ink_outline(surface: pygame.Surface, color=INK, thickness: int = 2) -> pygame.Surface:
-    """Traço de tinta em volta do piloto (mesma linguagem dos sprites "papel e aquarela")."""
-    mask = pygame.mask.from_surface(surface, 40)
-    line = mask.to_surface(setcolor=(*color, 255), unsetcolor=(0, 0, 0, 0))
-    out = pygame.Surface((surface.get_width() + 2 * thickness, surface.get_height() + 2 * thickness), pygame.SRCALPHA)
-    for dx in range(-thickness, thickness + 1):
-        for dy in range(-thickness, thickness + 1):
-            if dx * dx + dy * dy <= thickness * thickness + 1:
-                out.blit(line, (thickness + dx, thickness + dy))
-    out.blit(surface, (thickness, thickness))
-    return out
-
-
 class PilotRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
@@ -129,9 +109,6 @@ class PilotRenderer:
         self.painted = PaintedPilot(assets)
         self.cache = BoundedCache(32)  # piloto montado por vista e aparência
         self.expression_cache = BoundedCache(16)
-
-    def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
-        return self.assets.folder(FOLDER).get(f"{view}__{name}")
 
     def compose(self, view: str, look: dict, pose: Optional[str] = None,
                 expression: Optional[str] = None) -> Optional[pygame.Surface]:

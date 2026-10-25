@@ -24,7 +24,8 @@ sys.path.insert(0, str(ROOT))
 from dobramundo import __version__  # noqa: E402
 from dobramundo.content import texts  # noqa: E402
 
-STAGE = ROOT / "build" / "cartucho"
+STAGE_ROOT = ROOT / "build"
+STAGE = STAGE_ROOT / "cartucho"
 # Partes que só o executável usa (o console não deixa o cartucho abrir janela nem câmera).
 DESKTOP_ONLY = {"app.py", "main.py", "__main__.py", "selftest.py", "input/camera.py"}
 SKIP_ASSETS = {"pose_model"}
@@ -88,6 +89,10 @@ def ignore_assets(folder: str, names):
 
 
 def stage() -> Path:
+    # A exclusão é limitada ao estágio conhecido, sem seguir junction/symlink.
+    expected = STAGE_ROOT / "cartucho"
+    if STAGE.resolve() != expected.absolute() or any(p.is_symlink() for p in (STAGE_ROOT, STAGE)):
+        raise RuntimeError("Pasta de estágio fora do workspace ou redirecionada")
     if STAGE.exists():
         shutil.rmtree(STAGE)
     STAGE.mkdir(parents=True)

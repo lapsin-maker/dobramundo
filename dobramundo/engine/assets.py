@@ -15,6 +15,7 @@ import pygame
 
 from ..log import log
 from ..paths import asset_dir_candidates
+from .cache import BoundedCache
 
 # Pastas de cenário que formam um único espaço de nomes (os nomes não se repetem).
 SCENERY_FOLDERS = ("dieselpunk_sprites", "scenario_sprites", "era_final_sprites", "biome_sprites")
@@ -46,40 +47,98 @@ def load_image(path: Path, alpha: bool = True) -> Optional[pygame.Surface]:
 
 
 class Assets:
-    """Biblioteca de sprites por pasta, com cache."""
+    """Biblioteca de sprites por pasta, com cache e liberação seletiva."""
 
     def __init__(self) -> None:
-        self._folders: Dict[str, SpriteSet] = {}
-        self._loaded: Dict[str, pygame.Surface] = {}
+        # Índices de nomes/caminhos apenas: não mantenha uma segunda coleção de
+        # superfícies escondida além do cache de imagens decodificadas.
+        self._folders: BoundedCache = BoundedCache(64)
+        self._loaded: BoundedCache = BoundedCache(256, 48 * 1024 * 1024)
         self._scenery: Optional[SpriteSet] = None
 
     def folder(self, name: str, names: Optional[Iterable[str]] = None) -> SpriteSet:
         """Todos os PNGs da pasta (ou só os nomes pedidos, se informados)."""
+        names = None if names is None else tuple(names)
         key = name if names is None else f"{name}|{','.join(sorted(names))}"
-        cached = self._folders.get(key)
-        if cached is not None:
-            return cached
         wanted = None if names is None else set(names)
-        sprites: SpriteSet = {}
-        # Do pacote para o lado do executável: a pasta de maior prioridade sobrescreve.
-        for directory in reversed(asset_dir_candidates(name)):
-            if not directory.is_dir():
-                continue
-            for path in sorted(directory.glob("*.png")):
-                if wanted is not None and path.stem not in wanted:
+        paths = self._folders.get(key)
+        if paths is None:
+            by_name = {}
+            # Do pacote para o lado do executável: a pasta de maior prioridade sobrescreve.
+            for directory in reversed(asset_dir_candidates(name)):
+                if not directory.is_dir():
                     continue
-                image = self._loaded.get(str(path))
-                if image is None:
-                    image = load_image(path)
-                    if image is not None:
-                        self._loaded[str(path)] = image
+                for path in sorted(directory.glob("*.png")):
+                    if wanted is None or path.stem in wanted:
+                        by_name[path.stem] = str(path)
+            paths = tuple(sorted(by_name.items()))
+            self._folders[key] = paths
+        sprites: SpriteSet = {}
+        for stem, path in paths:
+            image = self._loaded.get(path)
+            if image is None:
+                image = load_image(Path(path))
                 if image is not None:
-                    sprites[path.stem] = image
-        self._folders[key] = sprites
+                    self._loaded[path] = image
+            if image is not None:
+                sprites[stem] = image
         return sprites
 
     def sprite(self, folder: str, name: str) -> Optional[pygame.Surface]:
         return self.folder(folder, names=(name,)).get(name)
+
+    def scenery_for(self, names: Iterable[str]) -> SpriteSet:
+        """Carrega somente os nomes de cenário de que a vista ativa precisa."""
+        wanted = set(names)
+        merged: SpriteSet = {}
+        for folder in SCENERY_FOLDERS:
+            merged.update(self.folder(folder, names=wanted))
+        return merged
+
+    def release_folder(self, name: str, names: Optional[Iterable[str]] = None) -> int:
+        """Solta referências de cache a uma pasta, ou a nomes específicos.
+
+        Superfícies que uma cena ainda mantém continuam válidas; seus donos devem
+        soltar essas referências antes de pedir descarte seletivo.
+        """
+        wanted = None if names is None else set(names)
+        folder_keys = [key for key in self._folders if key == name or key.startswith(name + "|")]
+        candidate_paths = set()
+        for key in folder_keys:
+            candidate_paths.update(
+                path for stem, path in self._folders[key] if wanted is None or stem in wanted
+            )
+            del self._folders[key]
+        removed = 0
+        still_indexed = {
+            path for paths in self._folders.values() for _, path in paths
+        }
+        for path in candidate_paths - still_indexed:
+            if path in self._loaded:
+                del self._loaded[path]
+                removed += 1
+        if name in SCENERY_FOLDERS:
+            self._scenery = None
+        return removed
+
+    def release_scenery(self, names: Optional[Iterable[str]] = None) -> int:
+        removed = 0
+        for folder in SCENERY_FOLDERS:
+            removed += self.release_folder(folder, names)
+        return removed
+
+    def cache_stats(self) -> dict:
+        """Contagens e bytes estimados das superfícies retidas no cache da biblioteca."""
+        seen = set()
+        retained = sum(BoundedCache.value_bytes(image, seen) for image in self._loaded.values())
+        if self._scenery is not None:
+            retained += BoundedCache.value_bytes(self._scenery, seen)
+        return {
+            "loaded_images": len(self._loaded),
+            "loaded_surface_bytes": self._loaded.bytes,
+            "unique_retained_surface_bytes": retained,
+            "folder_views": len(self._folders),
+        }
 
     @property
     def scenery(self) -> SpriteSet:

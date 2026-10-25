@@ -1,5 +1,12 @@
 # Histórico do Dobramundo
 
+## 1.6.0 — 2026-10-25
+
+- Perfis locais independentes com cartões anônimos, preservação do save legado e recuperação a partir de cópias anteriores; falhas de leitura bloqueiam gravação destrutiva.
+- Preparação de sessão: exploração sem eliminação, limite opcional de 120/180/240 s, assistência previsível e sementes comunitárias repetíveis. Resultados parciais preservam ganhos sem registrar conclusão não alcançada.
+- Missões oferecidas conforme alvos disponíveis; repetição de desafio mantém parâmetros selecionados. Exceções do cartucho passam a ser registradas sem conteúdo dos perfis.
+- Arquitetura de cenas permite fábrica injetável para testes e integração. Validação de release e aceite presencial desta versão ainda pendentes.
+
 ## 1.5.0 — 2026-10-25
 
 - Câmera com encerramento seguro e métricas locais de latência.
@@ -8,13 +15,13 @@
 - Carregamento seletivo do piloto, fundos opacos, renderização e pré-carga otimizadas.
 - README, ferramentas e versão da entrega alinhados.
 
-## Prévia — sprint 3: controle confortável e mundo vivo
+## Entrega anterior — sprint 3: controle confortável e mundo vivo
 
 O editor confirma escolhas mais devagar e exige sair do alvo antes de repetir. O controle de cabeça tolera melhor a perda de um marco facial, oferece calibração dos quatro alcances confortáveis e interrompe o cursor quando a leitura envelhece. Alto contraste também amplia avião, objetos e passagens, com escala ajustável. A vila começa industrial e colorida, tem moradores e pedidos persistentes e evolui para jardins, energia e alimentos integrados às construções.
 
 As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
 
-Baixe **Windows, cartucho e galeria** na [prévia da sprint 3](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint3-controle-e-vida-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT3.md) inclui instalação, validação, desempenho medido e aceite presencial pendente.
+Os artefatos dessa sprint pertencem à publicação histórica correspondente. Consulte a release mais recente para os downloads atuais.
 
 ## Entrega anterior — sprint 2: aquarela em movimento
 

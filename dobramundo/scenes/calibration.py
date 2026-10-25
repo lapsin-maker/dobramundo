@@ -12,7 +12,7 @@ from typing import Optional
 import pygame
 
 from .. import config as C
-from ..input.pose import SEGMENTS
+from ..input.api import SEGMENTS
 from ..ui import theme as T
 from ..ui.widgets import ring, row
 from .base import Scene

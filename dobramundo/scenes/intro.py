@@ -19,6 +19,15 @@ import pygame
 
 from .. import config as C
 from ..content import texts
+from ..content.story import (
+    LAUNCH_CAPTION_S,
+    LAUNCH_FADE_S,
+    LAUNCH_GLIDE_S,
+    LOGO_APPEAR_S,
+    LOGO_FADE_S,
+    PAGE_DURATIONS,
+    PAGE_TURN_S,
+)
 from ..engine import paper
 from ..ui import theme as T
 from ..util import clamp, lerp, lerp_color, rgb, smoothstep
@@ -49,8 +58,8 @@ FOLDS: List[Dict[str, Poly]] = [
         "flap_r": [(1.05, 0.55), (0, -0.85), (0.16, 0.42)],
     },
 ]
-PAGES = (3.4, 4.2, 6.2, 5.2)  # duração de cada página (s)
-TURN_S = 0.45  # virada de página
+PAGES = PAGE_DURATIONS
+TURN_S = PAGE_TURN_S
 SHEET_SCALE = 190
 CHILD_FEET = (300, 560)
 HANDS = (335, 405)  # onde as mãos da criança seguram a folha (página 2)
@@ -317,7 +326,7 @@ class IntroScene(Scene):
             self.draw_child(screen, "menu", (150, 600), (220, 280), expression="focused")
             self.caption(screen, texts.INTRO_CAPTIONS[2], FOLD_STEPS[step])
         else:
-            launch_alpha = 255 if reduced_motion else int(255 * clamp((PAGES[3] - t) / 0.6, 0.0, 1.0))
+            launch_alpha = 255 if reduced_motion else int(255 * clamp((PAGES[3] - t) / LAUNCH_FADE_S, 0.0, 1.0))
             self.draw_child(
                 screen,
                 # A animação do avião no céu é o gesto do lançamento; omite a
@@ -327,7 +336,7 @@ class IntroScene(Scene):
                 alpha=launch_alpha,
                 expression="happy",
             )
-            u = 1.0 if reduced_motion else smoothstep(t / 3.2)
+            u = 1.0 if reduced_motion else smoothstep(t / LAUNCH_GLIDE_S)
             x = lerp(440, C.WIDTH - 140, u)
             y = lerp(360, 120, u) - (0 if reduced_motion else math.sin(u * math.pi) * 90)
             if not self.trail or (abs(self.trail[-1][0] - x) > 6):
@@ -353,11 +362,11 @@ class IntroScene(Scene):
                 paper.sparkles(
                     screen, pygame.Rect(0, 80, C.WIDTH, 400), elapsed_total, clamp((t - 1.5) / 2.0, 0.0, 1.0), T.SUN
                 )
-            self.caption(screen, texts.INTRO_CAPTIONS[4] if t > 2.4 else texts.INTRO_CAPTIONS[3])
-            if t > 2.6:
+            self.caption(screen, texts.INTRO_CAPTIONS[4] if t > LAUNCH_CAPTION_S else texts.INTRO_CAPTIONS[3])
+            if t > LOGO_APPEAR_S:
                 logo = self.app.assets.sprite("ui", "logo")
                 if logo is not None:
-                    alpha = clamp((t - 2.6) / 1.0, 0.0, 1.0)
+                    alpha = clamp((t - LOGO_APPEAR_S) / LOGO_FADE_S, 0.0, 1.0)
                     img = self.scaled(logo, (520, 291))
                     img.set_alpha(int(255 * alpha))
                     screen.blit(img, img.get_rect(center=(C.WIDTH // 2, 250)))
