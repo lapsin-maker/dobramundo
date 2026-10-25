@@ -7,7 +7,6 @@ segmento ou seguir com teclado e mouse.
 
 from __future__ import annotations
 
-import math
 from typing import Optional
 
 import pygame
@@ -15,7 +14,7 @@ import pygame
 from .. import config as C
 from ..input.pose import SEGMENTS
 from ..ui import theme as T
-from ..ui.widgets import row
+from ..ui.widgets import ring, row
 from .base import Scene
 
 CONFIRM_S = 1.0  # depois de calibrar, mostra "pronto" um instante antes de seguir
@@ -105,23 +104,18 @@ class CalibrationScene(Scene):
             message, detail = "Não estou vendo o segmento", "Entre na área da câmera."
         else:
             message, detail = segment.hint if segment else "Fique parado", "Fique parado assim um instante..."
-        self.text.blit(screen, message, (card.centerx, card.top + 24), T.SIZES["title"], T.NAVY, True, "midtop")
+        size = (
+            T.SIZES["title"]
+            if self.text.font(T.SIZES["title"], True).size(message)[0] < card.width - 60
+            else T.SIZES["label"]
+        )
+        self.text.blit(screen, message, (card.centerx, card.top + 24), size, T.NAVY, True, "midtop")
         self.text.blit(screen, detail, (card.centerx, card.top + 74), T.SIZES["label"], T.INK, anchor="midtop")
         center = (card.left + 250, card.top + 270)
         radius = 110
         pygame.draw.circle(screen, T.PAPER_DARK, center, radius, 18)
         progress = body.progress
-        if progress > 0:
-            rect = pygame.Rect(0, 0, radius * 2, radius * 2)
-            rect.center = center
-            pygame.draw.arc(
-                screen,
-                T.GREEN if body.calibrated else T.ORANGE,
-                rect,
-                math.pi / 2,
-                math.pi / 2 + 2 * math.pi * progress,
-                18,
-            )
+        ring(screen, center, radius, 18, progress, T.GREEN if body.calibrated else T.ORANGE)
         self.text.blit(screen, f"{int(progress * 100)}%", center, T.SIZES["hero"], T.NAVY, True, "center")
         if body.preview is not None:
             if self.preview_bytes is not body.preview:

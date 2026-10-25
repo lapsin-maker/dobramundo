@@ -237,10 +237,25 @@ class Menu:
         pygame.draw.circle(screen, T.NAVY, (x, y), 18, 4)
         progress = self.dwell / dwell_time if self.hover is not None and self.armed else 0.0
         if progress > 0:
-            rect = pygame.Rect(0, 0, 50, 50)
-            rect.center = (x, y)
-            pygame.draw.arc(screen, T.ORANGE, rect, math.pi / 2, math.pi / 2 + 2 * math.pi * min(1.0, progress), 7)
+            ring(screen, (x, y), 25, 7, progress, T.ORANGE)
         pygame.draw.circle(screen, T.ORANGE, (x, y), 6)
+
+
+def ring(
+    screen: pygame.Surface, center: Tuple[int, int], radius: int, width: int, progress: float, color: Color
+) -> None:
+    """Anel de progresso (polígono cheio, sem o serrilhado do pygame.draw.arc grosso)."""
+    progress = max(0.0, min(1.0, progress))
+    if progress <= 0:
+        return
+    steps = max(3, int(48 * progress))
+    cx, cy = center
+    outer, inner = [], []
+    for i in range(steps + 1):
+        a = -math.pi / 2 + 2 * math.pi * progress * i / steps
+        outer.append((cx + radius * math.cos(a), cy + radius * math.sin(a)))
+        inner.append((cx + (radius - width) * math.cos(a), cy + (radius - width) * math.sin(a)))
+    pygame.draw.polygon(screen, color, outer + inner[::-1])
 
 
 def grid(

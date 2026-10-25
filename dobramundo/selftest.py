@@ -31,6 +31,26 @@ def _frame_stats(times: List[float]) -> Dict[str, float]:
     }
 
 
+def pose_check() -> dict:
+    """O detector de pose carrega? (bibliotecas e modelo empacotados; não abre a webcam)."""
+    from .input.pose import create_landmarker
+    from .paths import find_pose_model
+
+    model = find_pose_model()
+    result = {"modelo": str(model) if model else None, "detector": "não testado"}
+    if model is None:
+        return result
+    try:
+        landmarker = create_landmarker(model)
+        landmarker.close()
+        result["detector"] = "ok"
+    except ImportError as exc:
+        result["detector"] = f"bibliotecas ausentes ({exc.name})"
+    except Exception as exc:  # modelo corrompido, runtime do MediaPipe etc.
+        result["detector"] = f"erro ({exc.__class__.__name__})"
+    return result
+
+
 def run_self_test(frames: int) -> int:
     from .app import App
     from .scenes.about import AboutScene
@@ -122,6 +142,7 @@ def run_self_test(frames: int) -> int:
             **_frame_stats(times[10:]),
         }
     report["voos"] = flights
+    report["camera"] = pose_check()
     report["status"] = "ok"
     app.input.stop_body()
     path = user_data_dir() / "self_test.json"
