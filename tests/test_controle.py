@@ -1,0 +1,166 @@
+"""Controle corporal (sem webcam): pontos por segmento, calibração, presença e permanência."""
+
+from __future__ import annotations
+
+import pygame
+import pytest
+
+from dobramundo import config as C
+from dobramundo.input.hub import AUTO_PAUSE_S, InputHub
+from dobramundo.input.pose import SEGMENTS, AxisMapper, BodyControl, segment_point
+from dobramundo.ui.widgets import Button, Menu
+
+
+def landmarks(points: dict, visibility: float = 0.9):
+    data = [(0.5, 0.5, 0.0)] * 33
+    for index, (x, y) in points.items():
+        data[index] = (x, y, visibility)
+    return data
+
+
+class FakeSource:
+    """Fonte de câmera falsa: devolve os pontos que o teste definir."""
+
+    def __init__(self) -> None:
+        self.error = None
+        self.seq = 0
+        self.points = None
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def show(self, points) -> None:
+        self.seq += 1
+        self.points = points
+
+    def snapshot(self):
+        return self.seq, self.points, None
+
+
+@pytest.mark.parametrize("key", sorted(SEGMENTS))
+def test_cada_segmento_vira_um_ponto(key):
+    segment = SEGMENTS[key]
+    points = {i: (0.4, 0.6) for i in segment.landmarks}
+    assert segment_point(landmarks(points), segment) == pytest.approx((0.4, 0.6))
+    assert segment_point(landmarks(points, visibility=0.1), segment) is None
+
+
+def test_tronco_precisa_de_dois_pontos():
+    segment = SEGMENTS["tronco_pe"]
+    assert segment_point(landmarks({11: (0.5, 0.5)}), segment) is None
+
+
+def calibrated(segment: str = "tronco_pe") -> AxisMapper:
+    mapper = AxisMapper(SEGMENTS[segment])
+    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+        mapper.feed((0.5, 0.5))
+    return mapper
+
+
+def test_calibracao_usa_a_mediana():
+    mapper = AxisMapper(SEGMENTS["cabeca"])
+    for i in range(AxisMapper.CALIBRATION_SAMPLES):
+        mapper.feed((0.9, 0.9) if i == 3 else (0.5, 0.4))
+    assert mapper.base == (0.5, 0.4) and mapper.progress == 1.0
+
+
+def test_eixos_com_zona_morta_e_saturacao():
+    mapper = calibrated()
+    mapper.feed((0.505, 0.5))
+    assert mapper.axes() == (0.0, 0.0)
+    for _ in range(40):
+        mapper.feed((0.7, 0.3))  # direita e para cima (y da imagem diminui)
+    ax, ay = mapper.axes()
+    assert ax == pytest.approx(1.0, abs=1e-3) and ay == pytest.approx(1.0, abs=1e-3)
+
+
+def test_sensibilidade_reduz_o_movimento_necessario():
+    low, high = calibrated(), calibrated()
+    high.sensitivity = 2.0
+    for mapper in (low, high):
+        for _ in range(40):
+            mapper.feed((0.53, 0.5))
+    assert high.axes()[0] > low.axes()[0]
+
+
+def test_presenca_e_pausa_automatica():
+    hub = InputHub()
+    source = FakeSource()
+    hub.source_factory = lambda: source
+    hub.set_segment("mao_direita")
+    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+        source.show(landmarks({16: (0.5, 0.5)}))
+        hub.update(1 / 30)
+    assert hub.body_ready and not hub.out_of_area()
+    for _ in range(int(AUTO_PAUSE_S * 30) + 2):
+        source.show(landmarks({}))
+        hub.update(1 / 30)
+    assert hub.out_of_area() and not hub.back_in_area()
+    for _ in range(60):
+        source.show(landmarks({16: (0.5, 0.5)}))
+        hub.update(1 / 30)
+    assert hub.back_in_area()
+
+
+def test_cursor_corporal_cobre_a_tela():
+    hub = InputHub()
+    source = FakeSource()
+    hub.source_factory = lambda: source
+    hub.set_segment("cabeca")
+    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+        source.show(landmarks({0: (0.5, 0.5), 7: (0.5, 0.5), 8: (0.5, 0.5)}))
+        hub.update(1 / 30)
+    for _ in range(40):
+        source.show(landmarks({0: (0.6, 0.6), 7: (0.6, 0.6), 8: (0.6, 0.6)}))
+        hub.update(1 / 30)
+    x, y = hub.body_pointer()
+    assert x > C.WIDTH * 0.9 and y > C.HEIGHT * 0.9
+    ix, iy = hub.flight_axes()
+    assert ix > 0.9 and iy < -0.9
+
+
+def test_body_control_ignora_leituras_repetidas():
+    source = FakeSource()
+    body = BodyControl(source, SEGMENTS["mao_esquerda"])
+    source.show(landmarks({15: (0.5, 0.5)}))
+    body.poll(0.03)
+    body.poll(0.03)
+    assert len(body.mapper.samples) == 1
+
+
+# ----------------------------------------------------------- permanência
+def test_permanencia_aciona_uma_vez_por_entrada():
+    hits = []
+    menu = Menu([Button(pygame.Rect(0, 0, 100, 60), "A", lambda: hits.append("a"))])
+    for _ in range(30):
+        menu.update(0.05, (50, 30), 1.2)
+    assert hits == ["a"]  # 1,5 s parado: um acionamento só
+    menu.update(0.05, (500, 500), 1.2)
+    for _ in range(30):
+        menu.update(0.05, (50, 30), 1.2)
+    assert hits == ["a", "a"]
+
+
+def test_teclado_move_o_foco_e_confirma():
+    hits = []
+    menu = Menu(
+        [
+            Button(pygame.Rect(0, 0, 100, 60), "A", lambda: hits.append("a")),
+            Button(pygame.Rect(200, 0, 100, 60), "B", lambda: hits.append("b")),
+        ]
+    )
+    menu.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RIGHT))
+    menu.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN))
+    assert hits == ["b"]
+
+
+def test_botao_desabilitado_nao_aciona():
+    hits = []
+    menu = Menu([Button(pygame.Rect(0, 0, 100, 60), "A", lambda: hits.append("a"), enabled=False)])
+    for _ in range(40):
+        menu.update(0.05, (50, 30), 1.0)
+    menu.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(50, 30)))
+    assert hits == []
