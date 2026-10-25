@@ -2,6 +2,8 @@
 
 O cenário de voo agora avança de verdade. A pintura é o horizonte distante; água e solo são projetados em perspectiva a partir da distância percorrida, e árvores e construções se aproximam e passam pelas laterais. Isso corrige o fundo estático da primeira prévia.
 
+Executável Windows, galeria portátil e instruções de instalação: [entrega da sprint 2](ENTREGA_SPRINT2.md).
+
 ## Percurso
 
 - Manaus mantém águas naturais do Negro e Solimões, palafitas, barcos, porto, Teatro Amazonas e vegetação amazônica. A cor escura do Negro não significa poluição.
@@ -41,7 +43,7 @@ O resultado oferece acesso à próxima obra. A prévia mostra a estrutura no pr�
 
 - `engine/painted_route.py`: perspectiva por faixas de dois pixels, buffers fixos por linha, texturas com repetição espelhada e billboards regionais com cache limitado.
 - `engine/watercolor.py`: horizonte por estágio, composição cacheada e fallback para cenário procedural móvel se o pacote novo estiver incompleto.
-- `painted_pilot.py` e `painted_planes.py`: atlases, máscaras de cor e composição; `paper_pilot.py` mantém o fallback.
+- `engine/painted_pilot.py` e `engine/painted_planes.py`: atlases, máscaras de cor e composição, incluindo cabelos e dispositivos assistivos pintados em `pilot_hair_front.png`, `pilot_hair_back.png` e `pilot_mobility.png`; `engine/paper_pilot.py` mantém o fallback.
 - `paper_items.py` e `village_art.py`: objetos pintados, recortes por alfa e alternativas procedurais.
 - `scenes/tutorial.py`: prática isolada da progressão real; `upgrades.py` registra a transformação da obra.
 - `Assets` carrega os PNGs pedidos e compartilha a mesma imagem entre consultas, evitando decodificar a pasta inteira a cada sprite.
@@ -51,6 +53,7 @@ A arte foi gerada para o projeto. Prompts e saídas estão em [generation.json](
 ## Validação
 
 - **365 testes passaram** na suíte completa local (Python 3.12, 87,94 s), incluindo a auditoria do cartucho T-TEA. Ruff e `git diff --check` passaram.
+- O [CI do código da sprint](https://github.com/lapsin-maker/dobramundo/actions/runs/40221637599), commit `b08bcac82a2ffc883f515debcb25afcf8b340861`, passou em Python 3.8 e 3.12: lint, testes e self-test. Consulte os checks do [PR #9](https://github.com/lapsin-maker/dobramundo/pull/9) para a revisão documental posterior.
 - Self-tests de **1.200 quadros por cidade** passaram no código-fonte e no executável Windows. As duas cidades chegaram ao terceiro estágio, o detector de pose foi criado e não houve falha registrada.
 - Os 28 PNGs e os manifestos/créditos do pacote aquarelado foram comparados por SHA-256 entre o repositório e o bundle: nenhum divergente ou ausente.
 - A revisão independente encontrou duas falhas de fallback (atlas de margens vazio e preparo de recursos incompleto), ambas corrigidas e cobertas por regressões.

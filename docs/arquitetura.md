@@ -306,7 +306,15 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - **Seleção:** `HOLD_MARGIN` (30 px) e `LEAVE_TOLERANCE` (0,5 s) em `ui/widgets.py`.
 - **Cartucho:** `tools/build_cartridge.py` monta `build/cartucho/` sem `app.py`, `main.py`, `selftest.py`, `input/camera.py` e o modelo de pose, gera `CREDITOS.md` e roda `tsdk check` e `tsdk build`. `PLATFORM_KEYS` (ESC, P e F2) fica com o console, e `PLAYER_OPTIONS` define as opções que acompanham a criança registrada.
 
-## Mudanças da versão 1.4
+## Mudanças da sprint aquarelada
+
+`engine/painted_route.py` projeta terreno e margens usando a distância do mundo; `engine/watercolor.py` compõe o horizonte e escolhe o cenário procedural de reserva quando o pacote está incompleto. O piloto usa `engine/painted_pilot.py`, os aviões usam `engine/painted_planes.py`, e `engine/pilot.py` integra o personagem às vistas. As camadas low-poly e `engine/paper_pilot.py` permanecem para compatibilidade e fallback.
+
+`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. O fluxo atual começa em piloto → aviso/calibração quando necessários → vila; a abertura narrativa é opcional. Implementação, capturas e validação: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md). Pacotes e instalação: [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+
+## Histórico — versão 1.4
+
+Os itens abaixo registram a implementação anterior à sprint aquarelada. Os fluxos e renderizadores atuais estão descritos nas seções anteriores.
 
 - **Fontes e cartões** (`ui/theme.py`): `FONT_FILES` carrega Fredoka (títulos e botões), Nunito (leitura) e Patrick Hand (legendas à mão, com `hand=True`) de `assets/fonts`, com `SysFont` como reserva. `panel` desenha cartões de papel com sombra (`SHADOW_OFFSET`), grão (`paper_grain`, de ruído fixo) e borda de tinta, em cache por tamanho e cor.
 - **Filtro de papel** (`tools/stylize.py`): `stylize_image` aplica degraus de claridade, traço nas quebras internas, contorno de tinta azul-marinho e grão. `FOLDERS` lista as pastas de sprites, e `LIGHT_INK_FOLDERS` (aviões) recebe um traço mais fino e cinza-azulado. `tools/build_assets.py` aplica o filtro em cada sprite gerado, com `params_for`. As camadas do piloto não passam por ele.
