@@ -4,7 +4,7 @@ Os scripts desta pasta criam os arquivos de `assets/` que o jogo carrega. O jogo
 
 A pasta tem duas partes:
 
-- **Geradores ativos** (`build_assets.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
+- **Geradores ativos** (`build_assets.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py`, `balance.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
 - **Legado** (`legado/`). Scripts do protótipo Eco Runner. Dependem de materiais externos que não estão no repositório (ver a seção própria).
 
 ## Ambiente
@@ -34,6 +34,7 @@ make_grass_texture.py -----------> assets/ground/grass.png
 make_ground_textures.py ---------> assets/ground/dry_soil.png, agreste.png
                                    (importa make_grass_texture.py)
 measure_obstacles.py ------------> nada gravado: confere as colisões contra os sprites
+balance.py ----------------------> nada gravado: simula voos e mede duração da fase e recursos
 ```
 
 ## Geradores ativos
@@ -88,3 +89,13 @@ Os arquivos abaixo estão em `assets/`, mas nenhum script do repositório os ger
 - `assets/pose_model/pose_landmarker_lite.task`: modelo do MediaPipe Pose, de origem externa (Google).
 
 Os PNG de `assets/dieselpunk_sprites`, `scenario_sprites`, `skyline_sprites` e `atmosphere` dependem do `render_models.py` do legado e da pasta `modelos_3d`, que não está no repositório.
+
+## Equilíbrio (`balance.py`)
+
+Simula voos com um piloto automático que pega uma fração dos resíduos (`--coleta 0.4` = 4 de cada 10), sem colisões, e mostra por modo a duração da fase, quando cada estágio começa e quantos recursos um voo rende, além de quantos voos bastam para comprar tudo. Rode depois de mexer em `dobramundo/config.py`, `dobramundo/content/progress.py` ou `dobramundo/game/missions.py`:
+
+```
+python tools/balance.py --coleta 0.4 --voos 10
+```
+
+O teste `test_fase_dura_alguns_minutos` (em `tests/test_gameplay.py`) trava a duração da fase entre 2,5 e 6 minutos.

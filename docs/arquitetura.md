@@ -201,3 +201,13 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - Se o JSON do perfil estiver ilegível, `load_profile` guarda o arquivo como `dobramundo_perfil.corrompido.json` e recomeça com o perfil padrão (e a importação do protótipo).
 - A abertura completa aparece só na primeira execução (`abertura_vista`); depois ela fica em Opções > "Ver a abertura".
 - O mapa (`scenes/map.py`) tem posições fixas para duas fases; uma terceira fase pede reorganizar os botões.
+
+## Mudanças da versão 1.1
+
+- **Registro de cenas** (`scenes/__init__.py`): as cenas trocam de tela pelo nome (`self.goto("vila")`, `self.fly(bioma)`), sem importar umas às outras; voltar para a vila é o `back()` padrão.
+- **Metas curtas** (`game/missions.py`): `MissionTracker` sorteia uma meta por vez; o `FlightRun` conta coletas, power-ups e obstáculos que passam pelo avião sem acertá-lo (`Entity.hit` e `Entity.passed`) e publica o evento `mission`.
+- **Câmera única** (`input/hub.py`): o `InputHub` mantém uma só fonte de câmera aberta; trocar de segmento só troca o `BodyControl`. A calibração conta tempo real (2 s), e `inverter_vertical` atende câmeras vistas de cima.
+- **Caches**: todos usam `engine/cache.py:BoundedCache` (descarte gradual do mais antigo).
+- **Desenho da pista**: `WorldView.track_palette`, `draw_road`, `draw_lanes` e `curbs`; o chão usa `GroundRenderer.row_texture` e `queue_rows`. O estágio solarpunk se chama `solar` em todo o código (`solar_since`, `segment_solar`).
+- **FlightView** (Protocol em `engine/world_view.py`) documenta o que o desenho lê de um voo.
+- **Robustez**: perfil inválido ganha cópia `.corrompido.json`; falha ao salvar aparece na vila; avisos vão para `dobramundo.log` (`log.py`); o self-test reprova com `status: falhou` e código 1.

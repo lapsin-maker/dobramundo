@@ -92,12 +92,12 @@ class Audio:
             return
         self.current = name
         self.channels[self.active].fadeout(MUSIC_FADE_MS)
-        self.active = 1 - self.active  # a próxima trilha nunca usa o canal que ainda está sumindo
         if name is None:
-            return
+            return  # o canal ativo segue marcado: a próxima trilha entra no outro, não no que está sumindo
         sound = self.sound(name)
         if sound is None:
             return
+        self.active = 1 - self.active
         channel = self.channels[self.active]
         channel.set_volume(self.effective_music())
         channel.play(sound, loops=-1, fade_ms=MUSIC_FADE_MS)
