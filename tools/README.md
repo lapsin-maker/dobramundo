@@ -17,9 +17,9 @@ python tools/check_routes.py --seeds 1000 --out build/rotas.json
 
 `check_routes` verifica sementes reproduzíveis, diversidade, auditoria completa de uma amostra, continuidade após avanço e tempos de inserção/geração. O contrato geométrico não substitui testes de controle corporal e conforto com a pessoa. Veja [condições e validação](../docs/ENTREGA_1_5.md).
 
-## Geração de assets
-
 No benchmark, `--paced` cede CPU entre quadros para mirar 60 fps, excluindo esse sono dos tempos de processamento. Sem a opção, a execução é um teste de estresse sem limite de quadros. Registre a modalidade ao comparar resultados.
+
+## Geração de assets
 
 Os scripts desta pasta criam parte dos arquivos de `assets/` que o jogo carrega. O jogo não precisa das ferramentas para rodar: ele usa os PNG, OGG e JSON já gerados. Use-as para regenerar ou ajustar os assets indicados na tabela abaixo.
 

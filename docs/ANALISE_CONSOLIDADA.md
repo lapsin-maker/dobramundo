@@ -15,6 +15,8 @@ Base: revisão da main `4a650b2`, análise externa `analise-repositorio-dobramun
 
 ## Achados do anexo incorporados
 
+Os seis P0 acima foram implementados. A entrega passou por 446 testes, CI em Python 3.8/3.12, auditoria de 4.000 sementes e medição com webcam local. As [notas e métricas da versão 1.5](ENTREGA_1_5.md) registram picos, carregamento inicial, memória acumulada e o aceite presencial ainda necessário.
+
 | Achado | Conferência / encaminhamento |
 |---|---|
 | Piloto decodifica toda a pasta aquarela | Confirmado: 39 imagens, 245.378.820 bytes de superfícies dessa pasta na abertura. Baseline local: 2.793,9 ms para criar App e incremento de RSS de 377.925.632 bytes. Corrigido com seleção explícita das camadas do piloto. |

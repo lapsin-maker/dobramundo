@@ -19,6 +19,8 @@ O código-fonte completo está nos arquivos automáticos da tag. A galeria cont�
 
 ## Validação
 
+**446 testes locais passaram**, assim como lint e CI em Python 3.8/3.12. O self-test passou no código-fonte e no executável 1.5.0, carregando o detector de pose, desenhando 14 telas e percorrendo 1.200 quadros por bioma. O SDK validou 505 arquivos portáveis; o cartucho teve CRC e correspondência das fontes conferidos. Os pacotes incluem hashes SHA-256.
+
 Os resultados e hashes estão em [validacao-1.5.0.json](validacao-1.5.0.json). Componentes do benchmark estão aninhados: seus tempos não devem ser somados. Foram usados Windows 11, Python 3.12.10, canvas 1100×650, áudio desabilitado e 600 quadros medidos por cenário após 60 quadros de preparação.
 
 | Cenário | P95 sem câmera, sem limite de quadros | P95 com webcam e cadência de 60 fps | Máximo com webcam e cadência |
