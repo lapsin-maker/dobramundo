@@ -39,7 +39,7 @@ def usa_camera_falsa(app, source, controle: str = "mao_direita") -> None:
     app.apply_options()
 
 
-def test_calibracao_chega_a_pronto_e_volta_para_o_voo(app):
+def test_calibracao_aguarda_continuar_e_nao_sai_durante_alcances(app):
     source = FakeSource()
     usa_camera_falsa(app, source)
     voo = FlightScene(app, "amazonia")
@@ -57,11 +57,18 @@ def test_calibracao_chega_a_pronto_e_volta_para_o_voo(app):
         if app.input.body.calibrated:
             break
     assert app.input.body.calibrated and app.input.body.progress == 1.0
-    for _ in range(100):  # o "Pronto!" fica um instante na tela antes de seguir
+    for _ in range(100):
         source.show(landmarks({16: (0.5, 0.5)}))
         app.step(PASSO, [])
-        if app.scene is voo:
-            break
+    assert app.scene is scene  # calibração concluída aguarda confirmação explícita
+    scene.begin_guided()
+    for _ in range(40):
+        source.show(landmarks({16: (0.65, 0.5)}))
+        app.step(PASSO, [])
+    assert scene.guided_index == 0 and app.scene is scene
+    button = next(b for b in scene.menu.buttons if b.key == "continuar")
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=button.rect.center))
+    app.step(PASSO, [])
     assert app.scene is voo
 
 

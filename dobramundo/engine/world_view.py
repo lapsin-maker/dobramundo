@@ -21,6 +21,7 @@ from ..game.entities import Beam, Entity, FloatingText, entity_hitbox
 from ..game.player import Player
 from ..game.world import World
 from ..util import Color, clamp, haze_at, lerp_color, rgb, smoothstep
+from .accessible_view import screen_point, viewport
 from .assets import Assets
 from .cache import BoundedCache
 from .ground import GroundRenderer
@@ -101,6 +102,11 @@ class WorldView:
         self.elapsed = 0.0
         self.mode = "normal"
         self.high_contrast = False
+        self.contrast_scale = 1.3
+        self.celebration = 0.0
+        self.viewport = pygame.Rect(0, 0, C.WIDTH, C.HEIGHT)
+        self.accessible_canvas = None
+        self.player_rect = pygame.Rect(0, 0, 246, 180)
         self.reduce_motion = False
         self.show_hitboxes = False
         self.warm_queue: Optional[Iterator] = None
@@ -547,7 +553,8 @@ class WorldView:
             C.PLANE_WIDTH * (1.1 - player.y / 800),
             int(clamp(150 - player.y * 0.5, 40, 150)),
         )
-        if not self.reduce_motion and run.invulnerable_timer > 0 and int(self.elapsed * 14) % 2:
+        blink = not self.reduce_motion and not self.high_contrast
+        if blink and run.invulnerable_timer > 0 and int(self.elapsed * 14) % 2:
             return  # pisca depois de uma colisão
         bob = 0 if self.reduce_motion else math.sin(self.elapsed * 3.0) * 3.0
         sx, sy, scale = project(player.x, player.y + bob, C.PLAYER_Z, self.cam)
@@ -559,6 +566,8 @@ class WorldView:
             look_key += "#hc"
         pose = player.maneuver_pose()
         if sprite is None:
+            self.player_rect = pygame.Rect(0, 0, width, max(24, round(width * 0.6)))
+            self.player_rect.center = round(sx), round(sy)
             self.draw_paper_fallback(screen, int(sx), int(sy), width, player.roll + (pose[0] if pose else 0.0))
             return
         aspect = sprite.get_height() / max(1, sprite.get_width())
@@ -590,6 +599,8 @@ class WorldView:
             # papel tremulando no ar e nariz que sobe ou desce com a velocidade vertical
             # (em degraus, para reaproveitar as imagens giradas prontas)
             flutter = 0 if self.reduce_motion else C.PAPER_FLUTTER_DEG * math.sin(self.elapsed * 7.0)
+            if not self.reduce_motion and self.celebration > 0:
+                flutter += 5 * math.sin(self.celebration * math.tau) * min(1.0, self.celebration)
             pitch = clamp(player.vy / C.MAX_VERTICAL_SPEED, -1.0, 1.0)
             height = max(4, int(height * (1.0 + round(pitch * C.PITCH_STRETCH * 25) / 25)))
             base = self.cache.get(sprite, ("plane", look_key), (width, height))
@@ -598,7 +609,8 @@ class WorldView:
             image = self.rotations.get(key)
             if image is None:
                 image = self.remember_rotation(key, pygame.transform.rotozoom(base, angle, 1.0))
-        screen.blit(image, image.get_rect(center=(int(sx), int(sy))))
+        self.player_rect = image.get_rect(center=(int(sx), int(sy)))
+        screen.blit(image, self.player_rect)
         if run.shield_timer > 0:
             pulse = 0.5 + 0.5 * math.sin(self.elapsed * 8.0)
             pygame.draw.ellipse(
@@ -683,18 +695,35 @@ class WorldView:
 
     @staticmethod
     def desaturate(screen: pygame.Surface) -> None:
-        """Fundo em cinza escurecido, processado em meia resolução (~4x mais rápido).
+        """Fundo em cinza escurecido, processado em um quarto da resolução.
 
         A leve suavização que sobra ajuda o avião e os objetos contornados a saltarem à vista.
         """
         w, h = screen.get_size()
-        small = pygame.transform.scale(screen, (w // 2, h // 2))
+        small = pygame.transform.scale(screen, (w // 4, h // 4))
         gray = pygame.transform.grayscale(small)
         gray.fill(HC_DIM, special_flags=pygame.BLEND_RGB_MULT)
-        pygame.transform.scale2x(gray, screen)
+        pygame.transform.scale(gray, (w, h), screen)
 
-    def draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook) -> None:
+    def draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook, celebration: float = 0.0) -> None:
         """Quadro completo de um voo (sem HUD)."""
+        self.celebration = celebration
+        if self.high_contrast and self.contrast_scale > 1.0:
+            if self.accessible_canvas is None:
+                self.accessible_canvas = pygame.Surface((C.WIDTH, C.HEIGHT)).convert()
+            self._draw_run(self.accessible_canvas, run, look)
+            self.viewport = viewport(self.contrast_scale, self.player_rect.center, self.player_rect.size)
+            pygame.transform.smoothscale(self.accessible_canvas.subsurface(self.viewport),
+                                         screen.get_size(), screen)
+        else:
+            self.viewport = pygame.Rect(0, 0, C.WIDTH, C.HEIGHT)
+            self._draw_run(screen, run, look)
+
+    def screen_point(self, point: tuple) -> tuple:
+        """Converte âncoras de setas/pictogramas pelo mesmo enquadramento do voo."""
+        return screen_point(point, self.viewport)
+
+    def _draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook) -> None:
         world = run.world
         self.mode = run.mode
         self.background(screen, world, run.player.cam_x)

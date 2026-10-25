@@ -127,9 +127,13 @@ class Menu:
         self.armed = True
         self.pointer: Optional[Tuple[int, int]] = None
         self.on_focus: Optional[Callable[[], None]] = None
+        self._latched_rect: Optional[pygame.Rect] = None
+        self._latched_key: Optional[str] = None
+        self._latched_away = 0.0
 
     def set_buttons(self, buttons: Sequence[Button], keep_focus: bool = True) -> None:
         old = self.buttons[self.focus].key if keep_focus and self.buttons else None
+        hovered_key = self.hover.key if self.hover is not None else None
         self.buttons = list(buttons)
         self.focus = 0
         if old is not None:
@@ -137,8 +141,14 @@ class Menu:
                 if button.key == old:
                     self.focus = i
                     break
-        if self.hover is not None and self.hover.key not in {b.key for b in self.buttons}:
-            self.hover, self.dwell = None, 0.0
+        if hovered_key is not None:
+            replacement = next((button for button in self.buttons if button.key == hovered_key), None)
+            if replacement is None:
+                self.hover, self.dwell = None, 0.0
+            else:
+                # Rebuilds after choosing an option must preserve dwell state and
+                # the activated button lock, even though Button objects changed.
+                self.hover = replacement
 
     @property
     def focused(self) -> Optional[Button]:
@@ -207,6 +217,45 @@ class Menu:
         não zera a contagem (ela só fica parada).
         """
         self.pointer = pointer
+        if self._latched_rect is not None:
+            latched = self._latched_rect.inflate(16, 16)
+            direct = next(
+                (
+                    button
+                    for button in self.buttons
+                    if button.enabled and pointer is not None and button.rect.collidepoint(pointer)
+                ),
+                None,
+            )
+            if pointer is not None and latched.collidepoint(pointer):
+                self._latched_away = 0.0
+                if direct is None or direct.key == self._latched_key:
+                    self.away = 0.0
+                    return False
+                # Moving directly to a different target is deliberate. The old
+                # button remains blocked, while the new one can begin counting.
+                self._latched_rect = None
+                self._latched_key = None
+            elif pointer is None:
+                # Tracking loss freezes the ring; after the same leave tolerance
+                # used elsewhere, discard the near-complete dwell safely.
+                self._latched_away += dt
+                if self._latched_away <= LEAVE_TOLERANCE:
+                    return False
+                self._latched_rect = None
+                self._latched_key = None
+                self.hover, self.dwell = None, 0.0
+                self.armed = True
+                return False
+            else:
+                self._latched_away += dt
+                if self._latched_away <= 0.18:
+                    return False
+                self._latched_rect = None
+                self._latched_key = None
+                self._latched_away = 0.0
+                self.armed = True
+                self.hover, self.dwell = None, 0.0
         current = self.hover if self.hover in self.buttons and self.hover.enabled else None
         direct = next(
             (
@@ -253,6 +302,9 @@ class Menu:
         if self.dwell >= dwell_time:
             self.dwell = 0.0
             self.armed = False  # sai do botão para poder acionar de novo
+            self._latched_key = hovered.key
+            self._latched_rect = pygame.Rect(hovered.rect)
+            self._latched_away = 0.0
             return self.activate(hovered)
         return False
 

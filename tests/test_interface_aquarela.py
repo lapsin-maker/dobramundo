@@ -66,13 +66,21 @@ def test_intro_manual_pode_avancar_voltar_e_pular_sem_auto(app):
 def test_hangar_preserva_todas_as_opcoes_em_cards_legiveis(app):
     scene = HangarScene(app)
     scene.build()
-    assert len([b for b in scene.menu.buttons if b.key.startswith("aviao_")]) == len(PLANE_MODELS) == 11
+    modelos = []
+    for _page in range((len(PLANE_MODELS) + 2) // 3):
+        modelos.extend(b.key for b in scene.menu.buttons if b.key.startswith("aviao_"))
+        scene.change_page("modelo", 1)
+    assert len(set(modelos)) == len(PLANE_MODELS) == 11
     scene.tab = "cor"
     scene.build()
     assert len([b for b in scene.menu.buttons if b.key.startswith("cor_")]) == len(PLANE_COLORS)
     scene.tab = "padrao"
     scene.build()
-    assert len([b for b in scene.menu.buttons if b.key.startswith("padrao_")]) == len(PLANE_PATTERNS)
+    padroes = []
+    for _page in range((len(PLANE_PATTERNS) + 8) // 9):
+        padroes.extend(b.key for b in scene.menu.buttons if b.key.startswith("padrao_"))
+        scene.change_page("padrao", 1)
+    assert len(set(padroes)) == len(PLANE_PATTERNS)
     scene.draw(app.canvas)
     assert app.canvas.get_size() == (1100, 650)
 

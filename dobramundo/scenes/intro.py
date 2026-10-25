@@ -1,6 +1,6 @@
 """Abertura (GDD, seção 2) como um livro ilustrado de quatro páginas.
 
-1. A metrópole cinzenta, cheia de fumaça.
+1. A cidade colorida, com fumaça e poluição.
 2. A criança (o piloto que ela montou) encontra um jornal esquecido na rua.
 3. Ela dobra o papel, dobra a dobra, até virar um avião.
 4. Ela o lança: o avião sobe deixando um rastro de aquarela e a cidade ganha cor.
@@ -81,6 +81,7 @@ class IntroScene(Scene):
         self.trail: List[Tuple[float, float]] = []
         self._button_page = -1
         self._manual_page = 0
+        self.story_backgrounds: Dict[str, Optional[pygame.Surface]] = {}
 
     def build(self) -> None:
         page = self.page()[0]
@@ -201,11 +202,19 @@ class IntroScene(Scene):
             pygame.draw.polygon(layer, paper.INK, points, 3)
         screen.blit(layer, (cx - ox, cy - oy))
 
-    def draw_child(self, screen: pygame.Surface, view: str, feet, size=(300, 380), alpha: int = 255) -> None:
+    def draw_child(
+        self,
+        screen: pygame.Surface,
+        view: str,
+        feet,
+        size=(300, 380),
+        alpha: int = 255,
+        expression: str = "curious",
+    ) -> None:
         look = self.app.profile.piloto
         if look.get("cadeira") == "sim":
             view = "menu"  # na cadeira de rodas, a criança aparece sentada nela
-        child = self.app.view.skin.pilots.compose(view, look)
+        child = self.app.view.skin.pilots.compose(view, look, expression=expression)
         if child is None:
             return
         image = self.scaled(child, size, ("abertura", view, tuple(sorted(look.items())), size))
@@ -243,40 +252,57 @@ class IntroScene(Scene):
         page, t, turn = self.page()
         reduced_motion = self.app.options.reduzir_movimento
         elapsed_total = 0.0 if reduced_motion else self.time
-        # fundo: a cidade poluída até a última página, em que ela ganha cor
+        # Cada página pode ter um cenário próprio, sem personagem/texto embutidos.
+        # Em pacotes antigos, mantém o fundo de voo como fallback.
+        story_key = ("story_city", "story_newspaper", "story_fold", "story_launch")[page]
+        if story_key not in self.story_backgrounds:
+            source = self.app.assets.sprite("watercolor", story_key)
+            self.story_backgrounds[story_key] = (
+                self.scaled(source, (C.WIDTH, C.HEIGHT), ("story-background", story_key)) if source else None
+            )
+        story_background = self.story_backgrounds[story_key]
+        # A página de lançamento recebe uma passagem de cor discreta mesmo se o
+        # atlas de história estiver ausente e o fallback for usado.
         if page == 3:
             restoration = lerp(5.0, 95.0, smoothstep((t - 1.0) / 3.2))
         else:
             restoration = 5.0
-        self.app.backdrop(screen, self.last_dt, "amazonia", restoration)
-        if page < 3:
+        if story_background is not None:
+            screen.blit(story_background, (0, 0))
+        else:
+            self.app.backdrop(screen, self.last_dt, "amazonia", restoration)
+        if page < 3 and story_background is None:
             T.veil(screen, (20, 24, 40), 60)
         if page == 0:
             for k, x in enumerate((180, 420, 760, 980)):
                 paper.smoke(screen, (x, 150 + (k % 2) * 30), elapsed_total, 0.9, k)
             self.caption(screen, texts.INTRO_CAPTIONS[0])
         elif page == 1:
-            self.draw_child(screen, "segura", CHILD_FEET)
-            appear = smoothstep((t - 0.4) / 0.8)
-            if appear > 0:
-                self.draw_paper(screen, HANDS, FOLDS[0], SHEET_SCALE * 0.5 * (0.4 + 0.6 * appear))
+            found_feet = (610, 560) if story_background is not None else CHILD_FEET
+            self.draw_child(screen, "menu", found_feet, (280, 350), expression="curious")
+            # O fundo novo já traz o jornal no chão, perto da mão da criança.
+            if story_background is None:
+                appear = smoothstep((t - 0.4) / 0.8)
+                if appear > 0:
+                    self.draw_paper(screen, HANDS, FOLDS[0], SHEET_SCALE * 0.5 * (0.4 + 0.6 * appear))
             bubble_t = clamp((t - 1.4) / 0.4, 0.0, 1.0)
             if bubble_t > 0:
                 bubble = pygame.Rect(0, 0, int(96 * bubble_t), int(60 * bubble_t))
-                bubble.midbottom = (CHILD_FEET[0] + 150, CHILD_FEET[1] - 360)
+                bubble.midbottom = (found_feet[0] + 150, found_feet[1] - 360)
                 T.panel(screen, bubble, (255, 255, 255), T.NAVY, 255, 18, 2)
                 if bubble_t >= 1.0:
                     self.text.blit(screen, "?", bubble.center, T.SIZES["hero"], T.NAVY, anchor="center", hand=True)
             self.caption(screen, texts.INTRO_CAPTIONS[1])
         elif page == 2:
-            table = pygame.Rect(0, 0, 640, 420)
-            table.center = TABLE
-            T.panel(screen, table, rgb("f3ecd8"), T.NAVY, 235, 26, 3)
-            u = clamp((t - 0.5) / (PAGES[2] - 1.4), 0.0, 1.0)
+            if story_background is None:
+                table = pygame.Rect(0, 0, 640, 420)
+                table.center = TABLE
+                T.panel(screen, table, rgb("f3ecd8"), T.NAVY, 235, 26, 3)
+            u = 1.0 if reduced_motion else clamp((t - 0.5) / (PAGES[2] - 1.4), 0.0, 1.0)
             self.draw_paper(screen, TABLE, fold_pose(u), SHEET_SCALE)
             step = min(3, int(u * 3.2))
             pose = FOLDS[min(step, 2)]
-            if step < 3 and (u * 3.2) % 1.0 < 0.55:  # seta no começo de cada dobra
+            if not reduced_motion and step < 3 and (u * 3.2) % 1.0 < 0.55:  # seta no começo de cada dobra
                 fx, fy = pose["flap_r"][0]
                 tx, ty = FOLDS[step + 1]["flap_r"][0]
                 self.draw_arrow(
@@ -284,17 +310,26 @@ class IntroScene(Scene):
                     (TABLE[0] + fx * SHEET_SCALE, TABLE[1] + fy * SHEET_SCALE),
                     (TABLE[0] + tx * SHEET_SCALE, TABLE[1] + ty * SHEET_SCALE),
                 )
-            if step < 3:  # linha de dobra tracejada
+            if not reduced_motion and step < 3:  # linha de dobra tracejada
                 for k in range(-9, 10, 2):
                     y = TABLE[1] + k * 12
                     pygame.draw.line(screen, T.MUTED, (TABLE[0], y), (TABLE[0], y + 8), 2)
-            self.draw_child(screen, "segura", (150, 600), (220, 280))
+            self.draw_child(screen, "menu", (150, 600), (220, 280), expression="focused")
             self.caption(screen, texts.INTRO_CAPTIONS[2], FOLD_STEPS[step])
         else:
-            self.draw_child(screen, "lanca", CHILD_FEET, alpha=int(255 * clamp((PAGES[3] - t) / 0.6, 0.0, 1.0)))
-            u = smoothstep(t / 3.2)
+            launch_alpha = 255 if reduced_motion else int(255 * clamp((PAGES[3] - t) / 0.6, 0.0, 1.0))
+            self.draw_child(
+                screen,
+                # A animação do avião no céu é o gesto do lançamento; omite a
+                # miniatura estática que o preview de ação põe na mão/cabeça.
+                "menu",
+                CHILD_FEET,
+                alpha=launch_alpha,
+                expression="happy",
+            )
+            u = 1.0 if reduced_motion else smoothstep(t / 3.2)
             x = lerp(440, C.WIDTH - 140, u)
-            y = lerp(360, 120, u) - math.sin(u * math.pi) * 90
+            y = lerp(360, 120, u) - (0 if reduced_motion else math.sin(u * math.pi) * 90)
             if not self.trail or (abs(self.trail[-1][0] - x) > 6):
                 self.trail.append((x, y))
             # rastro de aquarela com as cores da logo

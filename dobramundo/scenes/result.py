@@ -15,6 +15,7 @@ from ..game.run import FlightRun
 from ..ui import theme as T
 from ..ui.widgets import row, star
 from .base import Scene
+from .village import VILLAGE_REQUESTS
 
 
 def apply_run(profile, run: FlightRun) -> dict:
@@ -103,6 +104,17 @@ class ResultScene(Scene):
         T.watercolor_backdrop(screen, "river" if run.biome.river else "warm")
         card = pygame.Rect(34, 18, C.WIDTH - 68, 520)
         T.panel(screen, card, T.PAPER, T.NAVY, 250, 24, 3)
+        # A reação do piloto reforça o resultado sem pedir leitura adicional.
+        expression = "recover" if run.game_over else "happy" if run.complete else "curious"
+        mood_color = T.TEAL if run.game_over else T.GREEN if run.complete else T.SUN
+        mood = pygame.Rect(card.left + 28, card.top + 76, 104, 124)
+        pygame.draw.ellipse(screen, T.NAVY, mood.inflate(6, 6))
+        pygame.draw.ellipse(screen, T.PAPER, mood)
+        pygame.draw.ellipse(screen, mood_color, mood, 4)
+        pilot = self.app.view.skin.pilots.compose("menu", self.app.profile.piloto, expression=expression)
+        if pilot is not None:
+            image = self.scaled(pilot, (86, 108), ("result-pilot", expression))
+            screen.blit(image, image.get_rect(center=mood.center))
         if run.complete:
             title = f"{run.biome.city} floresceu!"
         elif run.game_over:
@@ -118,7 +130,7 @@ class ResultScene(Scene):
             True,
             "midtop",
         )
-        shown = min(run.stars, int(self.time / 0.42))
+        shown = run.stars if self.app.options.reduzir_movimento else min(run.stars, int(self.time / 0.42))
         for i in range(3):
             star(screen, (card.centerx - 82 + i * 82, card.top + 89), 32, i < shown)
         if self.summary["new_stars"]:
@@ -185,8 +197,8 @@ class ResultScene(Scene):
         profile = self.app.profile
         next_build = next((item for item in VILLAGE_UPGRADES if item.key not in profile.vila), None)
         T.panel(screen, rect, T.PAPER, T.TEAL, 245, 16, 2)
-        screen.blit(T.icon_surface("village", 48, T.TEAL), (rect.left + 10, rect.top + 21))
         if next_build is None:
+            screen.blit(T.icon_surface("village", 48, T.TEAL), (rect.left + 10, rect.top + 21))
             self.text.blit(screen, "Vila completa!", (rect.left + 68, rect.top + 12), T.SIZES["body"], T.NAVY, True)
             self.text.blit(
                 screen,
@@ -206,18 +218,20 @@ class ResultScene(Scene):
             T.NAVY,
             True,
         )
+        request = VILLAGE_REQUESTS.get(next_build.key, "A vila pede ajuda!")
+        self.text.blit(screen, request, (rect.left + 132, rect.top + 38), T.SIZES["small"], T.TEAL)
         shortfall = missing(profile.recursos, next_build.cost)
         if not shortfall:
             self.text.blit(
                 screen,
                 "Pronta para construir!",
-                (rect.left + 132, rect.top + 48),
+                (rect.left + 132, rect.top + 62),
                 T.SIZES["small"],
                 T.GREEN,
                 True,
             )
             return
-        self.text.blit(screen, "Materiais", (rect.left + 132, rect.top + 48), T.SIZES["small"], T.ORANGE, True)
+        self.text.blit(screen, "Materiais", (rect.left + 132, rect.top + 62), T.SIZES["small"], T.ORANGE, True)
         x = rect.left + 226
         for waste in WASTE_TYPES:
             needed = next_build.cost.get(waste.key, 0)
@@ -225,13 +239,13 @@ class ResultScene(Scene):
                 continue
             icon = self.app.assets.sprite("waste_sprites", waste.sprite)
             if icon is not None:
-                screen.blit(self.scaled(icon, (24, 24), ("next-build-waste", waste.key)), (x, rect.top + 62))
+                screen.blit(self.scaled(icon, (24, 24), ("next-build-waste", waste.key)), (x, rect.top + 68))
             have = profile.recursos.get(waste.key, 0)
             color = T.GREEN if have >= needed else T.ORANGE
             self.text.blit(
                 screen,
                 f"{have}/{needed}",
-                (x + 25, rect.top + 65),
+                (x + 25, rect.top + 71),
                 15,
                 color,
                 True,

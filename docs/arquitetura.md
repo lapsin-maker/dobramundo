@@ -77,8 +77,8 @@ Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por perm
 Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente, e cada tela de primeira vez só entra enquanto a condição do perfil não foi cumprida:
 
 ```
-PilotScene (1ª vez: piloto_montado) -> ConsentScene (1ª vez: consentimento)
-           -> CalibrationScene (se houver controle corporal)
+ConsentScene (quando necessário) -> CalibrationScene (controle corporal)
+           -> DwellPracticeScene -> PilotScene (se piloto_montado=False)
            -> VillageScene
 ```
 
@@ -90,8 +90,8 @@ VillageScene
   Melhorias .......... UpgradesScene (abas Vila e Avião)
   Hangar ............. HangarScene (abas Dobradura, Cor e Padrão)
   Piloto ............. PilotScene
-  Opções ............. OptionsScene -> IntroScene ("Ver a abertura"), CalibrationScene e
-                       ProjectionScene ("Projeção e chão", só no executável)
+  Opções ............. OptionsScene -> IntroScene, CalibrationScene, DwellPracticeScene,
+                       PreparationScene e ProjectionScene (só no executável)
   Sobre .............. AboutScene (O jogo, ODS, Créditos, Referências)
   Esc ................ OptionsScene
 
@@ -161,7 +161,7 @@ O caminho procedural de reserva de `WorldView` segue esta ordem:
 8. **Objetos à frente do avião**, com halos no solarpunk do Difícil e alertas de chão antes dos obstáculos que colidem.
 9. **Feixes de coleta** e **textos flutuantes** ("+65", "ESCUDO").
 
-`FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), tudo o que vem antes dos objetos é dessaturado (`desaturate`), e objetos e avião ganham contorno espesso.
+`FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), o fundo é dessaturado (`desaturate`), objetos/avião ganham contorno e o canvas do mundo recebe zoom uniforme de `contrast_scale` (1 a 1,6×). Setas externas usam `screen_point`; HUD conserva o tamanho nativo.
 
 **Papel e aquarela.** `engine/paper.py` desenha as formas de papel por código (`ink_polygon`, `blob`, `shadow`, `hill_points`, `ribbon`, `bezier`, `tree`, `person`, `wave_lines`, `smoke` e `sparkles`), usadas pela vila e pela abertura. Ao coletar, o `Beam` (em `game/entities.py`) leva a cor do resíduo, e `WorldView.splash` desenha o respingo de aquarela durante `SPLASH_S` (0,55 s, em `game/run.py`).
 
@@ -310,7 +310,15 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 
 `engine/painted_route.py` projeta terreno e margens usando a distância do mundo; `engine/watercolor.py` compõe o horizonte e escolhe o cenário procedural de reserva quando o pacote está incompleto. O piloto usa `engine/painted_pilot.py`, os aviões usam `engine/painted_planes.py`, e `engine/pilot.py` integra o personagem às vistas. As camadas low-poly e `engine/paper_pilot.py` permanecem para compatibilidade e fallback.
 
-`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. O fluxo atual começa em piloto → aviso/calibração quando necessários → vila; a abertura narrativa é opcional. Implementação, capturas e validação: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md). Pacotes e instalação: [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. A abertura narrativa é opcional. Implementação, capturas e validação anteriores: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md) e [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+
+## Sprint 3: controle, legibilidade e vida
+
+O fluxo de primeira execução prepara aviso/calibração, oferece treino opcional de permanência, abre o piloto neutro e segue para a vila. `ui/widgets.py` conserva a trava do alvo ativado por chave/região após reconstruções do editor. Tempo de personalização e ampliação de contraste são campos próprios do perfil e acompanham o jogador registrado no console.
+
+`input/pose.py` usa nariz e orelhas compensadas para cabeça, rejeita leituras envelhecidas e permite alcances direcionais calibrados em sessão. O cursor sem leitura retorna `None`; eixos antigos não alimentam a velocidade do voo. `engine/accessible_view.py` aplica zoom uniforme do mundo; `screen_point` mantém setas e tutorial alinhados com a imagem ampliada, sem alterar a física. O fundo de alto contraste é atenuado em baixa resolução antes dos objetos interativos.
+
+`engine/painted_route.py` dissolve as formas das margens entre estágios, mantendo posição/distância. `engine/regional_life.py` desenha fauna decorativa atenuada perto de desafios, sem criar entidades. `engine/pilot.py` cacheia expressões. `scenes/village.py` mantém pedidos por obra e encena usos cotidianos. `audio.py` reserva dois canais de efeitos e prioriza uma fanfarra por vez. Os detalhes da implementação e o aceite presencial restante estão em [SPRINT3.md](SPRINT3.md).
 
 ## Histórico — versão 1.4
 

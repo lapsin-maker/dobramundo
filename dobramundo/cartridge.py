@@ -35,10 +35,13 @@ PLATFORM_KEYS = (pygame.K_ESCAPE, pygame.K_p, pygame.K_F2)  # o console usa: o j
 PLAYER_OPTIONS = (
     "sensibilidade",
     "permanencia",
+    "permanencia_editor",
     "controle_posicao",
     "momento_foco",
     "efeitos_fortes",
     "alto_contraste",
+    "escala_contraste",
+    "reduzir_movimento",
     "silencio",
     "inverter_vertical",
     "inverter_horizontal",

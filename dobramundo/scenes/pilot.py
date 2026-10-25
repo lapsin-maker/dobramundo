@@ -158,6 +158,7 @@ def _icon(field: str, option: Option, size: int = 44) -> pygame.Surface:
 
 
 class PilotScene(Scene):
+    editor_dwell = True
     """Editor de personagem organizado em páginas amplas e com miniaturas visuais."""
 
     def __init__(self, app, first_time: bool = False, return_to=None) -> None:

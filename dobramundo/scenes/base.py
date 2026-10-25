@@ -42,6 +42,7 @@ class Toast:
 class Scene:
     music: Optional[str] = "musica_vila"
     idle_warm_up = True  # usa a folga do quadro para preparar sprites
+    editor_dwell = False  # telas de edição usam permanência própria mais lenta
 
     def __init__(self, app: App) -> None:
         self.app = app
@@ -98,7 +99,7 @@ class Scene:
         self.time += dt
         self.last_dt = dt
         self.toast.update(dt)
-        if self.menu.update(dt, self.app.input.pointer(), self.app.options.permanencia):
+        if self.menu.update(dt, self.app.input.pointer(), self.dwell_time):
             self.app.audio.play("sfx_selecao")
 
     def draw(self, screen: pygame.Surface) -> None:
@@ -113,9 +114,15 @@ class Scene:
         return Button(pygame.Rect(rect), label, action, **kwargs)
 
     def draw_menu(self, screen: pygame.Surface) -> None:
-        dwell = self.app.options.permanencia
+        dwell = self.dwell_time
         self.menu.draw(screen, self.text, dwell)
         self.menu.draw_pointer(screen, dwell, self.app.input.body_pointer() is not None)
+
+    @property
+    def dwell_time(self) -> float:
+        if self.editor_dwell:
+            return self.app.options.permanencia_editor
+        return self.app.options.permanencia
 
     def title(self, screen: pygame.Surface, title: str, subtitle: str = "") -> None:
         width = (

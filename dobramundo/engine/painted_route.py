@@ -12,6 +12,7 @@ import math
 import pygame
 
 from .. import config as C
+from ..util import clamp, smoothstep
 from .assets import Assets, display_format
 from .ground import GroundRenderer, compute_ground_rows
 from .sprites import SpriteCache, fog_level, project
@@ -101,7 +102,9 @@ class PaintedRoute:
     HEIGHTS = (170, 230, 235, 270, 170, 180, 230, 285, 190, 140, 180, 200)
 
     def __init__(self, assets: Assets) -> None:
-        atlas = assets.sprite("watercolor", "terrain_tiles")
+        atlas = assets.sprite("watercolor", "terrain_tiles_v3")
+        if atlas is None:
+            atlas = assets.sprite("watercolor", "terrain_tiles")
         valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
         self.ground = PaintedGround(atlas) if valid else None
         self.banks = {}
@@ -154,7 +157,9 @@ class PaintedRoute:
                     continue
                 index = self.scenery_index(sequence, side, stage)
                 if biome == "amazonia" and index == 3:
-                    index = 3 if sequence % 48 == 7 and side < 0 else 7
+                    # O Teatro é um marco único no horizonte: não reaparece como
+                    # cópias de um prédio a cada volta do percurso.
+                    index = 7
                 x = side * (530 + (sequence % 3) * 64)
                 if z >= C.NEAR_CLIP_Z:
                     result.append((z, x, index, side))
@@ -162,25 +167,56 @@ class PaintedRoute:
                     result.append((z + 95, side * 1030, 2 if sequence % 4 else 7, side))
         return sorted(result, reverse=True)
 
+    @staticmethod
+    def stage_blend(visual: float, z: float) -> tuple:
+        """Transformação contínua, chegando do horizonte à margem próxima."""
+        delay = 4.0 * (1.0 - clamp(z / C.FOG_END, 0.0, 1.0))
+        if visual < C.ERA_SPAN + delay:
+            return 0, 0, 0.0
+        if visual < 2 * C.ERA_SPAN + delay:
+            mix = smoothstep(clamp((visual - C.ERA_SPAN - delay) / 16.0, 0.0, 1.0))
+            return (1, 1, 0.0) if mix >= 1 else (0, 1, mix)
+        mix = smoothstep(clamp((visual - 2 * C.ERA_SPAN - delay) / 12.0, 0.0, 1.0))
+        return (2, 2, 0.0) if mix >= 1 else (1, 2, mix)
+
+    def _bank(self, screen, sprites, biome, placement, cam, opacity=1.0):
+        z, x, index, side = placement
+        sx, sy, scale = project(x, 0, z, cam)
+        sprite = sprites[index]
+        height = max(4, round(self.HEIGHTS[index] * scale / 3) * 3)
+        width = max(4, round(height * sprite.get_width() / sprite.get_height()))
+        if sx + width / 2 < 0 or sx - width / 2 > C.WIDTH:
+            return
+        key = ("painted-bank", biome, index)
+        size = width, height
+        image = self.cache.get(sprite, key, size, side > 0)
+        level = fog_level(z)
+        if level:
+            image = self.cache.fogged(image, (key, size, side > 0), level)
+        # Peças próximas saem gradualmente, inclusive quando uma curva deixa
+        # parte da silhueta visível junto ao plano de corte.
+        near = smoothstep(clamp((z - C.NEAR_CLIP_Z) / 55, 0.0, 1.0))
+        alpha = round(255 * opacity * near)
+        if alpha:
+            image.set_alpha(alpha)
+            screen.blit(image, (round(sx - width / 2), round(sy - height)))
+            image.set_alpha(255)
+
     def draw(self, screen, world, cam: float, reduced: bool, fog) -> bool:
         sprites = self.load(world.biome.key)
         if not self.ready(world.biome.key):
             return False
         self.ground.paint(screen, world.biome.key, world.distance, cam, fog)
         self.cache.fog_color = fog
-        stage = min(2, int(world.visual / C.ERA_SPAN))
-        for z, x, index, side in self.placements(world.distance, stage, reduced, world.biome.key):
-            sx, sy, scale = project(x, 0, z, cam)
-            sprite = sprites[index]
-            height = max(4, round(self.HEIGHTS[index] * scale / 3) * 3)
-            width = max(4, round(height * sprite.get_width() / sprite.get_height()))
-            if sx + width / 2 < 0 or sx - width / 2 > C.WIDTH:
-                continue
-            key = ("painted-bank", world.biome.key, index)
-            size = width, height
-            image = self.cache.get(sprite, key, size, side > 0)
-            level = fog_level(z)
-            if level:
-                image = self.cache.fogged(image, (key, size, side > 0), level)
-            screen.blit(image, (round(sx - width / 2), round(sy - height)))
+        # A posição de cada peça é estável em todos os estágios; só sua forma
+        # se dissolve para a seguinte. Desenhar não avança relógios ou o mundo.
+        stages = [self.placements(world.distance, stage, reduced, world.biome.key) for stage in range(3)]
+        for slot, placement in enumerate(stages[0]):
+            a, b, mix = self.stage_blend(world.visual, placement[0])
+            old, new = stages[a][slot], stages[b][slot]
+            if old[2] == new[2] or a == b:
+                self._bank(screen, sprites, world.biome.key, old, cam)
+            else:
+                self._bank(screen, sprites, world.biome.key, old, cam, 1.0 - mix)
+                self._bank(screen, sprites, world.biome.key, new, cam, mix)
         return True

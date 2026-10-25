@@ -15,12 +15,14 @@ from .. import config as C
 from ..util import clamp, smoothstep
 from .assets import Assets, display_format
 from .painted_route import PaintedRoute
+from .regional_life import RegionalLife
 
 
 class WatercolorWorld:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         self.route = PaintedRoute(assets)
+        self.life = RegionalLife(assets)
         self.backdrops: dict[str, tuple] = {}
         self.composite_key = None
         self.composite = None
@@ -80,6 +82,7 @@ class WatercolorWorld:
         # em coordenadas de mundo, mesmo com efeitos decorativos reduzidos.
         fog = (226, 220, 191) if world.biome.key == "amazonia" else (240, 222, 185)
         if self.route.draw(screen, world, cam, reduce_motion, fog):
+            self.life.draw(screen, world, cam, reduce_motion)
             return True
         # Sem o pacote móvel, o chamador usa todo o cenário procedural móvel.
         return False

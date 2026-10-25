@@ -24,7 +24,7 @@ TITLE = "Dobramundo"
 TAGLINE = "Dobre o papel, voe e transforme a cidade."
 
 INTRO_CAPTIONS = (
-    "Uma metrópole cinzenta, cheia de fumaça e poluição.",
+    "Uma cidade colorida, com fumaça e poluição.",
     "Uma criança encontra um jornal esquecido na rua.",
     "Ela dobra o papel e cria um avião.",
     "Ela lança o avião ao céu.",

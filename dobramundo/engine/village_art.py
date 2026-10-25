@@ -31,6 +31,7 @@ VILLAGE_PROP_ORDER = (
     "telhado_verde",
     "turbina",
 )
+VILLAGER_POSES = ("calmo", "pedido", "feliz")
 
 
 def _shape(surface, points, fill, width=5):
@@ -165,6 +166,26 @@ def village_prop(key: str, atlas: pygame.Surface | None = None) -> pygame.Surfac
         if cropped is not None:
             return cropped
     return _fallback_village_prop(key)
+
+
+@lru_cache(maxsize=12)
+def _atlas_villager(atlas: pygame.Surface, person: int, pose: str) -> pygame.Surface | None:
+    """Recorta o atlas opcional 3x2 (três expressões, duas pessoas)."""
+    if pose not in VILLAGER_POSES or person not in (0, 1):
+        return None
+    col = VILLAGER_POSES.index(pose)
+    left, right = col * atlas.get_width() // 3, (col + 1) * atlas.get_width() // 3
+    top, bottom = person * atlas.get_height() // 2, (person + 1) * atlas.get_height() // 2
+    cell = atlas.subsurface((left, top, right - left, bottom - top))
+    bounds = cell.get_bounding_rect(min_alpha=30)
+    return cell.subsurface(bounds).copy() if bounds.width and bounds.height else None
+
+
+def village_resident(atlas: pygame.Surface | None, person: int = 0, pose: str = "calmo") -> pygame.Surface | None:
+    """Morador pintado do atlas, se o pacote Sprint 3 já estiver instalado."""
+    if atlas is None:
+        return None
+    return _atlas_villager(atlas, person % 2, pose)
 
 
 @lru_cache(maxsize=8)

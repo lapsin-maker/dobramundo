@@ -11,7 +11,7 @@ from typing import Optional, Tuple
 
 import pygame
 
-from ..content.pilot import normalize_pilot
+from ..content.pilot import SKIN_CHOICES, UNSELECTED, find_option, normalize_pilot
 from .assets import Assets
 from .cache import BoundedCache
 from .painted_pilot import PaintedPilot
@@ -20,6 +20,87 @@ from .paper_pilot import draw_pilot
 FOLDER = "pilot_layers"
 INK = (29, 36, 51)
 MIN_PILOT_SHARE = 0.32  # leitura do piloto acima da escala do avião durante o voo
+EXPRESSIONS = {"curious", "focused", "happy", "recover"}
+
+
+def _expression_layer(size: Tuple[int, int], look: dict, pose: str, expression: str) -> pygame.Surface:
+    """Expressão facial leve, composta uma vez por variante e mantida no cache.
+
+    A base pintada é preservada. Os traços 2x acompanham as âncoras usadas pelos
+    olhos personalizáveis no atlas Sprint 2, sem fazer trabalho por quadro.
+    """
+    width, height = size
+    if expression not in EXPRESSIONS or pose.startswith("back_"):
+        return pygame.Surface(size, pygame.SRCALPHA)
+    layer = pygame.Surface((width * 2, height * 2), pygame.SRCALPHA)
+    seated = pose.endswith("seated")
+    mobility_ratio = 0.24 if look.get("cadeira") == "sim" else 0.30 if look.get("andador") == "sim" else 0.0
+    body_width = max(1, round(width / (1 + 2 * mobility_ratio)))
+    pad = (width - body_width) / 2
+    eye_x = (0.333, 0.647) if seated else (0.377, 0.639)
+    eye_y = (0.178 if seated else 0.144) * height
+    centers = [(round(pad + body_width * x), round(eye_y)) for x in eye_x]
+    mouth_x = round(pad + body_width * 0.50)
+    mouth_y = round(height * (0.248 if seated else 0.218))
+    q = 2
+    ink = (48, 54, 76, 235)
+    skin_rgb = find_option(SKIN_CHOICES, look.get("pele", UNSELECTED)).color or (243, 230, 210)
+    if look.get("pele", UNSELECTED) == UNSELECTED:
+        skin_rgb = (243, 230, 210)
+    skin = (*skin_rgb, 190)
+
+    def line(points, color, thickness):
+        pygame.draw.lines(layer, color, False,
+                          [(round(x * q), round(y * q)) for x, y in points],
+                          max(1, round(thickness * q)))
+
+    def arc(rect, start, stop, color, thickness):
+        scaled = pygame.Rect(*(round(v * q) for v in rect))
+        pygame.draw.arc(layer, color, scaled, start, stop, max(1, round(thickness * q)))
+
+    # Keep the expression marks broad enough to read at the normal menu scale.
+    brow_y = eye_y - height * 0.035
+    brow_dx = body_width * 0.035
+    if expression == "focused":
+        for side, (cx, _) in enumerate(centers):
+            direction = 1 if side == 0 else -1
+            line([(cx - brow_dx, brow_y - height * 0.006),
+                  (cx + brow_dx, brow_y + height * 0.008 * direction)], ink, max(2, height * 0.006))
+    elif expression == "curious":
+        for cx, _ in centers:
+            arc((cx - brow_dx, brow_y - height * 0.018, 2 * brow_dx, height * 0.035), 0.25, 2.9, ink,
+                max(2, height * 0.006))
+    elif expression == "recover":
+        for side, (cx, _) in enumerate(centers):
+            direction = -1 if side == 0 else 1
+            line([(cx - brow_dx, brow_y + height * 0.006 * direction),
+                  (cx + brow_dx, brow_y - height * 0.014)], ink, max(2, height * 0.006))
+
+    # Blend a small skin wash over the base smile before drawing the new mouth.
+    wash = pygame.Surface((width * q, height * q), pygame.SRCALPHA)
+    pygame.draw.ellipse(wash, skin, pygame.Rect(
+        (mouth_x - round(body_width * 0.065)) * q,
+        (mouth_y - round(height * 0.018)) * q,
+        max(2, round(body_width * 0.13) * q),
+        max(2, round(height * 0.058) * q),
+    ))
+    layer.blit(wash, (0, 0))
+    if expression == "curious":
+        pygame.draw.ellipse(layer, ink, pygame.Rect(
+            (mouth_x - round(height * 0.012)) * q,
+            (mouth_y - round(height * 0.014)) * q,
+            max(3, round(height * 0.024) * q), max(3, round(height * 0.034) * q),
+        ), max(1, round(height * 0.004) * q))
+    elif expression == "focused":
+        line([(mouth_x - body_width * 0.045, mouth_y), (mouth_x + body_width * 0.045, mouth_y)], ink,
+             max(2, height * 0.006))
+    elif expression == "recover":
+        arc((mouth_x - body_width * 0.045, mouth_y - height * 0.002,
+             body_width * 0.09, height * 0.026), 3.3, 6.1, ink, max(2, height * 0.006))
+    else:  # happy: a broad, visibly upturned smile
+        arc((mouth_x - body_width * 0.058, mouth_y - height * 0.026,
+             body_width * 0.116, height * 0.056), 3.45, 5.95, (153, 68, 75, 240), max(2, height * 0.008))
+    return pygame.transform.smoothscale(layer, size)
 
 
 def tinted(layer: pygame.Surface, color) -> pygame.Surface:
@@ -47,22 +128,35 @@ class PilotRenderer:
         self.anchors = assets.json(FOLDER, "anchors.json") or {}
         self.painted = PaintedPilot(assets)
         self.cache = BoundedCache(32)  # piloto montado por vista e aparência
+        self.expression_cache = BoundedCache(16)
 
     def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
         return self.assets.folder(FOLDER).get(f"{view}__{name}")
 
-    def compose(self, view: str, look: dict, pose: Optional[str] = None) -> Optional[pygame.Surface]:
+    def compose(self, view: str, look: dict, pose: Optional[str] = None,
+                expression: Optional[str] = None) -> Optional[pygame.Surface]:
         """Piloto 2D de papel, independente das antigas camadas low-poly."""
         look = normalize_pilot(look)
         key = (view, pose, tuple(sorted(look.items())))
         cached = self.cache.get(key)
         if cached is not None:
-            return cached
-        canvas = self.painted.compose(view, look, pose=pose)
-        if canvas is None:
-            canvas = draw_pilot(view, look)
-        self.cache[key] = canvas
-        return canvas
+            canvas = cached
+        else:
+            canvas = self.painted.compose(view, look, pose=pose)
+            if canvas is None:
+                canvas = draw_pilot(view, look)
+            self.cache[key] = canvas
+        if expression not in EXPRESSIONS:
+            return canvas
+        pose_key = self.painted.pose_key(view, look, pose)
+        expression_key = (key, pose_key, expression)
+        expressed = self.expression_cache.get(expression_key)
+        if expressed is not None:
+            return expressed
+        expressed = canvas.copy()
+        expressed.blit(_expression_layer(canvas.get_size(), look, pose_key, expression), (0, 0))
+        self.expression_cache[expression_key] = expressed
+        return expressed
 
     def anchor(self, plane: str, view: str) -> Optional[Tuple[int, int, int, int]]:
         box = self.anchors.get(view, {}).get(plane)
