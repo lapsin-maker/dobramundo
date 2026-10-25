@@ -59,7 +59,6 @@ class Profile:
     abertura_vista: bool = False
     modo: str = "normal"
     controle: str = "teclado"
-    calibracao: Dict[str, List[float]] = field(default_factory=dict)  # segmento -> [x, y] neutro
     estrelas: Dict[str, int] = field(default_factory=dict)
     recordes: Dict[str, int] = field(default_factory=dict)  # "bioma:modo" -> pontos
     recursos: Dict[str, int] = field(default_factory=lambda: {k: 0 for k in WASTE_KEYS})
@@ -110,11 +109,6 @@ class Profile:
         self.cores = {m: c for m, c in self.cores.items() if m in PLANE_KEYS and c in PLANE_COLOR_KEYS}
         self.padroes = {m: c for m, c in self.padroes.items() if m in PLANE_KEYS and c in PLANE_PATTERN_KEYS}
         self.piloto = normalize_pilot(self.piloto)
-        self.calibracao = {
-            k: [float(v[0]), float(v[1])]
-            for k, v in self.calibracao.items()
-            if k in CONTROL_SEGMENTS and isinstance(v, (list, tuple)) and len(v) == 2
-        }
         o = self.opcoes
         for name in ("volume_geral", "volume_musica", "volume_efeitos"):
             setattr(o, name, max(0.0, min(1.0, float(getattr(o, name)))))
@@ -205,9 +199,15 @@ def import_legacy(profile: Profile) -> bool:
 
 
 def load_profile() -> Profile:
-    data = _read_json(profile_path())
+    path = profile_path()
+    data = _read_json(path)
     if data is not None:
         return Profile.from_dict(data)
+    if path.is_file():  # arquivo ilegível: guarda uma cópia antes de recomeçar o perfil
+        try:
+            path.replace(path.with_name(path.stem + ".corrompido.json"))
+        except OSError:
+            pass
     profile = Profile()
     import_legacy(profile)
     return profile

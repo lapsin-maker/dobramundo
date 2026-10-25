@@ -19,7 +19,7 @@ vira escala. As manobras são só visuais: a colisão continua na posição real
 Saída: assets/maneuvers/maneuvers.json
 
 Uso:
-    python tools/extract_maneuvers.py --gltf-dir CAMINHO/01_Animacoes_3D_Prontas_GLTF_8_Manobras
+    python tools/legado/extract_maneuvers.py --gltf-dir CAMINHO/01_Animacoes_3D_Prontas_GLTF_8_Manobras
 """
 
 from __future__ import annotations
@@ -182,7 +182,7 @@ def extract(path: Path, start: float, end, settle: bool) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--gltf-dir", type=Path, required=True)
-    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[1] / "assets" / "maneuvers")
+    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "assets" / "maneuvers")
     args = parser.parse_args()
     data = {"columns": ["t", "roll", "pitch", "dx", "dy", "dz"]}
     for name, (filename, start, end, settle) in MANEUVERS.items():

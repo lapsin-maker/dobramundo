@@ -75,7 +75,7 @@ Estes scripts geraram assets do protótipo. Ficam aqui para registro da proveni�
 
 Atenção: o `render_models.py` sobrescreve sprites que foram substituídos por versões revisadas da equipe (`fabrica`, `chamine`, `tambores` e `cacamba`). Use `--out` para gravar em outra pasta.
 
-Os caminhos padrão de `--out` desses scripts ainda usam `parents[1]`, que apontava para `tools/` antes de os scripts irem para `legado/`. Por isso o padrão aponta para `tools/assets/`, e não para `assets/`. Para regenerar em `assets/`, informe `--out assets` (ou o caminho da pasta de destino).
+O `--out` padrão desses scripts é a pasta `assets/` da raiz do projeto.
 
 ## Assets sem gerador no repositório
 

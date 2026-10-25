@@ -16,7 +16,7 @@ import pygame
 from ..paths import asset_dir_candidates
 
 # Pastas de cenário que formam um único espaço de nomes (os nomes não se repetem).
-SCENERY_FOLDERS = ("dieselpunk_sprites", "scenario_sprites", "solarpunk_sprites", "era_final_sprites", "biome_sprites")
+SCENERY_FOLDERS = ("dieselpunk_sprites", "scenario_sprites", "era_final_sprites", "biome_sprites")
 
 SpriteSet = Dict[str, pygame.Surface]
 

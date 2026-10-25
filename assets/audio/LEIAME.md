@@ -19,4 +19,4 @@ Requer numpy. Para gravar OGG Vorbis, precisa de `soundfile`; sem ele o script g
 
 ## Licenca
 
-Gerado pelo projeto; mesma licenca do codigo do Dobramundo.
+Gerado pelo proprio projeto (sem samples de terceiros). Segue a licenca que a equipe definir para o Dobramundo.

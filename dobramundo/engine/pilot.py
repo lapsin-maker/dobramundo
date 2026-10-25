@@ -55,10 +55,7 @@ class PilotRenderer:
             return None
         canvas = pygame.Surface(skin.get_size(), pygame.SRCALPHA)
         wheelchair = look["cadeira"] == "sim"
-        parts = []
-        if wheelchair:
-            parts.append((self.layer(view, "chair_back"), None))
-        parts += [
+        parts = [
             (skin, find_option(SKIN_TONES, look["pele"]).color),
             (self.layer(view, "base"), None),
             (self.layer(view, "shirt"), find_option(SHIRT_COLORS, look["roupa"]).color),

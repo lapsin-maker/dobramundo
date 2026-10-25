@@ -110,3 +110,9 @@ def test_resultado_leva_o_voo_para_o_perfil():
     run.stars = 0
     apply_run(profile, run)
     assert profile.estrelas["amazonia"] == 1  # guarda a melhor marca
+
+
+def test_perfil_corrompido_ganha_copia_de_seguranca(data_dir):
+    profile_path().write_text("{quebrado", encoding="utf-8")
+    load_profile()
+    assert (data_dir / "dobramundo_perfil.corrompido.json").is_file()

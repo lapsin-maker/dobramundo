@@ -15,7 +15,7 @@ from .paths import user_data_dir  # noqa: E402
 
 
 def first_scene(app):
-    """Abertura -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
+    """Abertura (1ª vez) -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
     from .scenes.calibration import CalibrationScene
     from .scenes.consent import ConsentScene
     from .scenes.intro import IntroScene
@@ -26,7 +26,8 @@ def first_scene(app):
         scene = CalibrationScene(app, return_to=scene)
     if not app.profile.consentimento:
         scene = ConsentScene(app, scene)
-    return IntroScene(app, scene)
+    # A abertura completa aparece na primeira vez; depois fica em Opções > "Ver a abertura".
+    return scene if app.profile.abertura_vista else IntroScene(app, scene)
 
 
 def show_message(title: str, text: str) -> None:

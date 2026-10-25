@@ -188,3 +188,8 @@ def test_self_test_completo(data_dir):
 
     assert run_self_test(45) == 0
     assert (data_dir / "self_test.json").is_file()
+
+
+def test_abertura_so_na_primeira_vez(app):
+    app.profile.abertura_vista = True
+    assert isinstance(first_scene(app), VillageScene)

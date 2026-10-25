@@ -8,7 +8,7 @@ A imagem é contínua nas bordas (ruído periódico e desenhos com coordenadas
 pista são desenhadas pelo jogo em perspectiva, não fazem parte da imagem.
 
 Uso:
-    python tools/make_concrete_texture.py [--out assets/ground/concrete.png] [--seed 11]
+    python tools/legado/make_concrete_texture.py [--out assets/ground/concrete.png] [--seed 11]
 
 Requer: numpy, Pillow (só para gerar a imagem; o jogo não precisa).
 """
@@ -104,7 +104,7 @@ def make_concrete(seed: int) -> Image.Image:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path,
-                        default=Path(__file__).resolve().parents[1] / "assets" / "ground" / "concrete.png")
+                        default=Path(__file__).resolve().parents[2] / "assets" / "ground" / "concrete.png")
     parser.add_argument("--seed", type=int, default=11)
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)

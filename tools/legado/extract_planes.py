@@ -28,12 +28,12 @@ do padrão (256×256) pixel a pixel. As texturas são desenhadas pela própria
 função drawSchemeBackground do estúdio, com as cores dos presets dele.
 
 Para só acrescentar os mapas UV e os padrões a um conjunto já extraído:
-    python tools/extract_planes.py ... --passes uv
+    python tools/legado/extract_planes.py ... --passes uv
 
 <piloto> = none | riding | surfing | zen | waving | superman | wheelchair
 
 Uso (somente para gerar os assets; o jogo não precisa do Playwright):
-    python tools/extract_planes.py --html CAMINHO/estudio_avioes_14bis_e_piloto_3d.html \
+    python tools/legado/extract_planes.py --html CAMINHO/estudio_avioes_14bis_e_piloto_3d.html \
         --three node_modules/three/build/three.min.js --jszip node_modules/jszip/dist/jszip.min.js
 """
 
@@ -238,7 +238,7 @@ def main() -> None:
     parser.add_argument("--html", type=Path, required=True)
     parser.add_argument("--three", type=Path, required=True)
     parser.add_argument("--jszip", type=Path, required=True)
-    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[1] / "assets")
+    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "assets")
     parser.add_argument("--game-size", type=int, default=300)
     parser.add_argument("--menu-size", type=int, default=260)
     parser.add_argument("--models", nargs="*", default=MODEL_KEYS, help="só estes modelos (padrão: todos)")

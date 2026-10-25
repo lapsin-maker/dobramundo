@@ -305,7 +305,7 @@ def save(img: Image.Image, path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--models", type=Path, required=True, help="pasta modelos_3d (OBJ/MTL/textures)")
-    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[1] / "assets")
+    parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[2] / "assets")
     parser.add_argument("--only", nargs="*",
                         help="renderiza só estes grupos: trees props trash scenario")
     parser.add_argument("--scenario", type=Path, default=None,
