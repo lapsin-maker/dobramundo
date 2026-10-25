@@ -85,7 +85,7 @@ class GameCore:
         stats = plane_stats(self.profile.pecas)
         o = self.options
         self.input.position_control = o.controle_posicao
-        self.input.comfort = o.centralizar_sozinho
+        self.input.auto_center = o.centralizar_sozinho
         self.input.invert_x = o.inverter_horizontal
         self.input.set_floor(*self.floor_setup())
         if self.profile.controle != self.input.segment_key:

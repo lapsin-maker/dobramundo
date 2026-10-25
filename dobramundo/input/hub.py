@@ -51,7 +51,7 @@ class InputHub:
         self.source = None  # fonte da câmera, compartilhada entre segmentos
         self.segment_key = "teclado"
         self.position_control = True  # o corpo indica onde o avião fica (senão, a velocidade)
-        self.comfort = True  # repouso refeito sozinho depois de uma ausência longa
+        self.auto_center = True  # repouso refeito sozinho depois de uma ausência longa
         self.invert_x = False
         # Pés sobre a projeção: função dos pontos do corpo -> posição na imagem do jogo.
         # Definida pela plataforma (calibração do chão no executável; o próprio console no T-TEA).
@@ -88,7 +88,7 @@ class InputHub:
         sensitivity, dead_scale, invert_y = self.settings
         body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y, self.invert_x)
         body.mapper.hold_when_lost = self.position_control
-        body.recenter_after = RECENTER_S if self.comfort and key != "pes" else None
+        body.recenter_after = RECENTER_S if self.auto_center and key != "pes" else None
         return body
 
     def set_floor(self, locate, token: object) -> None:
@@ -113,7 +113,7 @@ class InputHub:
             mapper.invert_x = self.invert_x
             mapper.hold_when_lost = self.position_control
             if not self.body.absolute:
-                self.body.recenter_after = RECENTER_S if self.comfort and self.segment_key != "pes" else None
+                self.body.recenter_after = RECENTER_S if self.auto_center and self.segment_key != "pes" else None
 
     def stop_camera(self) -> None:
         """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""

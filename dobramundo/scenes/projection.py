@@ -15,7 +15,7 @@ import pygame
 
 from .. import config as C
 from ..content import texts
-from ..engine.orientation import ROTATIONS, unrotate_point
+from ..engine.orientation import ROTATIONS, standing, unrotate_point
 from ..input.floor import TARGETS, FloorMap
 from ..ui import theme as T
 from ..ui.widgets import row
@@ -39,6 +39,9 @@ class ProjectionScene(Scene):
     # ------------------------------------------------------------ menu
     def build(self) -> None:
         o = self.app.options
+        if self.state == "alvos":
+            self.menu.set_buttons([])  # nada sobre os alvos; ESC cancela
+            return
         if self.state != "menu":
             buttons = [self.button((24, 570, 300, 64), "Cancelar", self.cancel, key="cancelar")]
             if self.state == "foto":
@@ -83,9 +86,12 @@ class ProjectionScene(Scene):
 
     def rotate(self) -> None:
         o = self.app.options
+        before = o.rotacao
         o.rotacao = ROTATIONS[(ROTATIONS.index(o.rotacao) + 1) % len(ROTATIONS)]
-        if o.chao_pontos and o.rotacao in (90, 270):
-            self.toast.show("Girou em pé: calibre os 4 cantos de novo")
+        if o.chao_pontos and standing(before) != standing(o.rotacao):
+            # em pé ou deitada, a imagem ocupa outra área: os alvos calibrados não servem mais
+            o.chao_pontos = []
+            self.toast.show("A imagem mudou de formato: calibre os 4 cantos de novo")
         self.changed()
 
     def mirror(self) -> None:
@@ -221,10 +227,10 @@ class ProjectionScene(Scene):
         for i, (u, v) in enumerate(TARGETS):
             x, y = unrotate_point(u, v, o.rotacao, o.espelhar)
             center = (int(x * C.WIDTH), int(y * C.HEIGHT))
-            pygame.draw.circle(screen, T.WHITE, center, 46)
-            pygame.draw.circle(screen, (230, 40, 40), center, 34)
-            pygame.draw.circle(screen, T.WHITE, center, 20)
-            self.text.blit(screen, str(i + 1), (center[0], center[1] + 70), T.SIZES["hero"], T.WHITE, True, "center")
+            pygame.draw.circle(screen, T.WHITE, center, 50)
+            pygame.draw.circle(screen, (230, 40, 40), center, 40)
+            pygame.draw.circle(screen, T.WHITE, center, 26)
+            self.text.blit(screen, str(i + 1), center, T.SIZES["title"], (200, 30, 30), True, "center")
         left = max(0, int(SHOW_TARGETS_S - self.timer) + 1)
         self.text.blit(
             screen,

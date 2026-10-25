@@ -4,7 +4,7 @@ Os scripts desta pasta criam os arquivos de `assets/` que o jogo carrega. O jogo
 
 A pasta tem duas partes:
 
-- **Geradores ativos** (`build_assets.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py`, `balance.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
+- **Geradores ativos** (`build_assets.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py`, `balance.py`, `build_cartridge.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
 - **Legado** (`legado/`). Scripts do protótipo Eco Runner. Dependem de materiais externos que não estão no repositório (ver a seção própria).
 
 ## Ambiente
@@ -15,7 +15,7 @@ Para todos os geradores ativos, instale as dependências de desenvolvimento a pa
 python -m pip install -r requirements-dev.txt
 ```
 
-Esse arquivo traz numpy, Pillow e soundfile (opcional, para OGG). O `measure_obstacles.py` também importa o pygame, que já vem com `requirements.txt`.
+Esse arquivo traz numpy, Pillow e soundfile (opcional, para OGG). O `measure_obstacles.py` também importa o pygame, que já vem com `requirements.txt`. O `build_cartridge.py` não usa essas dependências: ele precisa da ferramenta oficial de cartuchos do T-TEA (comando `tsdk`, Python 3.14).
 
 ## Fluxo de geração
 
@@ -35,6 +35,9 @@ make_ground_textures.py ---------> assets/ground/dry_soil.png, agreste.png
                                    (importa make_grass_texture.py)
 measure_obstacles.py ------------> nada gravado: confere as colisões contra os sprites
 balance.py ----------------------> nada gravado: simula voos e mede duração da fase e recursos
+
+build_cartridge.py --------------> build/cartucho/ e dist/dobramundo-1.3.0.ttea
+                                   (monta o pacote do jogo; valida e gera com o tsdk)
 ```
 
 ## Geradores ativos
@@ -48,6 +51,7 @@ balance.py ----------------------> nada gravado: simula voos e mede duração da
 | `make_grass_texture.py` | `assets/ground/grass.png` | `python tools/make_grass_texture.py [--out assets/ground/grass.png] [--seed 7]` | numpy, Pillow | Textura de grama contínua nas bordas, para repetição sem emenda |
 | `make_ground_textures.py` | `assets/ground/dry_soil.png` (despertar do sertão) e `agreste.png` (Petrolina solarpunk) | `python tools/make_ground_textures.py [--out assets/ground]` | numpy, Pillow | Importa `make_grass_texture.py`, que deve estar na mesma pasta |
 | `measure_obstacles.py` | Nada gravado. Imprime, para cada obstáculo de cada fase, a medida usada no jogo ao lado da medida medida no sprite | `python tools/measure_obstacles.py` | numpy, Pillow, pygame | Usa a altura visual e o alfa dos sprites. Ajuda a calibrar `low`, `gate` e `tower` em `content/items.py` e `content/biomes.py` |
+| `build_cartridge.py` | `build/cartucho/` (pasta montada do pacote) e `dist/dobramundo-1.3.0.ttea` (cartucho do console T-TEA) | `python tools/build_cartridge.py [--tsdk CAMINHO_DO_TSDK] [--so-montar]` | ferramenta oficial de cartuchos do T-TEA (comando `tsdk`, Python 3.14) | Monta `dobramundo/` e `assets/` sem o que só o executável usa (`app.py`, `main.py`, `selftest.py`, `input/camera.py`) e sem o modelo de pose. Escreve `ttea.toml`, `pyproject.toml` e `CREDITOS.md` (a partir dos créditos do jogo), depois roda `tsdk check` e `tsdk build`. `--so-montar` só monta a pasta |
 
 ### Pacote `lowpoly/`
 
