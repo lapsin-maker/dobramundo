@@ -126,6 +126,9 @@ class AxisMapper:
         self.sensitivity = sensitivity
         self.dead_scale = dead_scale
         self.invert_y = invert_y  # câmera vista de cima ou de cabeça para baixo: subir vira descer
+        # Controle por posição: sem o ponto, o comando fica onde estava (o avião mantém o
+        # rumo). No controle por velocidade, volta ao centro aos poucos (o avião para).
+        self.hold_when_lost = False
         self.reset()
 
     def reset(self) -> None:
@@ -156,6 +159,8 @@ class AxisMapper:
                     self.base = (median([p[0] for p in self.samples]), median([p[1] for p in self.samples]))
             return
         if point is None:
+            if self.hold_when_lost:
+                return
             self.ax *= self.LOST_DECAY
             self.ay *= self.LOST_DECAY
             return
@@ -330,8 +335,8 @@ class BodyControl:
         self.mapper.reset()
 
     def poll(self, dt: float) -> None:
-        self._since_reading += dt
         """Consome a leitura nova da câmera, se houver (chamado a cada quadro)."""
+        self._since_reading += dt
         seq, landmarks, preview = self.source.snapshot()
         if seq != 0 and seq != self._seq:
             self._seq = seq

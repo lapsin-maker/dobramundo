@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pygame
 
 from .. import config as C
@@ -22,6 +24,11 @@ def apply_run(profile, run: FlightRun) -> dict:
         profile.recursos[waste] = profile.recursos.get(waste, 0) + amount
     profile.pontos += run.score
     profile.voos += 1
+    profile.voos_fase[key] = profile.voos_fase.get(key, 0) + 1
+    entry = run.summary()
+    entry["data"] = datetime.now().isoformat(timespec="seconds")
+    entry["controle"] = profile.controle
+    profile.historico = (profile.historico + [entry])[-C.HISTORY_LIMIT :]
     if run.stars > best_before:
         profile.estrelas[key] = run.stars
     record_key = f"{key}:{run.mode}"
@@ -29,6 +36,19 @@ def apply_run(profile, run: FlightRun) -> dict:
     if new_record:
         profile.recordes[record_key] = run.score
     return {"new_stars": max(0, run.stars - best_before), "new_record": new_record}
+
+
+def movement_line(run: FlightRun) -> str:
+    """Linha do movimento no resultado: tempo em ação, alcances percorridos e momentos de foco."""
+    parts = []
+    if run.body_time >= 5.0:
+        minutes, seconds = divmod(int(run.active_time), 60)
+        share = int(round(100 * run.active_time / max(1.0, run.body_time)))
+        parts.append(f"Em movimento: {minutes}:{seconds:02d} ({share}% do voo)")
+        parts.append(f"{run.travel:.0f} alcances percorridos")
+    if run.focus.total:
+        parts.append(f"Momentos de foco: {run.focus.successes} de {run.focus.total}")
+    return "   ·   ".join(parts)
 
 
 class ResultScene(Scene):
@@ -97,10 +117,13 @@ class ResultScene(Scene):
             True,
             "midtop",
         )
+        movement = movement_line(run)
+        if movement:
+            self.text.blit(screen, movement, (card.centerx, card.top + 250), T.SIZES["small"], T.TEAL, True, "midtop")
         self.text.blit(
-            screen, "Recursos para a vila", (card.centerx, card.top + 262), T.SIZES["body"], T.MUTED, True, "midtop"
+            screen, "Recursos para a vila", (card.centerx, card.top + 274), T.SIZES["body"], T.MUTED, True, "midtop"
         )
-        cells = row(pygame.Rect(card.left + 60, card.top + 294, card.width - 120, 70), 4, 16)
+        cells = row(pygame.Rect(card.left + 60, card.top + 302, card.width - 120, 70), 4, 16)
         for waste, rect in zip(WASTE_TYPES, cells):
             T.panel(screen, rect, T.PAPER, waste.color, 255, 14, 4)
             icon = self.app.assets.sprite("waste_sprites", waste.sprite)
@@ -115,8 +138,8 @@ class ResultScene(Scene):
                 True,
             )
             self.text.blit(screen, waste.name, (rect.left + 76, rect.top + 40), T.SIZES["small"], T.MUTED)
-        self.text.blit(screen, "Você sabia?", (card.left + 60, card.top + 384), T.SIZES["body"], T.TEAL, True)
+        self.text.blit(screen, "Você sabia?", (card.left + 60, card.top + 388), T.SIZES["body"], T.TEAL, True)
         self.text.paragraph(
-            screen, self.fact, pygame.Rect(card.left + 60, card.top + 412, card.width - 120, 70), T.SIZES["body"], T.INK
+            screen, self.fact, pygame.Rect(card.left + 60, card.top + 414, card.width - 120, 70), T.SIZES["body"], T.INK
         )
         self.draw_menu(screen)

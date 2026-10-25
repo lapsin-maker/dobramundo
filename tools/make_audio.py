@@ -798,6 +798,52 @@ def sfx_decolagem() -> Onda:
     return sopro_papel(secs(1.1), rng_para(330))
 
 
+def sopro_suave(n: int, rng: np.random.Generator, fc_ini: float, fc_fim: float) -> Onda:
+    """Sopro de ar sem envelope: banda central vai de fc_ini a fc_fim (Hz), em quadros curtos."""
+    tam, passo = 1024, 256
+    janela = np.hanning(tam)
+    ruido = rng.standard_normal(n + tam)
+    freqs = np.fft.rfftfreq(tam, 1.0 / SR)
+    saida = np.zeros(n + tam)
+    for ini in range(0, n, passo):
+        fc = fc_ini * (fc_fim / fc_ini) ** (ini / n)
+        mascara = np.exp(-0.5 * ((freqs - fc) / (0.5 * fc)) ** 2)
+        quadro = ruido[ini : ini + tam] * janela
+        saida[ini : ini + tam] += np.fft.irfft(np.fft.rfft(quadro) * mascara, tam)
+    return saida[:n] / (np.sqrt(np.mean(saida[:n] ** 2)) + 1e-12)
+
+
+def sfx_desvio_alerta() -> Onda:
+    """Chamada de atencao do momento de foco (0,5 s): duas notas descendentes (A5 e E5)
+    com sopro de ar cuja banda desce, sugerindo o mundo desacelerando."""
+    n = secs(0.5)
+    envelope = np.sin(np.pi * np.linspace(0.0, 1.0, n)) ** 2
+    sopro = 0.12 * sopro_suave(n, rng_para(341), 2600.0, 700.0) * envelope
+    return junta(
+        [
+            (0.0, sino_suave(hz(81), secs(0.42))),
+            (0.16, sino_suave(hz(76), secs(0.34))),
+            (0.0, sopro),
+        ]
+    )
+
+
+def sfx_desvio_ok() -> Onda:
+    """Conquista do desvio (0,4 s): arpejo ascendente de kalimba (C6, E6, G6, C7)
+    com sopro de ar cuja banda sobe."""
+    n = secs(0.4)
+    envelope = np.sin(np.pi * np.linspace(0.0, 1.0, n)) ** 2
+    sopro = 0.1 * sopro_suave(n, rng_para(342), 900.0, 3500.0) * envelope
+    partes = [(i * 0.055, kalimba(hz(m), secs(0.26))) for i, m in enumerate((84, 88, 91, 96))]
+    partes.append((0.0, sopro))
+    return junta(partes)
+
+
+def sfx_desvio_quase() -> Onda:
+    """Quase-la gentil (0,3 s): duas notas graves e suaves (G3 e E3), sem ruido."""
+    return junta([(0.0, sino_suave(hz(55), secs(0.18))), (0.12, sino_suave(hz(52), secs(0.16)))])
+
+
 # ---------------------------------------------------------------------------
 # Salvamento e linha de comando
 # ---------------------------------------------------------------------------
@@ -843,7 +889,7 @@ def escrever_leiame(pasta: Path) -> None:
         "## Conteudo\n\n"
         "- `musica_*.ogg`: loops de 16 compassos (vila, Amazonia e Caatinga, com 3 estagios "
         "cada). Cada bioma usa a mesma tonalidade e o mesmo andamento, para crossfade.\n"
-        "- `sfx_*.ogg`: efeitos curtos de coleta, interface e fases.\n\n"
+        "- `sfx_*.ogg`: efeitos curtos de coleta, interface, fases e avisos do momento de foco (`sfx_desvio_*`).\n\n"
         "## Licenca\n\n"
         "Gerado pelo projeto; mesma licenca do codigo do Dobramundo.\n"
     )
@@ -876,6 +922,9 @@ SFX: List[Tuple[str, Callable[[], Onda], float]] = [
     ("sfx_fim_fase.ogg", sfx_fim_fase, PICO_SFX_DB),
     ("sfx_game_over.ogg", sfx_game_over, -12.0),
     ("sfx_decolagem.ogg", sfx_decolagem, -10.0),
+    ("sfx_desvio_alerta.ogg", sfx_desvio_alerta, -12.0),
+    ("sfx_desvio_ok.ogg", sfx_desvio_ok, PICO_SFX_DB),
+    ("sfx_desvio_quase.ogg", sfx_desvio_quase, -12.0),
 ]
 
 

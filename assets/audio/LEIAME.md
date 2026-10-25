@@ -15,7 +15,7 @@ Requer numpy. Para gravar OGG Vorbis, precisa de `soundfile`; sem ele o script g
 ## Conteudo
 
 - `musica_*.ogg`: loops de 16 compassos (vila, Amazonia e Caatinga, com 3 estagios cada). Cada bioma usa a mesma tonalidade e o mesmo andamento, para crossfade.
-- `sfx_*.ogg`: efeitos curtos de coleta, interface e fases.
+- `sfx_*.ogg`: efeitos curtos de coleta, interface, fases e avisos do momento de foco (`sfx_desvio_*`).
 
 ## Licenca
 
