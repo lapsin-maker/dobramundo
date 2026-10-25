@@ -105,7 +105,7 @@ class FlightRun:
         if normal:
             gain = C.NORMAL_RESTORATION_PER_TRASH
         else:
-            gain = C.RESTORATION_PER_TRASH + (C.RESTORATION_COMBO_BONUS if self.combo >= 4 else 0.0)
+            gain = C.RESTORATION_PER_TRASH + (C.RESTORATION_COMBO_BONUS if self.combo >= C.COMBO_BONUS_FROM else 0.0)
         self.streak += 1
         self.combo_timer = C.COMBO_WINDOW_S
         if not normal and self.streak % C.COMBO_STEP == 0:  # Normal: pontos fixos, sem combo

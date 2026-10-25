@@ -13,7 +13,9 @@ import pygame
 
 from .. import config as C
 from ..content import texts
+from ..content.biomes import BIOMES
 from ..content.progress import VILLAGE_UPGRADES
+from ..persistence import MODE_LABELS
 from ..ui import theme as T
 from ..ui.widgets import row
 from ..util import lerp_color, rgb
@@ -153,7 +155,8 @@ class VillageScene(Scene):
         self.title(
             screen,
             "Vila-base",
-            f"Vila {int(progress * 100)}% sustentável   •   {app.profile.total_stars()} de 6 estrelas",
+            f"Vila {int(progress * 100)}% sustentável   •   {app.profile.total_stars()} de "
+            f"{3 * len(BIOMES)} estrelas   •   Modo {MODE_LABELS[app.profile.modo]}",
         )
         self.resource_bar(screen)
         logo = app.assets.sprite("ui", "logo")

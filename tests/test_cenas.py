@@ -79,10 +79,11 @@ def test_inicio_passa_pelo_aviso_na_primeira_vez(app):
 
 def test_comprar_melhoria_da_vila_desconta_recursos(app):
     scene = show(app, UpgradesScene(app))
-    app.profile.recursos.update({"papel": 10, "plastico": 10})
+    cost = VILLAGE_BY_KEY["ponto_troca"].cost
+    app.profile.recursos.update({key: amount + 4 for key, amount in cost.items()})
     scene.buy_village(VILLAGE_BY_KEY["ponto_troca"])
     assert "ponto_troca" in app.profile.vila
-    assert app.profile.recursos["papel"] == 4 and app.profile.recursos["plastico"] == 4
+    assert all(app.profile.recursos[key] == 4 for key in cost)
 
 
 def test_compra_sem_recursos_nao_acontece(app):

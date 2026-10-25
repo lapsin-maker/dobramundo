@@ -30,10 +30,10 @@ SEGMENT_LENGTH = 100.0
 TRACK_LENGTH = 2500.0  # profundidade da pista mantida à frente do avião
 
 # ------------------------------------------------------------------ voo
-BASE_SPEED = 460.0
-RESTORATION_SPEED_GAIN = 0.6  # velocidade extra por ponto de transformação
-DIFFICULTY_SPEED_GAIN = 50.0  # velocidade extra ao fim da rampa de dificuldade
-DIFFICULTY_RAMP_S = 180.0  # segundos até a dificuldade máxima
+BASE_SPEED = 340.0  # Difícil; o Normal voa à metade (antes 460: rápido demais para a criança)
+RESTORATION_SPEED_GAIN = 0.3  # velocidade extra por ponto de transformação
+DIFFICULTY_SPEED_GAIN = 30.0  # velocidade extra ao fim da rampa de dificuldade
+DIFFICULTY_RAMP_S = 240.0  # segundos até a dificuldade máxima
 MAX_LATERAL_SPEED = 620.0  # unidades/s para os lados
 MAX_VERTICAL_SPEED = 420.0  # unidades/s para cima/baixo
 FLIGHT_RESPONSE = 9.0  # quão rápido o avião responde aos comandos
@@ -51,8 +51,9 @@ HIT_FLASH_S = 0.28
 # ------------------------------------------------- transformação da cidade
 ERA_SPAN = 100.0 / 3.0  # três estágios do mesmo tamanho (33,3% e 66,7%)
 START_RESTORATION = 5.0
-RESTORATION_PER_TRASH = 1.4  # Difícil: cada era pede ~24 resíduos
-RESTORATION_COMBO_BONUS = 0.15  # com combo >= 4
+# Fase de ~3,5 min com a criança pegando 4 de cada 10 resíduos (ver tools/balance.py).
+RESTORATION_PER_TRASH = 0.35  # Difícil
+RESTORATION_COMBO_BONUS = 0.04  # com combo >= COMBO_BONUS_FROM
 REPAIR_RESTORATION = 2.0  # reparo com vidas cheias
 NORMAL_TRASH_EVERY = 4  # Normal: 1 resíduo a cada 4 do Difícil
 NORMAL_TRASH_POINTS = 65  # pontos fixos por resíduo no Normal
@@ -63,6 +64,7 @@ HARD_TRASH_POINTS = 15  # Difícil: 15 x combo por resíduo
 COMBO_WINDOW_S = 2.2
 COMBO_STEP = 4  # a cada 4 coletas seguidas o combo sobe
 MAX_COMBO = 8
+COMBO_BONUS_FROM = 4  # combo a partir do qual cada coleta rende transformação extra
 SHIELD_S = 6.0
 MAGNET_S = 7.0
 TRASH_HEIGHTS = (32.0, 88.0, 140.0)  # rasante, meia altura, alto

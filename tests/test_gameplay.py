@@ -222,3 +222,22 @@ def test_fase_termina_depois_do_voo_final(run):
     assert run.complete and not run.finished
     advance(run, 3.2)
     assert run.finished
+
+
+@pytest.mark.parametrize("mode", ["normal", "dificil"])
+def test_fase_dura_alguns_minutos(mode):
+    """Equilíbrio: pegando 4 de cada 10 resíduos, a fase leva de 2,5 a 6 minutos."""
+    import random
+
+    run = make_run(mode=mode, clear=False)
+    run.invincible = True
+    rng, decided, t = random.Random(2), set(), 0.0
+    while not run.complete and t < 600:
+        for entity in run.world.entities:
+            if entity.kind == "waste" and id(entity) not in decided and entity.z <= C.PLAYER_Z + 60:
+                decided.add(id(entity))
+                if rng.random() < 0.4:
+                    run.player.x, run.player.y = entity.x, min(C.MAX_ALTITUDE, entity.y)
+        run.update(1 / 30)
+        t += 1 / 30
+    assert 150 <= t <= 360, f"{mode}: {t / 60:.1f} min"
