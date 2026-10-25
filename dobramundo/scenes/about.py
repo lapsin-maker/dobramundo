@@ -11,6 +11,7 @@ from .base import Scene
 
 TABS = (("sobre", "O jogo"), ("ods", "ODS"), ("creditos", "Créditos"), ("referencias", "Referências"))
 BODY = pygame.Rect(40, 160, C.WIDTH - 80, 390)
+CREDIT_LABEL_W = 250  # coluna dos rótulos dos créditos ("Referências de design" cabe inteiro)
 
 
 class AboutScene(Scene):
@@ -100,12 +101,12 @@ class AboutScene(Scene):
                     text.paragraph(
                         screen,
                         value,
-                        pygame.Rect(BODY.left + 190, y, BODY.width - 190, 80),
+                        pygame.Rect(BODY.left + CREDIT_LABEL_W, y, BODY.width - CREDIT_LABEL_W, 80),
                         T.SIZES["body"],
                         T.INK,
-                        1.2,
+                        1.1,
                     )
-                    + 6
+                    + 2
                 )
         else:
             y = BODY.top

@@ -4,6 +4,7 @@ dynamic = ["version"]
 description = "Exergame sério de voo: um avião de papel reciclado, pilotado com o corpo, transforma cidades brasileiras em cidades solarpunk."
 readme = "README.md"
 requires-python = ">=3.8"
+license = { text = "CC-BY-4.0" }
 authors = [{ name = "Liga de Psiquiatria e Neurociências – CENSUPEG" }]
 dependencies = ["pygame>=2.5,<3"]
 

@@ -185,8 +185,10 @@ CREDITS = (
     ("Referências de design", "Star Fox 64, Subway Surfers, It Takes Two e Super Mario World"),
     ("Programação", "IA generativa (Gemini e Claude) apoiou a programação"),
     ("Tecnologia", "Python, pygame, OpenCV e MediaPipe Pose"),
+    ("Modelo de pose", "MediaPipe Pose Landmarker Lite, do Google (licença Apache 2.0)"),
     ("Música e efeitos", "Sintetizados pelo projeto"),
     ("Evento", "3ª ExerGame JAM LARVA/UDESC 2026"),
+    ("Licença", "Creative Commons Atribuição 4.0 (CC BY 4.0), código aberto"),
 )
 
 REFERENCES = (
