@@ -416,13 +416,15 @@ class FlightScene(Scene):
         T.panel(screen, status, T.PAPER, T.NAVY, 238, 16, 2)
         spacing = 39
         start_x = status.left + (status.width - (run.max_lives - 1) * spacing) // 2
+        life_y = 40 if run.exploration or run.predictable_assistance else 48
         for i in range(run.max_lives):
-            self.draw_life(screen, (start_x + i * spacing, 48), i < run.lives)
+            self.draw_life(screen, (start_x + i * spacing, life_y), i < run.lives)
+        label_anchor = (status.centerx, status.bottom - 24)
         if run.exploration:
             label = "EXPLORAR" + (" · APOIO" if run.predictable_assistance else "")
-            text.blit(screen, label, status.center, T.SIZES["small"], T.TEAL, True, "midtop")
+            text.blit(screen, label, label_anchor, T.SIZES["small"], T.TEAL, True, "midtop")
         elif run.predictable_assistance:
-            text.blit(screen, "APOIO", status.center, T.SIZES["small"], T.TEAL, True, "midtop")
+            text.blit(screen, "APOIO", label_anchor, T.SIZES["small"], T.TEAL, True, "midtop")
         if run.shield_timer > 0 or run.magnet_timer > 0:
             # Ambos os benefícios têm um relógio visual próprio. A leitura de
             # segundos é auxiliar; o arco se esvazia sem piscar.
