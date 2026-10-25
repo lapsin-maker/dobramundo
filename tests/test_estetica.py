@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pygame
 import pytest
-from PIL import Image
 
 from dobramundo import config as C
 from dobramundo.content.pilot import ACCESSORIES, HAIR_STYLES, SKIN_TONES, option_keys
@@ -23,6 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_stylize():
+    """O filtro é ferramenta de build: precisa de numpy e Pillow, que o jogo não exige."""
+    pytest.importorskip("numpy")
+    pytest.importorskip("PIL")
     spec = importlib.util.spec_from_file_location("stylize", ROOT / "tools" / "stylize.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules["stylize"] = module
@@ -33,6 +35,8 @@ def load_stylize():
 # ------------------------------------------------------------ filtro
 def test_filtro_mantem_tamanho_e_poe_contorno_de_tinta():
     stylize = load_stylize()
+    from PIL import Image
+
     image = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
     for y in range(10, 30):
         for x in range(10, 30):
