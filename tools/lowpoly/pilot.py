@@ -19,7 +19,13 @@ from .kit import P, chain, hexcolor, rotate_x, rotate_z, translate
 from .mesh import Mesh
 from .raster import make_frame, render_layers
 
-VIEWS = {"flight": {"yaw": 0.0, "pitch": 28.0}, "menu": {"yaw": -120.0, "pitch": 18.0}}
+# Vista -> pose e câmera. "segura" e "lanca" são a criança em pé da abertura (GDD, seção 2).
+VIEWS = {
+    "flight": {"pose": "sentada", "yaw": 0.0, "pitch": 28.0},
+    "menu": {"pose": "sentada", "yaw": -120.0, "pitch": 18.0},
+    "segura": {"pose": "segura", "yaw": -150.0, "pitch": 8.0},
+    "lanca": {"pose": "lanca", "yaw": -150.0, "pitch": 8.0},
+}
 SPRITE_MAX = 256
 HEAD = (0.0, 1.08, 0.0)
 HEAD_R = 0.32
@@ -27,10 +33,12 @@ TINTED = ("skin", "shirt", "hair_curto", "hair_cacheado", "hair_crespo", "hair_l
 
 
 # ------------------------------------------------------------------- corpo
-def body() -> Mesh:
-    """Criança sentada, de frente para -z, acenando com a mão direita."""
+def body(pose: str = "sentada") -> Mesh:
+    """Criança de frente para -z: sentada acenando (voo), segurando o jornal ou lançando o avião."""
     m = Mesh()
     pants, shoe = hexcolor("2a3f6e"), hexcolor("e2483d")
+    if pose != "sentada":
+        return standing(m, pose, pants, shoe)
     m.box((0.5, 0.62, 0.32), (255, 255, 255), at=translate(0, 0.05, 0), part="shirt")  # tronco
     m.box((0.18, 0.1, 0.18), (255, 255, 255), at=translate(0, 0.66, 0), part="skin")  # pescoço
     m.sphere(HEAD_R, (255, 255, 255), 5, 10, at=translate(*HEAD), part="skin")  # cabeça
@@ -46,13 +54,41 @@ def body() -> Mesh:
     m.beam((0.3, 0.6, 0.0), (0.5, 0.85, -0.05), 0.14, (255, 255, 255), part="shirt")
     m.beam((0.5, 0.85, -0.05), (0.6, 1.22, -0.1), 0.12, (255, 255, 255), part="skin")
     m.sphere(0.09, (255, 255, 255), 2, 6, at=translate(0.61, 1.27, -0.1), part="skin")
-    # rosto (olhos e sorriso) na frente da cabeça
+    return face(m)
+
+
+def face(m: Mesh) -> Mesh:
+    """Olhos e sorriso na frente da cabeça."""
     for side in (-1, 1):
         m.sphere(
             0.045, hexcolor("1d2433"), 2, 6, at=translate(side * 0.11, HEAD[1] + 0.04, -HEAD_R + 0.03), part="base"
         )
     m.box((0.12, 0.03, 0.02), hexcolor("8a3a3a"), at=translate(0, HEAD[1] - 0.12, -HEAD_R + 0.04), part="base")
     return m
+
+
+def standing(m: Mesh, pose: str, pants, shoe) -> Mesh:
+    """Em pé: pernas retas até y = -0,95; a cabeça fica onde está na pose sentada (os itens servem)."""
+    white = (255, 255, 255)
+    m.box((0.5, 0.62, 0.32), white, at=translate(0, 0.05, 0), part="shirt")
+    m.box((0.18, 0.1, 0.18), white, at=translate(0, 0.66, 0), part="skin")
+    m.sphere(HEAD_R, white, 5, 10, at=translate(*HEAD), part="skin")
+    for side in (-1, 1):
+        m.sphere(0.07, white, 2, 6, at=translate(side * HEAD_R, HEAD[1], 0.02), part="skin")
+        m.box((0.2, 0.92, 0.22), pants, at=translate(side * 0.13, -0.87, 0), part="base")
+        m.box((0.22, 0.12, 0.34), shoe, at=translate(side * 0.13, -0.95, -0.06), part="base")
+    if pose == "segura":  # as duas mãos à frente do peito, segurando a folha de jornal
+        for side in (-1, 1):
+            m.beam((side * 0.3, 0.6, 0.0), (side * 0.32, 0.35, -0.22), 0.14, white, part="shirt")
+            m.beam((side * 0.32, 0.35, -0.22), (side * 0.16, 0.42, -0.45), 0.12, white, part="skin")
+            m.sphere(0.09, white, 2, 6, at=translate(side * 0.14, 0.44, -0.5), part="skin")
+    else:  # lança: braço direito esticado para a frente e para o alto, esquerdo para trás
+        m.beam((0.3, 0.6, 0.0), (0.42, 0.95, -0.3), 0.14, white, part="shirt")
+        m.beam((0.42, 0.95, -0.3), (0.48, 1.3, -0.62), 0.12, white, part="skin")
+        m.sphere(0.09, white, 2, 6, at=translate(0.49, 1.35, -0.68), part="skin")
+        m.beam((-0.3, 0.6, 0.0), (-0.42, 0.25, 0.18), 0.14, white, part="shirt")
+        m.beam((-0.42, 0.25, 0.18), (-0.45, -0.05, 0.25), 0.12, white, part="skin")
+    return face(m)
 
 
 # ---------------------------------------------------------------- cabelos
@@ -255,12 +291,13 @@ def options() -> Dict[str, Mesh]:
 def build_pilot(assets: Path) -> None:
     folder = assets / "pilot_layers"
     folder.mkdir(parents=True, exist_ok=True)
-    base = body()
-    everything = Mesh().extend(base)
-    for mesh in options().values():
-        everything.extend(mesh)
     layout: Dict[str, Dict[str, List[int]]] = {}
     for view, cam in VIEWS.items():
+        base = body(cam["pose"])
+        everything = Mesh().extend(base)
+        for name, mesh in options().items():
+            if name != "chair" or cam["pose"] == "sentada":
+                everything.extend(mesh)
         frame = make_frame(everything, cam["yaw"], cam["pitch"], SPRITE_MAX)
         layers = render_layers(base, cam["yaw"], cam["pitch"], frame, white_parts=TINTED)
         for name, image in layers.items():
@@ -269,6 +306,8 @@ def build_pilot(assets: Path) -> None:
         ys, xs = np.nonzero(alpha > 40)
         layout[view] = [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
         for name, mesh in options().items():
+            if name == "chair" and cam["pose"] != "sentada":
+                continue  # em pé não há cadeira: com cadeira, a abertura usa a pose sentada
             scene = Mesh().extend(base).extend(mesh)
             image = render_layers(scene, cam["yaw"], cam["pitch"], frame, white_parts=TINTED).get(name)
             if image is not None:

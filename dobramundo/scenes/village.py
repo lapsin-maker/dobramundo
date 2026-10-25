@@ -8,6 +8,7 @@ arquitetura solarpunk.
 from __future__ import annotations
 
 import math
+from typing import Dict, Tuple
 
 import pygame
 
@@ -40,6 +41,20 @@ SKY_POLLUTED = (rgb("3b2a22"), rgb("8a5a36"))
 SKY_CLEAN = (rgb("4fb3f0"), rgb("fff2b0"))
 
 
+_puffs: Dict[Tuple[int, int], pygame.Surface] = {}
+
+
+def smoke_puff(radius: int, alpha: int) -> pygame.Surface:
+    """Bolha de fumaça translúcida (em cache por raio e opacidade: ~100 variações no total)."""
+    key = (radius, alpha)
+    surf = _puffs.get(key)
+    if surf is None:
+        surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surf, (70, 60, 55, alpha), (radius, radius), radius)
+        _puffs[key] = surf
+    return surf
+
+
 def village_progress(profile) -> float:
     return len(profile.vila) / len(VILLAGE_UPGRADES)
 
@@ -69,9 +84,7 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
     if progress < 0.5:  # fumaça das chaminés
         for i in range(5):
             r = 26 + i * 9 + int(4 * math.sin(scene.time * 1.5 + i))
-            surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (70, 60, 55, 120 - i * 18), (r, r), r)
-            screen.blit(surf, (260 - r + i * 22, 110 - i * 34 - r))
+            screen.blit(smoke_puff(r, 120 - i * 18), (260 - r + i * 22, 110 - i * 34 - r))
     owned = set(app.profile.vila)
     for upgrade in sorted(VILLAGE_UPGRADES, key=lambda u: u.slot[1]):
         x, base_y, height = upgrade.slot

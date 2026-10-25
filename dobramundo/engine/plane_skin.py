@@ -15,9 +15,9 @@ import pygame
 from .. import config as C
 from ..content.planes import color_value
 from .assets import Assets
+from .cache import BoundedCache
 from .pilot import PilotRenderer
 
-VIEWS = ("flight", "menu")
 FOLDERS = {
     "flight": ("plane_sprites", "plane_paint", "plane_uv"),
     "menu": ("plane_menu", "plane_menu_paint", "plane_menu_uv"),
@@ -32,9 +32,9 @@ class PlaneSkin:
         for key, surface in assets.folder("plane_patterns").items():
             size = (C.PATTERN_TEXTURE_SIZE, C.PATTERN_TEXTURE_SIZE)
             self.patterns[key] = surface if surface.get_size() == size else pygame.transform.smoothscale(surface, size)
-        self.palettes: Dict[str, list] = {}
-        self.uv_indices: Dict[tuple, list] = {}
-        self.cache: Dict[tuple, pygame.Surface] = {}
+        self.palettes = BoundedCache(C.PATTERN_CACHE_LIMIT)  # ~2,7 MB cada
+        self.uv_indices = BoundedCache(8)
+        self.cache = BoundedCache(48)  # avião pintado com piloto
         self.thumbs: Dict[tuple, pygame.Surface] = {}
 
     def base(self, plane: str, view: str) -> Optional[pygame.Surface]:
@@ -50,8 +50,6 @@ class PlaneSkin:
                 return None
             data = pygame.image.tobytes(texture, "RGB")
             palette = [data[i : i + 3] for i in range(0, len(data), 3)]
-            if len(self.palettes) >= C.PATTERN_CACHE_LIMIT:
-                self.palettes.pop(next(iter(self.palettes)))
             self.palettes[pattern] = palette
         return palette
 
@@ -64,8 +62,6 @@ class PlaneSkin:
                 return None
             data = pygame.image.tobytes(uv, "RGB")
             index = [(g << 8) | r for r, g in zip(data[0::3], data[1::3])]
-            if len(self.uv_indices) >= 8:
-                self.uv_indices.pop(next(iter(self.uv_indices)))
             self.uv_indices[key] = index
         return index
 
@@ -119,8 +115,6 @@ class PlaneSkin:
             result = painted
             if pilot:
                 result = self.pilots.mount(painted, plane, view, pilot)
-            if len(self.cache) >= 48:
-                self.cache.pop(next(iter(self.cache)))
             self.cache[key] = result
         return result
 

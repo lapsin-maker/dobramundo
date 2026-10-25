@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, Tuple
 import pygame
 
 from .. import config as C
-from ..util import Color, clamp, lerp_color
+from ..util import Color, haze_at, lerp_color
 from .assets import Assets
 from .sprites import project
 
@@ -89,7 +89,7 @@ class GroundRenderer:
             column = pygame.Surface((1, y_near - y_far), pygame.SRCALPHA)
             for i in range(y_near - y_far):
                 z = C.CAMERA_HEIGHT * C.FOV / (y_far + i + 0.5 - C.HORIZON_Y)
-                haze = clamp((z - C.FOG_START) / (C.FOG_END - C.FOG_START), 0.0, 1.0)
+                haze = haze_at(z)
                 column.set_at((0, i), (*fog, int(255 * haze)))
             overlay = pygame.transform.scale(column, (C.WIDTH, y_near - y_far))
             self.fog_cache[fog] = overlay
@@ -123,32 +123,41 @@ class GroundRenderer:
         """names = (chão industrial, chão do despertar, chão solarpunk)."""
         if not self.textures:
             return
-        green_flags, final_flags = flags
+        jobs, road_jobs = self.queue_rows(world, flags, cam, names, road_texture if self.has(road_texture) else None)
+        screen.blits(jobs, doreturn=False)
+        if road_jobs:
+            screen.blits(road_jobs, doreturn=False)
+        if names[0] == "concrete" and "concrete" in self.textures:
+            for near_z, far_z in self.concrete_spans(world, flags[0]):
+                self.draw_concrete_joints(screen, near_z, far_z, cam, fog)
+        overlay, y_far = self.fog_overlay(fog)
+        screen.blit(overlay, (0, y_far))
+
+    def row_texture(self, i: int, flags, names: Tuple[str, str, str]) -> Tuple[str, bool]:
+        """Textura do chão no trecho i e se o trecho já está no estágio solarpunk."""
+        green_flags, solar_flags = flags
         industrial, green_name, solar_name = names
-        solar_ok = self.has(solar_name)
-        green_ok = self.has(green_name)
-        road_ok = self.has(road_texture)
-        segments = world.segments
-        first = segments[0] if segments else 0.0
-        count = len(segments)
+        is_final = bool(solar_flags) and 0 <= i < len(solar_flags) and solar_flags[i]
+        if is_final and self.has(solar_name):
+            return solar_name, True
+        if green_flags and 0 <= i < len(green_flags) and green_flags[i] and self.has(green_name):
+            return green_name, is_final
+        return industrial, is_final
+
+    def queue_rows(self, world, flags, cam: float, names: Tuple[str, str, str], road_texture: Optional[str]):
+        """Pedaços de textura de cada linha: laterais do chão e, no estágio final, a pista."""
+        first = world.segments[0] if world.segments else 0.0
         distance = world.distance
+        half_road = C.ROAD_WIDTH / 2
         jobs: list = []
         road_jobs: list = []
         for y, z, group in self.rows:
-            i = int((z - first) // C.SEGMENT_LENGTH)
-            in_track = 0 <= i < count
-            is_final = bool(final_flags) and in_track and final_flags[i]
-            if is_final and solar_ok:
-                name = solar_name
-            elif green_flags and in_track and green_flags[i] and green_ok:
-                name = green_name
-            else:
-                name = industrial
+            name, is_final = self.row_texture(int((z - first) // C.SEGMENT_LENGTH), flags, names)
             scale = C.FOV / z
-            road_left = int(C.WIDTH / 2 + (-C.ROAD_WIDTH / 2 - cam) * scale)
-            road_right = int(C.WIDTH / 2 + (C.ROAD_WIDTH / 2 - cam) * scale)
-            if is_final and road_ok:
-                info = self.row_info(road_texture, group)  # type: ignore[arg-type]
+            road_left = int(C.WIDTH / 2 - (half_road + cam) * scale)
+            road_right = int(C.WIDTH / 2 + (half_road - cam) * scale)
+            if is_final and road_texture is not None:
+                info = self.row_info(road_texture, group)
                 if info is not None:
                     self._queue_row(
                         road_jobs, info, y, z, max(0, road_left), min(C.WIDTH, road_right + 1), distance, cam
@@ -156,19 +165,10 @@ class GroundRenderer:
             if road_left + 2 <= 0 and road_right - 2 >= C.WIDTH:
                 continue  # a pista cobre a linha inteira
             info = self.row_info(name, group)
-            if info is None:
-                continue
-            # Só as laterais: a pista (desenhada depois) cobre o meio da linha.
-            self._queue_row(jobs, info, y, z, 0, min(road_left + 2, C.WIDTH), distance, cam)
-            self._queue_row(jobs, info, y, z, max(road_right - 2, 0), C.WIDTH, distance, cam)
-        screen.blits(jobs, doreturn=False)
-        if road_jobs:
-            screen.blits(road_jobs, doreturn=False)
-        if industrial == "concrete" and "concrete" in self.textures:
-            for near_z, far_z in self.concrete_spans(world, green_flags):
-                self.draw_concrete_joints(screen, near_z, far_z, cam, fog)
-        overlay, y_far = self.fog_overlay(fog)
-        screen.blit(overlay, (0, y_far))
+            if info is not None:  # só as laterais: a pista, desenhada depois, cobre o meio
+                self._queue_row(jobs, info, y, z, 0, min(road_left + 2, C.WIDTH), distance, cam)
+                self._queue_row(jobs, info, y, z, max(road_right - 2, 0), C.WIDTH, distance, cam)
+        return jobs, road_jobs
 
     @staticmethod
     def concrete_spans(world, green_flags) -> List[Tuple[float, float]]:
@@ -199,7 +199,7 @@ class GroundRenderer:
                 for z0, z1 in zip(pieces, pieces[1:]):
                     if z1 <= z0:
                         continue
-                    haze = clamp((z0 - C.FOG_START) / (C.FOG_END - C.FOG_START), 0.0, 1.0)
+                    haze = haze_at(z0)
                     p0 = project(side * x, 0, z0, cam)
                     p1 = project(side * x, 0, z1, cam)
                     pygame.draw.line(

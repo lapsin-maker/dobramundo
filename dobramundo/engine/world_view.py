@@ -9,7 +9,7 @@ dos objetos é dessaturado e escurecido, e objetos e avião ganham contorno espe
 from __future__ import annotations
 
 import math
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, NamedTuple, Optional, Protocol, Tuple
 
 import pygame
 
@@ -17,20 +17,51 @@ from .. import config as C
 from ..content.biomes import Biome, Specs
 from ..content.items import POWERUP_COLORS, WASTE_BY_KEY, ObstacleSpec
 from ..content.planes import MANEUVER_STYLES
-from ..game.entities import Entity, entity_hitbox
+from ..game.entities import Beam, Entity, FloatingText, entity_hitbox
+from ..game.player import Player
 from ..game.world import World
-from ..util import Color, clamp, lerp_color, rgb
+from ..util import Color, clamp, haze_at, lerp_color, rgb, smoothstep
 from .assets import Assets
+from .cache import BoundedCache
 from .ground import GroundRenderer
 from .plane_skin import PlaneSkin
 from .sky import SkyRenderer
 from .sprites import SpriteCache, fog_level, project
 
 RIVER_NEGRO = rgb("2a1a10")  # águas escuras do Rio Negro
-RIVER_ENCOUNTER = rgb("b08452")  # Solimões (barrento) ao lado do Rio Negro, no despertar
+RIVER_ENCOUNTER = rgb("b08452")
+RIVER_CURB = rgb("e0c27a")  # orla do rio limpo
+ROAD_CURB = rgb("c9a04a")  # meio-fio dourado do piso drenante
+PURIFIED_ROAD = rgb("8bcf78")  # Solimões (barrento) ao lado do Rio Negro, no despertar
 HC_PLANE = rgb("ffeb3b")
 HC_OBSTACLE = rgb("ff3d00")
 HC_DIM = (150, 150, 150)  # escurecimento do fundo dessaturado
+ROTATION_CACHE_LIMIT = 400  # rotações do avião guardadas
+
+
+class FlightView(Protocol):
+    """O que o desenho lê de um voo (game.run.FlightRun cumpre isto); o motor não conhece as regras."""
+
+    world: World
+    player: Player
+    mode: str
+    invulnerable_timer: float
+    shield_timer: float
+    magnet_timer: float
+    beams: List[Beam]
+    floating: List[FloatingText]
+
+
+class TrackPalette(NamedTuple):
+    even: Color
+    odd: Color
+    right_even: Color  # metade direita do rio (Solimões) no encontro das águas
+    right_odd: Color
+    purified: Color
+    lane: Color
+    ground: Color
+    encounter: float  # 0..1: quanto do encontro das águas aparece
+    wave_z: float  # até onde a pista já foi purificada
 
 
 class PlaneLook:
@@ -56,10 +87,10 @@ class WorldView:
         self.waste = assets.folder("waste_sprites")
         self.powerups = assets.folder("powerup_sprites")
         self.fx = assets.folder("era_final_fx")
-        self.shadows: dict = {}
-        self.rotations: dict = {}
+        self.shadows = BoundedCache(400)
+        self.rotations = BoundedCache(ROTATION_CACHE_LIMIT)
         self.font = pygame.font.SysFont("segoeui,verdana,dejavusans", 20, bold=True)
-        self.text_cache: dict = {}
+        self.text_cache = BoundedCache(64)
         self.biome: Optional[Biome] = None
         self.world: Optional[World] = None
         self.cam = 0.0
@@ -177,8 +208,6 @@ class WorldView:
         key = (w, h, alpha // 4)
         surf = self.shadows.get(key)
         if surf is None:
-            if len(self.shadows) > 400:
-                self.shadows.pop(next(iter(self.shadows)))
             surf = pygame.Surface((w, h), pygame.SRCALPHA)
             pygame.draw.ellipse(surf, (0, 0, 0, alpha // 4 * 4), surf.get_rect())
             self.shadows[key] = surf
@@ -188,8 +217,6 @@ class WorldView:
         key = (text, color)
         surf = self.text_cache.get(key)
         if surf is None:
-            if len(self.text_cache) > 64:
-                self.text_cache.clear()
             surf = self.font.render(text, True, color)
             self.text_cache[key] = surf
         return surf
@@ -217,8 +244,8 @@ class WorldView:
         margin_cam = self.cam * C.MARGIN_PARALLAX
         border_z = z + 50.0
         green = world.segment_green(seg)
-        final = world.segment_final(seg)
-        keep = 1.0 - final  # a peça do estágio anterior afunda enquanto a nova cresce
+        solar = world.segment_solar(seg)
+        keep = 1.0 - solar  # a peça do estágio anterior afunda enquanto a nova cresce
         for side in (-1, 1):
             if green < 1.0 and keep > 0.0:
                 self.piece(screen, biome.industrial_mid, seg, side, C.MID_ROW_X, z, mid_cam, (1.0 - green) * keep)
@@ -227,10 +254,10 @@ class WorldView:
                 specs = biome.restored if restored else biome.green_mid
                 index = seg // C.RESTORED_EVERY + (side > 0) if restored else seg
                 self.piece(screen, specs, index, side, C.MID_ROW_X, z, mid_cam, green * keep)
-            if final > 0.0:
+            if solar > 0.0:
                 marco = seg % C.LANDMARK_EVERY == 4 and (seg // C.LANDMARK_EVERY + (side > 0)) % 2 == 0
                 specs = [biome.landmark] if marco else biome.solar_mid
-                self.piece(screen, specs, seg, side, C.MID_ROW_X, z, mid_cam, final)
+                self.piece(screen, specs, seg, side, C.MID_ROW_X, z, mid_cam, solar)
             if border_z > C.MARGIN_MAX_Z or (seg + (side > 0)) % 2:
                 continue  # a borda alterna de lado a cada trecho e some ao longe
             if green < 1.0 and keep > 0.0:
@@ -248,7 +275,7 @@ class WorldView:
                 self.piece(
                     screen, biome.green_margin, seg // 2 + 3, side, C.MARGIN_X, border_z, margin_cam, green * keep
                 )
-            if final > 0.0:
+            if solar > 0.0:
                 self.piece(
                     screen,
                     biome.solar_margin,
@@ -257,98 +284,112 @@ class WorldView:
                     C.MARGIN_X,
                     border_z,
                     margin_cam,
-                    final,
+                    solar,
                 )
 
-    def draw_track(self, screen: pygame.Surface, world: World, flags) -> None:
+    def track_palette(self, world: World) -> TrackPalette:
+        """Cores da pista no quadro (mistura dos estágios), calculadas uma vez."""
         a, b, t = world.visual_stage_pair()
+        river = self.biome.river
+        weight = self.encounter_weight(world) if river else 0.0
+        even = lerp_color(a.road_even, b.road_even, t)
+        odd = lerp_color(a.road_odd, b.road_odd, t)
+        return TrackPalette(
+            even=even,
+            odd=odd,
+            right_even=lerp_color(even, RIVER_ENCOUNTER, weight),
+            right_odd=lerp_color(odd, RIVER_ENCOUNTER, weight * 0.95),
+            purified=lerp_color(even, PURIFIED_ROAD, 0.2),
+            lane=lerp_color(a.lane_line, b.lane_line, t),
+            ground=lerp_color(a.ground, b.ground, t),
+            encounter=weight,
+            wave_z=180.0 + (world.visual / 100.0) ** 1.15 * 2150.0,  # frente da pista purificada
+        )
+
+    def draw_track(self, screen: pygame.Surface, world: World, flags) -> None:
+        """Pista (ou rio) trecho a trecho, do horizonte para o avião, com as margens."""
+        pal = self.track_palette(world)
         fog = self.sky.fog_color
-        road_even = lerp_color(a.road_even, b.road_even, t)
-        road_odd = lerp_color(a.road_odd, b.road_odd, t)
-        lane_base = lerp_color(a.lane_line, b.lane_line, t)
-        ground_base = lerp_color(a.ground, b.ground, t)
         biome = self.biome
-        river = biome.river
-        stage_weight = self.encounter_weight(world)
-        right_even = lerp_color(road_even, RIVER_ENCOUNTER, stage_weight) if river else road_even
-        right_odd = lerp_color(road_odd, RIVER_ENCOUNTER, stage_weight * 0.95) if river else road_odd
-        purified = lerp_color(road_even, rgb("8bcf78"), 0.2)
-        wave_z = 180.0 + (world.visual / 100.0) ** 1.15 * 2150.0  # frente da pista purificada
-        textured = bool(self.ground.textures)
-        solar_road = self.ground.has(biome.solar_road)
-        final_flags = flags[1]
         cam = self.cam
+        half = C.ROAD_WIDTH / 2
         stretches = []
         for i in range(len(world.segments) - 1, -1, -1):
             z = world.segments[i]
             seg = world.segment_base + i
-            next_z = z + C.SEGMENT_LENGTH
-            left1 = project(-C.ROAD_WIDTH / 2, 0, z, cam)
-            right1 = project(C.ROAD_WIDTH / 2, 0, z, cam)
-            left2 = project(-C.ROAD_WIDTH / 2, 0, next_z, cam)
-            right2 = project(C.ROAD_WIDTH / 2, 0, next_z, cam)
-            haze = clamp((z + 50.0 - C.FOG_START) / (C.FOG_END - C.FOG_START), 0.0, 1.0)
-            if not textured:
-                ground = C.GRASS_FALLBACK[seg % 2] if world.segment_green(seg) > 0.0 else ground_base
+            edges = (
+                project(-half, 0, z, cam),
+                project(half, 0, z, cam),
+                project(-half, 0, z + C.SEGMENT_LENGTH, cam),
+                project(half, 0, z + C.SEGMENT_LENGTH, cam),
+            )
+            haze = haze_at(z + 50.0)
+            if not self.ground.textures:  # sem texturas: chão liso por trecho
+                ground = C.GRASS_FALLBACK[seg % 2] if world.segment_green(seg) > 0.0 else pal.ground
+                left1, right1, left2, right2 = edges
                 pygame.draw.polygon(
                     screen,
                     lerp_color(ground, fog, haze),
                     [(0, left2[1]), (C.WIDTH, right2[1]), (C.WIDTH, right1[1]), (0, left1[1])],
                 )
-            stretches.append((i, seg, z, next_z, left1, right1, left2, right2, haze))
+            stretches.append((i, seg, z, edges, haze))
         self.ground.draw(
             screen, world, flags, cam, fog, ("concrete", biome.green_ground, biome.solar_ground), biome.solar_road
         )
-        for i, seg, z, next_z, left1, right1, left2, right2, haze in stretches:
-            final = bool(final_flags) and final_flags[i]
-            purify = clamp((wave_z - z) / C.ROAD_PURIFY_BAND, 0.0, 1.0)
-            purify = purify * purify * (3 - 2 * purify)
-            even = seg % 2 == 0
-            base = lerp_color(road_even if even else road_odd, purified, purify * (not river))
-            if river:  # encontro das águas: o Negro fica escuro à esquerda
-                base = lerp_color(base, RIVER_NEGRO, stage_weight * (0.9 if even else 1.0))
-            color = lerp_color(base, fog, haze)
-            lane = lerp_color(lane_base, fog, haze)
-            if final and solar_road:
-                curb = lerp_color(rgb("c9a04a"), fog, haze)  # meio-fio dourado do piso drenante
-                width = max(1, int(6 * left1[2]))
-                pygame.draw.line(screen, curb, (left1[0], left1[1]), (left2[0], left2[1]), width)
-                pygame.draw.line(screen, curb, (right1[0], right1[1]), (right2[0], right2[1]), width)
-            elif river and stage_weight > 0.01:
-                mid1 = project(0, 0, z, cam)
-                mid2 = project(0, 0, next_z, cam)
-                right = lerp_color(right_even if even else right_odd, fog, haze)
-                pygame.draw.polygon(
-                    screen, color, [(left1[0], left1[1]), (mid1[0], mid1[1]), (mid2[0], mid2[1]), (left2[0], left2[1])]
-                )
-                pygame.draw.polygon(
-                    screen,
-                    right,
-                    [(mid1[0], mid1[1]), (right1[0], right1[1]), (right2[0], right2[1]), (mid2[0], mid2[1])],
-                )
-            else:
-                pygame.draw.polygon(
-                    screen,
-                    color,
-                    [(left1[0], left1[1]), (right1[0], right1[1]), (right2[0], right2[1]), (left2[0], left2[1])],
-                )
-            if river:
-                if final:  # orla dourada do rio limpo
-                    curb = lerp_color(rgb("e0c27a"), fog, haze)
-                    width = max(1, int(5 * left1[2]))
-                    pygame.draw.line(screen, curb, (left1[0], left1[1]), (left2[0], left2[1]), width)
-                    pygame.draw.line(screen, curb, (right1[0], right1[1]), (right2[0], right2[1]), width)
-                if (seg + int(self.elapsed * 3)) % 3 == 0:  # reflexos que andam: água corrente
-                    for divider in (-0.5, 0.5):
-                        p1 = project(C.LANE_WIDTH * divider, 0, z + 20, cam)
-                        p2 = project(C.LANE_WIDTH * divider, 0, z + 60, cam)
-                        pygame.draw.line(screen, lane, (p1[0], p1[1]), (p2[0], p2[1]), max(1, int(3 * p1[2])))
-            else:
-                for divider in (-0.5, 0.5):
-                    p1 = project(C.LANE_WIDTH * divider, 0, z, cam)
-                    p2 = project(C.LANE_WIDTH * divider, 0, next_z, cam)
-                    pygame.draw.line(screen, lane, (p1[0], p1[1]), (p2[0], p2[1]), max(1, int(4 * p1[2])))
+        solar_road = self.ground.has(biome.solar_road)
+        solar_flags = flags[1]
+        for i, seg, z, edges, haze in stretches:
+            solar = bool(solar_flags) and solar_flags[i]
+            self.draw_road(screen, pal, seg, z, edges, haze, solar and solar_road)
+            if biome.river and solar:
+                self.curbs(screen, edges, lerp_color(RIVER_CURB, fog, haze), 5)  # orla dourada do rio limpo
+            self.draw_lanes(screen, pal, seg, z, haze)
             self.margins(screen, world, seg, z)
+
+    def draw_road(
+        self, screen: pygame.Surface, pal: TrackPalette, seg: int, z: float, edges, haze: float, paved: bool
+    ) -> None:
+        """Superfície de um trecho: piso drenante (só o meio-fio), rio com encontro das águas ou pista."""
+        fog = self.sky.fog_color
+        left1, right1, left2, right2 = edges
+        if paved:  # a textura do piso já foi desenhada pelo chão
+            self.curbs(screen, edges, lerp_color(ROAD_CURB, fog, haze), 6)
+            return
+        even = seg % 2 == 0
+        river = self.biome.river
+        purify = smoothstep((pal.wave_z - z) / C.ROAD_PURIFY_BAND) if not river else 0.0
+        base = lerp_color(pal.even if even else pal.odd, pal.purified, purify)
+        if river:  # encontro das águas: o Negro fica escuro à esquerda
+            base = lerp_color(base, RIVER_NEGRO, pal.encounter * (0.9 if even else 1.0))
+        color = lerp_color(base, fog, haze)
+        if river and pal.encounter > 0.01:
+            mid1, mid2 = project(0, 0, z, self.cam), project(0, 0, z + C.SEGMENT_LENGTH, self.cam)
+            right = lerp_color(pal.right_even if even else pal.right_odd, fog, haze)
+            pygame.draw.polygon(screen, color, [left1[:2], mid1[:2], mid2[:2], left2[:2]])
+            pygame.draw.polygon(screen, right, [mid1[:2], right1[:2], right2[:2], mid2[:2]])
+        else:
+            pygame.draw.polygon(screen, color, [left1[:2], right1[:2], right2[:2], left2[:2]])
+
+    def draw_lanes(self, screen: pygame.Surface, pal: TrackPalette, seg: int, z: float, haze: float) -> None:
+        """Divisórias das faixas; no rio, reflexos curtos que andam (água corrente)."""
+        lane = lerp_color(pal.lane, self.sky.fog_color, haze)
+        if self.biome.river:
+            if (seg + int(self.elapsed * 3)) % 3:
+                return
+            z0, z1, thickness = z + 20, z + 60, 3
+        else:
+            z0, z1, thickness = z, z + C.SEGMENT_LENGTH, 4
+        for divider in (-0.5, 0.5):
+            p1 = project(C.LANE_WIDTH * divider, 0, z0, self.cam)
+            p2 = project(C.LANE_WIDTH * divider, 0, z1, self.cam)
+            pygame.draw.line(screen, lane, p1[:2], p2[:2], max(1, int(thickness * p1[2])))
+
+    @staticmethod
+    def curbs(screen: pygame.Surface, edges, color, thickness: int) -> None:
+        left1, right1, left2, right2 = edges
+        width = max(1, int(thickness * left1[2]))
+        pygame.draw.line(screen, color, left1[:2], left2[:2], width)
+        pygame.draw.line(screen, color, right1[:2], right2[:2], width)
 
     @staticmethod
     def encounter_weight(world: World) -> float:
@@ -472,7 +513,7 @@ class WorldView:
         return pygame.Rect(int(x0), int(y0), max(1, int(x1 - x0)), max(1, int(y1 - y0)))
 
     # ----------------------------------------------------------------- avião
-    def draw_player(self, screen: pygame.Surface, run, look: PlaneLook) -> None:
+    def draw_player(self, screen: pygame.Surface, run: FlightView, look: PlaneLook) -> None:
         player = run.player
         self.shadow(
             screen,
@@ -509,11 +550,16 @@ class WorldView:
             depth = 1.0 / max(0.4, 1.0 + style.depth * m_dz)
             vertical = math.cos(math.radians(m_pitch))
             thickness = round(max(C.MANEUVER_MIN_THICKNESS, abs(vertical)) * 25) / 25
-            size = (max(8, int(width * depth)), max(3, int(height * depth * thickness)))
-            img = self.cache.get(sprite, ("plane", look_key), size)
-            if vertical < 0:  # de cabeça para baixo (topo do looping)
-                img = pygame.transform.flip(img, False, True)
-            image = pygame.transform.rotozoom(img, player.roll + m_roll, 1.0)
+            # tamanho e ângulo em degraus: a manobra se repete e reaproveita as imagens prontas
+            size = (max(8, int(width * depth)) // 4 * 4, max(4, int(height * depth * thickness)) // 4 * 4)
+            angle = round((player.roll + m_roll) / 4.0) * 4.0
+            key = ("manobra", look_key, size, angle, vertical < 0)
+            image = self.rotations.get(key)
+            if image is None:
+                img = self.cache.get(sprite, ("plane", look_key), size)
+                if vertical < 0:  # de cabeça para baixo (topo do looping)
+                    img = pygame.transform.flip(img, False, True)
+                image = self.remember_rotation(key, pygame.transform.rotozoom(img, angle, 1.0))
             width = size[0]
         else:
             base = self.cache.get(sprite, ("plane", look_key), (width, height))
@@ -521,10 +567,7 @@ class WorldView:
             key = (look_key, width, height, angle)
             image = self.rotations.get(key)
             if image is None:
-                if len(self.rotations) > 400:
-                    self.rotations.clear()
-                image = pygame.transform.rotozoom(base, angle, 1.0)
-                self.rotations[key] = image
+                image = self.remember_rotation(key, pygame.transform.rotozoom(base, angle, 1.0))
         screen.blit(image, image.get_rect(center=(int(sx), int(sy))))
         if run.shield_timer > 0:
             pulse = 0.5 + 0.5 * math.sin(self.elapsed * 8.0)
@@ -544,6 +587,10 @@ class WorldView:
             )
         if self.show_hitboxes:
             pygame.draw.rect(screen, rgb("40c4ff"), self.hitbox_rect(player.hitbox()), 2)
+
+    def remember_rotation(self, key: tuple, image: pygame.Surface) -> pygame.Surface:
+        """Guarda uma rotação do avião (descarte gradual, como o cache de sprites)."""
+        return self.rotations.put(key, image)
 
     @staticmethod
     def draw_paper_fallback(screen: pygame.Surface, cx: int, cy: int, width: int, roll: float) -> None:
@@ -576,7 +623,7 @@ class WorldView:
         horizon = lerp_color(a.sky_horizon, b.sky_horizon, t)
         self.sky.update_atmosphere(world.visual, horizon, world.biome.polluted_haze)
         self.cache.fog_color = self.sky.fog_sprite_color
-        solar = world.final_share()
+        solar = world.solar_share()
         self.sky.draw(screen, top, horizon, cam, world.distance, solar, self.elapsed)
         pygame.draw.rect(screen, self.sky.fog_color, (0, C.HORIZON_Y, C.WIDTH, C.HEIGHT - C.HORIZON_Y))
         self.draw_track(screen, world, world.stage_flags())
@@ -595,7 +642,7 @@ class WorldView:
         gray.fill(HC_DIM, special_flags=pygame.BLEND_RGB_MULT)
         pygame.transform.scale2x(gray, screen)
 
-    def draw_run(self, screen: pygame.Surface, run, look: PlaneLook) -> None:
+    def draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook) -> None:
         """Quadro completo de um voo (sem HUD)."""
         world = run.world
         self.mode = run.mode

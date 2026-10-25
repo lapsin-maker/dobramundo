@@ -68,6 +68,9 @@ MAX_COMBO = 8
 COMBO_BONUS_FROM = 4  # combo a partir do qual cada coleta rende transformação extra
 SHIELD_S = 6.0
 MAGNET_S = 7.0
+MAGNET_REACH_Z = 45.0  # o ímã puxa resíduos a esta distância à frente/atrás do avião
+MAGNET_REACH_LANES = 1.1  # ... até a faixa vizinha
+MAGNET_REACH_Y = 110.0  # ... e nesta diferença de altura
 TRASH_HEIGHTS = (32.0, 88.0, 140.0)  # rasante, meia altura, alto
 
 # Transição de cenário: o desenho segue a transformação aos poucos (constante de tempo).
@@ -76,9 +79,9 @@ GRASS_START_RESTORATION = ERA_SPAN  # início do estágio 2: chão verde e flora
 GREEN_SWEEP_RESTORATION = 30.0  # parcela verde sobe de 0 a 100% ao longo disto
 GREEN_CONVERT_Z = 1800.0  # trechos novos chegam transformados a partir daqui
 GREEN_GROW_DISTANCE = 1000.0  # a peça antiga afunda e a nova cresce nesta distância
-FINAL_START_RESTORATION = 2 * ERA_SPAN  # início do estágio 3 (cidade solarpunk)
-FINAL_SWEEP_RESTORATION = 10.0
-FINAL_GROW_DISTANCE = 900.0
+SOLAR_START_RESTORATION = 2 * ERA_SPAN  # início do estágio 3 (cidade solarpunk)
+SOLAR_SWEEP_RESTORATION = 10.0
+SOLAR_GROW_DISTANCE = 900.0
 ROAD_PURIFY_BAND = 300.0  # a pista passa de suja a limpa nesta profundidade
 
 # -------------------------------------------------------------- neblina

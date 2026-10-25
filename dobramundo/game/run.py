@@ -64,10 +64,12 @@ class FlightRun:
     # --------------------------------------------------------------- regras
     @property
     def restoration(self) -> float:
+        """Transformação da cidade, de 0 a 100%."""
         return self.world.restoration
 
     @property
     def speed(self) -> float:
+        """Velocidade da pista: base + transformação + rampa de dificuldade (metade no Normal)."""
         factor = C.NORMAL_SPEED_FACTOR if self.mode == "normal" else 1.0
         return (
             C.BASE_SPEED
@@ -76,13 +78,16 @@ class FlightRun:
         ) * factor
 
     def emit(self, name: str, data: object = None) -> None:
+        """Publica um acontecimento do voo para a cena (som, avisos, efeitos)."""
         self.events.append((name, data))
 
     def take_events(self) -> List[Event]:
+        """Entrega e esvazia os acontecimentos desde a última chamada."""
         events, self.events = self.events, []
         return events
 
     def add_restoration(self, amount: float) -> None:
+        """Transforma a cidade e publica mudança de estágio, estrelas e fase completa."""
         self.world.add_restoration(amount)
         stage = self.world.stage
         if stage > self.stage:
@@ -231,9 +236,9 @@ class FlightRun:
             if entity.kind == "waste":
                 reaches = (
                     magnet
-                    and abs(entity.z - C.PLAYER_Z) <= 45.0
-                    and abs(player.x - entity.x) < C.LANE_WIDTH * 1.1
-                    and abs(player.y - entity.y) < 110.0
+                    and abs(entity.z - C.PLAYER_Z) <= C.MAGNET_REACH_Z
+                    and abs(player.x - entity.x) < C.LANE_WIDTH * C.MAGNET_REACH_LANES
+                    and abs(player.y - entity.y) < C.MAGNET_REACH_Y
                 )
                 if overlaps or reaches:
                     self.collect_waste(entity)
