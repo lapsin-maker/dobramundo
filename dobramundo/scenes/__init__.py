@@ -27,9 +27,10 @@ from .intro import IntroScene  # noqa: E402
 from .map import MapScene  # noqa: E402
 from .options import OptionsScene  # noqa: E402
 from .pilot import PilotScene  # noqa: E402
+from .preparation import PreparationScene  # noqa: E402
 from .projection import ProjectionScene  # noqa: E402
 from .result import ResultScene  # noqa: E402
-from .tutorial import TutorialScene  # noqa: E402
+from .tutorial import DwellPracticeScene, TutorialScene  # noqa: E402
 from .upgrades import UpgradesScene  # noqa: E402
 from .village import VillageScene  # noqa: E402
 
@@ -43,10 +44,12 @@ SCENES.update(
         "voo": FlightScene,
         "resultado": ResultScene,
         "tutorial": TutorialScene,
+        "dwell_treino": DwellPracticeScene,
         "hangar": HangarScene,
         "piloto": PilotScene,
         "melhorias": UpgradesScene,
         "opcoes": OptionsScene,
+        "preparar": PreparationScene,
         "projecao": ProjectionScene,
         "sobre": AboutScene,
     }

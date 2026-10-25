@@ -15,6 +15,7 @@ from ..game.entities import Entity
 from ..game.run import FlightRun
 from ..input.hub import FLIGHT_KEYS
 from ..ui import theme as T
+from ..ui.widgets import ring
 from . import make_scene
 from .base import Scene
 
@@ -32,6 +33,115 @@ PRACTICE_STEPS = (
     ("down", "Passe por baixo", "Desça para passar por baixo."),
     ("side", "Desvie para o lado", "Vá para a esquerda ou para a direita."),
 )
+DWELL_TARGET = pygame.Rect(330, 214, 440, 225)
+
+
+def dwell_target_icon(size: int = 64) -> pygame.Surface:
+    """Mira pictográfica: anéis concêntricos, cruz e ponto central."""
+    image = pygame.Surface((size, size), pygame.SRCALPHA)
+    center = (size // 2, size // 2)
+    for fraction, color, width in ((0.42, T.NAVY, 4), (0.25, T.TEAL, 4), (0.08, T.ORANGE, 0)):
+        radius = int(size * fraction)
+        if width:
+            pygame.draw.circle(image, color, center, radius, max(2, round(width * size / 64)))
+        else:
+            pygame.draw.circle(image, color, center, radius)
+    arm = int(size * 0.18)
+    pygame.draw.line(image, T.NAVY, (center[0] - arm, center[1]), (center[0] + arm, center[1]), 3)
+    pygame.draw.line(image, T.NAVY, (center[0], center[1] - arm), (center[0], center[1] + arm), 3)
+    return image
+
+
+class DwellPracticeScene(Scene):
+    """Ensina mirar, esperar o anel e sair do alvo antes da primeira personalização."""
+
+    editor_dwell = True
+    music = "musica_vila"
+
+    def __init__(self, app, next_scene=None, return_to=None) -> None:
+        super().__init__(app)
+        self.next_scene = next_scene
+        self.return_to = return_to
+        self.phase = "aim"
+        self.exit_time = 0.0
+
+    def build(self) -> None:
+        if self.phase == "aim":
+            target_action = self.begin_exit
+        else:
+            target_action = None
+        buttons = [
+            self.button(
+                DWELL_TARGET,
+                "MIRE AQUI",
+                target_action,
+                key="alvo_treino",
+                icon=dwell_target_icon(76),
+                color=T.TEAL,
+                size=T.SIZES["hero"],
+            ),
+            self.button(
+                (418, 540, 264, 72),
+                "Continuar" if self.phase == "leave" else "Pular treino",
+                self.finish,
+                key="seguir" if self.phase == "leave" else "pular",
+                icon=T.icon_surface("next", 34, T.ORANGE),
+                color=T.ORANGE,
+                size=T.SIZES["label"],
+            ),
+        ]
+        self.menu.set_buttons(buttons, keep_focus=False)
+
+    def begin_exit(self) -> None:
+        self.phase = "leave"
+        self.exit_time = 0.0
+        self.build()
+
+    def finish(self) -> None:
+        target = self.next_scene or self.return_to or make_scene(self.app, "vila")
+        self.app.go(target)
+
+    def back(self) -> None:
+        self.finish()
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+        if self.phase != "leave":
+            return
+        pointer = self.app.input.pointer()
+        if pointer is None or DWELL_TARGET.inflate(20, 20).collidepoint(pointer):
+            self.exit_time = 0.0
+            return
+        self.exit_time += dt
+        if self.exit_time >= 0.35:
+            self.finish()
+
+    def draw(self, screen: pygame.Surface) -> None:
+        self.app.backdrop(screen, self.last_dt, None, 18.0)
+        T.veil(screen, (16, 35, 52), 104)
+        self.title(screen, "Vamos treinar", "Sem voo e sem perder nada")
+        if self.phase == "aim":
+            instruction = "Mire no alvo e espere o anel completar"
+            icon = dwell_target_icon(58)
+        else:
+            instruction = "Agora afaste o cursor do alvo"
+            icon = T.icon_surface("next", 58, T.ORANGE)
+        panel = pygame.Rect(180, 114, 740, 70)
+        T.panel(screen, panel, T.PAPER, T.TEAL, 245, 18, 3)
+        screen.blit(icon, icon.get_rect(midleft=(panel.left + 14, panel.centery)))
+        self.text.blit(screen, instruction, (panel.left + 88, panel.centery), T.SIZES["label"], T.NAVY, True, "midleft")
+        if self.phase == "leave":
+            start_x, y = DWELL_TARGET.right + 12, DWELL_TARGET.centery
+            pygame.draw.line(screen, T.ORANGE, (start_x, y), (start_x + 48, y), 8)
+            pygame.draw.polygon(
+                screen,
+                T.ORANGE,
+                [(start_x + 70, y), (start_x + 38, y - 22), (start_x + 38, y + 22)],
+            )
+        self.draw_menu(screen)
+        if self.phase == "aim" and (self.menu.hover is None or self.menu.hover.key != "alvo_treino"):
+            # Um arco parado antecipa a ação antes da criança pousar o cursor.
+            ring(screen, (DWELL_TARGET.right - 62, DWELL_TARGET.top + 58), 30, 7, 0.76, T.TEAL)
 
 
 @dataclass
@@ -257,11 +367,13 @@ class TutorialScene(Scene):
     def draw(self, screen: pygame.Surface) -> None:
         self.app.view.draw_run(screen, self.run, self.app.plane_look())
         player_x, player_y, scale = project(self.run.player.x, self.run.player.y, C.PLAYER_Z, self.app.view.cam)
-        pygame.draw.circle(screen, T.SUN, (int(player_x), int(player_y)), max(34, int(42 * scale)), 3)
+        player_x, player_y = self.app.view.screen_point((player_x, player_y))
+        zoom = C.WIDTH / max(1, self.app.view.viewport.width)
+        pygame.draw.circle(screen, T.SUN, (int(player_x), int(player_y)), max(34, int(42 * scale * zoom)), 3)
 
         step_kind, title, subtitle = PRACTICE_STEPS[self.step_index]
         if self.feedback <= 0.0:
-            self._draw_action_cue(screen, step_kind, player_x, player_y)
+            self._draw_action_cue(screen, step_kind, player_x, player_y, zoom)
         panel = pygame.Rect(250, 16, 600, 112)
         T.panel(screen, panel, T.PAPER, T.NAVY, 245, 20, 3)
         icon = self._step_icon(step_kind)
@@ -316,25 +428,28 @@ class TutorialScene(Scene):
             self._draw_arrow(surface, (52, 36), (1, 0), 20)
         return surface
 
-    def _draw_action_cue(self, screen: pygame.Surface, kind: str, player_x: float, player_y: float) -> None:
+    def _draw_action_cue(
+        self, screen: pygame.Surface, kind: str, player_x: float, player_y: float, zoom: float = 1.0
+    ) -> None:
         """Setas grandes ligam a instrução pictográfica ao avião e ao alvo real."""
         if kind == "move":
-            self._draw_arrow(screen, (player_x, player_y - 100), (0, -1), 32)
-            self._draw_arrow(screen, (player_x, player_y + 100), (0, 1), 32)
-            self._draw_arrow(screen, (player_x - 150, player_y), (-1, 0), 32)
-            self._draw_arrow(screen, (player_x + 150, player_y), (1, 0), 32)
+            self._draw_arrow(screen, (player_x, player_y - 100 * zoom), (0, -1), 32 * zoom)
+            self._draw_arrow(screen, (player_x, player_y + 100 * zoom), (0, 1), 32 * zoom)
+            self._draw_arrow(screen, (player_x - 150 * zoom, player_y), (-1, 0), 32 * zoom)
+            self._draw_arrow(screen, (player_x + 150 * zoom, player_y), (1, 0), 32 * zoom)
         elif kind == "collect" and self.trial is not None:
             target_x, target_y, _ = project(
                 self.trial.entity.x, self.trial.entity.y, self.trial.entity.z, self.app.view.cam
             )
+            target_x, target_y = self.app.view.screen_point((target_x, target_y))
             self._draw_link_arrow(screen, (player_x, player_y), (target_x, target_y))
         elif kind == "up":
-            self._draw_arrow(screen, (player_x + 180, player_y + 30), (0, -1), 38)
+            self._draw_arrow(screen, (player_x + 180 * zoom, player_y + 30 * zoom), (0, -1), 38 * zoom)
         elif kind == "down":
-            self._draw_arrow(screen, (player_x + 180, player_y + 30), (0, 1), 38)
+            self._draw_arrow(screen, (player_x + 180 * zoom, player_y + 30 * zoom), (0, 1), 38 * zoom)
         elif kind == "side":
-            self._draw_arrow(screen, (player_x - 170, player_y), (-1, 0), 38)
-            self._draw_arrow(screen, (player_x + 170, player_y), (1, 0), 38)
+            self._draw_arrow(screen, (player_x - 170 * zoom, player_y), (-1, 0), 38 * zoom)
+            self._draw_arrow(screen, (player_x + 170 * zoom, player_y), (1, 0), 38 * zoom)
 
     @staticmethod
     def _draw_arrow(screen: pygame.Surface, center, direction, size: float) -> None:

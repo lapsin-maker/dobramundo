@@ -14,9 +14,11 @@ from ..content.progress import MAX_PART_LEVEL, PLANE_PARTS, VILLAGE_UPGRADES, ca
 from ..engine.village_art import village_prop
 from ..ui import theme as T
 from .base import Scene
-from .village import SLOTS, draw_village
+from .village import SLOTS, VILLAGE_REQUESTS, draw_village, ensure_village_requests
 
 PAGE_SIZE = 4
+PLANE_CARD_TOPS = (145, 285, 425)
+PLANE_STATS_Y = 552
 CARD_RECTS = (
     pygame.Rect(25, 150, 480, 130),
     pygame.Rect(595, 150, 480, 130),
@@ -43,6 +45,12 @@ class UpgradesScene(Scene):
         self.reveal_static_after: pygame.Surface | None = None
         self.reveal_cost: dict = {}
         self.reveal_elapsed = 0.0
+
+    def enter(self) -> None:
+        changed = ensure_village_requests(self.app.profile)
+        super().enter()
+        if changed:
+            self.app.save()
 
     def build(self) -> None:
         profile = self.app.profile
@@ -130,13 +138,15 @@ class UpgradesScene(Scene):
             # Melhorias de voo preservam os três upgrades e níveis atuais.
             for i, part in enumerate(PLANE_PARTS):
                 level = profile.pecas.get(part.key, 0)
-                rect = pygame.Rect(130, 140 + i * 170, 840, 110)
+                rect = pygame.Rect(130, PLANE_CARD_TOPS[i], 840, 110)
                 buttons.append(
                     self.button(
                         rect,
                         part.name,
                         (lambda p=part: self.buy_part(p)),
-                        sublabel=f"Nível {level} / {MAX_PART_LEVEL}",
+                        # O sublabel central do botão atravessava a descrição da peça.
+                        # A linha de nível é desenhada abaixo, na coluna livre à esquerda.
+                        sublabel="",
                         selected=level >= MAX_PART_LEVEL,
                         enabled=level < MAX_PART_LEVEL,
                         key=part.key,
@@ -227,6 +237,8 @@ class UpgradesScene(Scene):
         if not self.pay(upgrade.cost):
             return False
         self.app.profile.vila.append(upgrade.key)
+        ensure_village_requests(self.app.profile)
+        self.app.profile.pedidos_vila[upgrade.key] = "concluida"
         self.app.profile.normalize()
         self.app.save()
         self._start_reveal(upgrade, before)
@@ -302,6 +314,19 @@ class UpgradesScene(Scene):
             sprite = village_prop(upgrade.key, atlas)
             img = self.scaled(sprite, (150, 96), ("upgrade", upgrade.key))
             screen.blit(img, img.get_rect(midleft=(rect.left + 8, rect.centery + 4)))
+            request = VILLAGE_REQUESTS.get(upgrade.key, "A vila pede ajuda!")
+            request_state = self.app.profile.pedidos_vila.get(
+                upgrade.key, "concluida" if upgrade.key in self.app.profile.vila else "solicitada"
+            )
+            color = T.GREEN if request_state == "concluida" else T.TEAL
+            self.text.paragraph(
+                screen,
+                request if request_state == "solicitada" else "Pedido atendido!",
+                pygame.Rect(rect.left + 170, rect.top + 38, 294, 43),
+                T.SIZES["small"],
+                color,
+                spacing=1.0,
+            )
             if upgrade.key not in profile.vila:
                 self._draw_cost_icons(screen, upgrade.cost, (rect.left + 170, rect.top + 88))
 
@@ -524,10 +549,17 @@ class UpgradesScene(Scene):
                     T.INK,
                 )
                 level = self.app.profile.pecas.get(part.key, 0)
+                self.text.blit(
+                    screen,
+                    f"Nível {level} / {MAX_PART_LEVEL}",
+                    (button.rect.left + 24, button.rect.top + 86),
+                    T.SIZES["small"],
+                    T.INK,
+                )
                 if level < MAX_PART_LEVEL:
                     self._draw_cost_icons(
-                        screen, part.level_costs[level], (button.rect.left + 650, button.rect.top + 55)
+                        screen, part.level_costs[level], (button.rect.left + 24, button.rect.top + 40)
                     )
             info = f"Resposta x{stats.response:.2f}   Agilidade x{stats.max_speed:.2f}   Colisão x{stats.hitbox:.2f}"
-            self.text.blit(screen, info, (40, 525), T.SIZES["body"], T.WHITE, True)
+            self.text.blit(screen, info, (40, PLANE_STATS_Y), T.SIZES["body"], T.WHITE, True)
         self.toast.draw(screen, self.text, (C.WIDTH // 2, 630))

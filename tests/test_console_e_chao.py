@@ -211,7 +211,7 @@ def test_hub_com_chao_cria_controle_absoluto_no_centro():
     hub.set_floor(lambda lm: (0.5, 0.5), "t1")
     hub.set_segment("pes")
     assert isinstance(hub.body, FloorControl)
-    assert hub.body_pointer() == (C.WIDTH // 2, C.HEIGHT // 2)
+    assert hub.body_pointer() is None  # não posiciona o cursor até chegar uma leitura válida
 
 
 def test_hub_recria_o_controle_quando_o_token_muda():

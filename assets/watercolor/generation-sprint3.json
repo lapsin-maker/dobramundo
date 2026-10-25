@@ -1,0 +1,128 @@
+[
+  {
+    "key": "village_industrial_v3",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "transparent": false,
+    "prompt": "Edit the provided Brazilian children's watercolor village game background into its strongly INDUSTRIAL DIESELPUNK starting state. Preserve EXACT camera, wide 1100:650 composition, all building footprints, center cream empty plaza, shoreline, center civic building, hangar at right and house over water left. Keep delightful rich turquoise, coral, ochre and blue paint, tactile watercolor on paper and warm daylight. Remove ALL solar panels, rooftop gardens, climbing plants and lush foreground flowers. Replace roof equipment with charming bulky diesel machinery, riveted copper/teal pipes, small rounded smokestacks emitting localized blue-gray watercolor soot; weathered industry along back skyline. Lower left canal visibly has oil film and discarded containers, with tasteful litter piles at the plaza edges; worn brick, old fuel tanks, utility cables, unplanted beds. Strong visible industrial ecological problem, still welcoming colorful children's storybook world, not horror or monochrome. A few surviving palms. No people, plane, letters, interface or text. Leave center plaza free for future playable overlays. Preserve resolution/aspect and geometry of the reference.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-c2798957-5320-4df0-9b1e-1fdeca09893f.png",
+    "file": "village_industrial_v3.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "story_city",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "transparent": false,
+    "prompt": "Create a new illustration for a Brazilian children's paper-watercolor storybook game, using reference ONLY for watercolor style/palette. Wide 1100:650. Page one: eye-level intimate small Brazilian waterfront neighborhood with colorful coral and turquoise industrial workshops, riveted pipes and gentle blue-gray chimney smoke, a few litter objects near a drainage canal, warm golden daylight. City needing care, not frightening. Buildings in upper half and sides, bottom half a simple warm cream pavement, broad empty stage centered x=360 y=480 for a separate customizable child sprite. Clear large color masses, handmade navy ink contours, saturated inviting color. No people, no animals, no aircraft, no lettering, logo or UI. Do not reproduce the aerial plaza composition. No final solar equipment yet.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-9250032a-22ae-4ac4-b385-c20f7aa416a9.png",
+    "file": "story_city.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "fauna_sprint3",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/amazonia_2.png"
+    ],
+    "transparent": true,
+    "prompt": "Create a transparent game sprite atlas of Brazilian wildlife in the refined children's hand-painted paper watercolor style of the reference. EXACT 3 columns and 2 rows equally sized invisible cells, generous transparent gaps, six separate whole-body silhouettes, no backdrop, NO labels. First row: left white egret standing side view; middle same white egret wings raised, same scale; right gentle Amazon pink river dolphin arcing, full body, side view. Second row: left Caatinga white-winged dove standing side view, warm brown gray with distinctive white wing band; middle same dove wings raised; right same pink dolphin smaller arc tail raised, same scale as row1 dolphin. Broad simple masses, navy ink accents, blue/coral highlights, real transparent background. Each animal entirely within its cell, no overlap, no decorative splashes, no shadows extending across cells. Original expressive but recognizable natural wildlife, no coins, no halos, no text.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-a887eeb0-cc5e-4df5-a83b-d1a7d0a9d4ed.png",
+    "file": "fauna_sprint3.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "story_newspaper",
+    "prompt": "Original Brazilian children's watercolor storybook game art, hand-painted paper, navy ink contours, vivid coral/turquoise/ochre, warm inviting light, wide 1100:650. Reference ONLY for style, not aerial composition. No text, logo, UI, people or aircraft. Broad simple masses and gently textured paper, not fine noisy digital grain. Page two: close eye-level view of the same industrial waterfront street: teal workshop and coral brick wall at the upper right, rounded pipe and distant chimney. A folded discarded newspaper with abstract blank ink marks rests on the pavement at x=650,y=480. Foreground x=300,y=500 empty to insert a customizable child reaching for newspaper. Strong focus on newspaper and empty child stage, backdrop simplified and softly washed.",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-aa09e8df-84eb-47fb-ad3d-f28d5f98c18f.png",
+    "file": "story_newspaper.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "story_fold",
+    "prompt": "Original Brazilian children's watercolor storybook game art, hand-painted paper, navy ink contours, vivid coral/turquoise/ochre, warm inviting light, wide 1100:650. Reference ONLY for style, not aerial composition. No text, logo, UI, people or aircraft. Broad simple masses and gently textured paper, not fine noisy digital grain. Page three: intimate overhead/three-quarter craft-table scene. An inviting wooden table covered with a large cream sheet of handmade paper occupying middle and right, with LARGE completely empty area centered x=620,y=330 for animated paper folding overlay. A small terracotta pigment cup and watercolor brush at far top-right, rounded wooden tabletop edge at bottom. Left x=290,y=500 clear for customized child. The workshop courtyard is only a subdued background hint. No pre-drawn hands, no folded airplane, no newspaper at center.",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-96f5427a-fa4e-451b-aa54-a32d8958b9f4.png",
+    "file": "story_fold.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "story_launch",
+    "prompt": "Original Brazilian children's watercolor storybook game art, hand-painted paper, navy ink contours, vivid coral/turquoise/ochre, warm inviting light, wide 1100:650. Reference ONLY for style, not aerial composition. No text, logo, UI, people or aircraft. Broad simple masses and gently textured paper, not fine noisy digital grain. Page four: same waterfront neighborhood at dawn with clear hopeful open sky filling upper two thirds, distant colorful buildings beginning to integrate plants and a few small solar panels at edges. Eye-level view from a pale cream courtyard. Empty left foreground x=300,y=500 for a customized child throwing a separate paper plane; open diagonal sky from lower left to upper right for plane path. Gentle clouds, golden light, clean broad shapes. No pre-drawn plane/trail or children.",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-23315937-c82f-4317-9545-b1fc41cd5ec1.png",
+    "file": "story_launch.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "villagers_sprint3",
+    "transparent": true,
+    "prompt": "Create an original transparent game character atlas in the paper watercolor style of the reference. EXACT 3 equal columns x2 equal rows, six full-body separate childlike community helpers with generous transparent padding in each cell. Row1: same friendly dark-skinned curly-haired child wearing coral overalls in three poses: neutral standing, holding out open hands asking for help, happy waving. Row2: same friendly medium-brown child short dark hair turquoise shirt, seated in a clearly drawn functional wheelchair in three poses: neutral, holding out hands asking help, happy waving. Preserve identity, anatomy, proportions and wheelchair between row2 frames. Cream paper watercolor with navy ink, warm bright color and rounded stylized anatomy, gently expressive eyes. All wheels and feet inside each cell. No text, labels, speech bubbles, props in other cells, no ground/shadow, true transparent background.",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-2b24b7c5-84d5-4f77-ae30-ac3f401f9180.png",
+    "file": "villagers_sprint3.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "village_transition_v3",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_industrial_v3.png",
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/village_final.png"
+    ],
+    "prompt": "Edit reference1, the industrial village, into the midway ecological recovery state BETWEEN reference1 and reference2. Preserve EXACT building footprints, camera, shore, empty cream center plaza and composition of both refs. Keep center civic house, house over water left, hangar right aligned pixel-for-pixel. Half the diesel roof machines have been removed; one last chimney at far right still emits a small localized cloud, several rusty pipes remain. Repair and cleanup are clearly underway; a small first solar panel and a few planted boxes but not yet a lush garden. Half the oily shore cleaned; subtle patch of litter at edge, no people. Left canal retains naturalwater color. Same brightcoral turquoiseochre childfriendly watercolorandnavyink. No text/planes/UI. Maintain open central plaza forgame overlays, widesameaspect1100:650.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-369ae2e0-1d2d-4632-ac06-447503405b69.png",
+    "file": "village_transition_v3.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "travel_amazonia",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/amazonia_2.png"
+    ],
+    "prompt": "Original watercolor-paper travel vignette for Brazilian children's game. Reference for style. Wide landscape 3:2 composition with THREE dominant simple shapes: recognizable Teatro Amazonas with patterned dome on left, regional wooden river boat on right, meeting of naturally dark Rio Negro and warm muddy Solimoes below between lush layered Amazon trees. Rich navy ink, warm sunshine, coral teal gold, broadpaperwash. A cheerful adventure destination postcard without border, NO text, words, people, airplane, coins or UI. Clean silhouette at thumbnail size, no clutter or photorealism.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-e6a31ce9-5c3d-438a-ad0b-b432d1f831b8.png",
+    "file": "travel_amazonia.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "travel_caatinga",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/amazonia_2.png"
+    ],
+    "prompt": "Original watercolor-paper travel vignette for Brazilian children's game, same painterly palette asreferencebut Caatinga biome. Wide3:2 with THREEdominantreadableelements: bridge over blue Sao Francisco river in distance; foreground mandacaru cactus next to plate cistern and rustic ochre taipa home; small wooden river boat bearing traditional carved carranca on right. Layered dryserras,juazeiroshadeandrows of mango/grape orchardonlyaslarge quietshapes. Colorful invitingsemiarid,NOT Amazon rainforest. Warmgoldcoral teal, navyink, handmadepaper. NOtext, words, labels, people, airplaneorUI.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-1c0c9c47-b2a4-4c50-bd74-9e275e1a8242.png",
+    "file": "travel_caatinga.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  },
+  {
+    "key": "terrain_tiles_v3",
+    "refs": [
+      "C:/Users/jvito/Documents/ExerGame_JAM_2026/dobramundo/assets/watercolor/amazonia_2.png"
+    ],
+    "prompt": "Production game texture atlas, EXACT2columns x2rows seamless square material swatches fillingthecanvas without gutters or labels. Referenceonlyfor watercolorpapertexturestyle. Top-left: dark warm navy-brown Rio Negro water with verybroad quiet elongatedreflectivewashes. Top-right: warmgoldenochre Solimoes water with verybroadquietreflectivewashes. Bottom-left: warm peach ochre dry Caatinga soil, verysoftbroadpigment. Bottom-right: soft mutedgreen bank groundwash. Noobjects, recognizablewaves, foamlines, plants, cracks, rocks, text or borders. Deliberately low spatialfrequency and low contrast within eachsquare, nofinegrain or speckles. Tonally uniform edges for repeatinggameground; real watercolor fibers extremelysubtle. Fourequalcells, straight division preciselyatmidpoint.",
+    "source": "C:\\Users\\jvito\\.codex\\generated_images\\01a173cf-4906-7303-92c2-ec923fdfa1f0\\exec-feefa543-e4bc-45eb-bde1-f0bb0271d830.png",
+    "file": "terrain_tiles_v3.png",
+    "tool": "image_gen built-in",
+    "date": "2026-10-25"
+  }
+]

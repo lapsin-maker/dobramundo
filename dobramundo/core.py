@@ -32,16 +32,17 @@ from .ui.theme import Text
 
 
 def first_scene(app):
-    """Piloto (1ª vez) -> aviso ao supervisor -> calibração corporal -> vila."""
+    """Aviso -> calibração -> treino de permanência -> piloto -> vila na primeira vez."""
     from .scenes import make_scene
 
     scene = make_scene(app, "vila")
+    if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
+        pilot = make_scene(app, "piloto", first_time=True, return_to=scene)
+        scene = make_scene(app, "dwell_treino", next_scene=pilot, return_to=pilot)
     if app.input.uses_body:
         scene = make_scene(app, "calibracao", return_to=scene)
     if not app.profile.consentimento:
         scene = make_scene(app, "aviso", scene)
-    if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
-        scene = make_scene(app, "piloto", first_time=True, return_to=scene)
     return scene
 
 
@@ -83,6 +84,7 @@ class GameCore:
     def apply_options(self) -> None:
         self.audio.apply(self.options)
         self.view.high_contrast = self.options.alto_contraste
+        self.view.contrast_scale = self.options.escala_contraste
         self.view.reduce_motion = self.options.reduzir_movimento
         stats = plane_stats(self.profile.pecas)
         o = self.options

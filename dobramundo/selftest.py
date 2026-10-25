@@ -83,7 +83,9 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
     from .scenes.map import MapScene
     from .scenes.options import OptionsScene
     from .scenes.pilot import PilotScene
+    from .scenes.preparation import PreparationScene
     from .scenes.projection import ProjectionScene
+    from .scenes.tutorial import DwellPracticeScene
     from .scenes.upgrades import UpgradesScene
     from .scenes.village import VillageScene
 
@@ -124,6 +126,8 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
         ("hangar", HangarScene(app)),
         ("hangar_padrao", HangarScene(app, "padrao")),
         ("piloto", PilotScene(app)),
+        ("selecao", DwellPracticeScene(app)),
+        ("preparar", PreparationScene(app)),
         ("melhorias", UpgradesScene(app)),
         ("melhorias_aviao", UpgradesScene(app, "aviao")),
         ("opcoes", OptionsScene(app)),

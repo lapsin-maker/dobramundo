@@ -2,7 +2,7 @@
 
 Um diorama de papel: morros ao fundo, um rio que atravessa a vila, caminhos
 até um largo central onde o avião pousa, casas em três núcleos, árvores e
-gente passeando. A vila começa cinzenta e poluída; cada melhoria comprada
+gente passeando. A vila começa industrial, colorida e poluída; cada melhoria comprada
 aparece no seu lugar e, conforme a vila avança, o céu limpa, o rio fica azul,
 o gramado verdeja e as casas industriais dão lugar à arquitetura solarpunk,
 uma a uma.
@@ -16,9 +16,10 @@ import pygame
 
 from .. import config as C
 from ..content.biomes import BIOMES
+from ..content.pilot import DEFAULT_PILOT, normalize_pilot
 from ..content.progress import VILLAGE_UPGRADES
 from ..engine import paper
-from ..engine.village_art import destination_icon, village_prop
+from ..engine.village_art import destination_icon, village_prop, village_resident
 from ..persistence import MODE_LABELS
 from ..ui import theme as T
 from ..ui.widgets import row
@@ -65,11 +66,45 @@ HILL_POLLUTED, HILL_CLEAN = rgb("6e7478"), rgb("5aa66a")
 CANOPY_POLLUTED, CANOPY_CLEAN = rgb("8a8f7a"), rgb("4fae5e")
 PATH_COLOR = rgb("d9b57a")
 SQUARE = (580, 392)  # centro do largo onde o avião pousa
+VILLAGE_NEIGHBOR_POSITIONS = ((280, 516), (835, 516), (960, 516))
 HILLS = ((-100, 700, 236, 90, 2, 0.35), (420, 1250, 240, 110, 3, 0.2), (-60, 1200, 262, 60, 4, 0.0))
 
 
 def village_progress(profile) -> float:
     return len(profile.vila) / len(VILLAGE_UPGRADES)
+
+
+VILLAGE_REQUESTS = {
+    "ponto_troca": "Podemos separar os materiais?",
+    "horta": "Vamos plantar nosso lanche!",
+    "paineis": "Queremos luz do sol em casa!",
+    "compostor": "A terra pode ganhar adubo?",
+    "cisterna": "Guarde água para os dias secos.",
+    "bicicletario": "Vamos pedalar pela vila!",
+    "telhado_verde": "Uma sombra de folhas ajudaria.",
+    "turbina": "O vento pode acender a vila!",
+}
+
+
+def ensure_village_requests(profile) -> bool:
+    """Mantém pedidos simples no perfil sem alterar a economia do jogo."""
+    raw = profile.pedidos_vila
+    valid_keys = {upgrade.key for upgrade in VILLAGE_UPGRADES}
+    requests = {key: value for key, value in raw.items() if key in valid_keys}
+    owned = set(profile.vila)
+    changed = requests != raw
+    for upgrade in VILLAGE_UPGRADES:
+        wanted = "concluida" if upgrade.key in owned else "solicitada"
+        if requests.get(upgrade.key) not in ("solicitada", "concluida"):
+            requests[upgrade.key] = wanted
+            changed = True
+        elif upgrade.key in owned and requests[upgrade.key] != "concluida":
+            requests[upgrade.key] = "concluida"
+            changed = True
+    if requests != raw:
+        profile.pedidos_vila = requests
+        changed = True
+    return changed
 
 
 def river_line() -> list:
@@ -154,6 +189,8 @@ def _watercolor_background(scene: Scene, progress: float) -> tuple[tuple[pygame.
     cache = scene.watercolor_backgrounds
     if not cache:
         for name in (
+            "village_industrial_v3",
+            "village_transition_v3",
             "village_start_v2",
             "village_start",
             "village_intermediate",
@@ -162,8 +199,8 @@ def _watercolor_background(scene: Scene, progress: float) -> tuple[tuple[pygame.
         ):
             source = scene.app.assets.sprite("watercolor", name)
             cache[name] = scene.scaled(source, (C.WIDTH, C.HEIGHT), ("watercolor", name)) if source else None
-    start = cache.get("village_start_v2") or cache.get("village_start")
-    intermediate = cache["village_intermediate"] or cache["village_clean"]
+    start = cache.get("village_industrial_v3") or cache.get("village_start_v2") or cache.get("village_start")
+    intermediate = cache.get("village_transition_v3") or cache["village_intermediate"] or cache["village_clean"]
     final = cache["village_final"] or cache["village_clean"] or intermediate
     if start is None and intermediate is None and final is None:
         return None
@@ -176,9 +213,10 @@ def _watercolor_background(scene: Scene, progress: float) -> tuple[tuple[pygame.
         surface.set_alpha(255)
     stage = max(0.0, min(2.0, progress * 2))
     if stage <= 1:
-        base, overlay, blend = start, intermediate, stage
+        base, overlay, local = start, intermediate, stage
     else:
-        base, overlay, blend = intermediate, final, stage - 1
+        base, overlay, local = intermediate, final, stage - 1
+    blend = local * local * (3.0 - 2.0 * local)
     if base is overlay:
         base.set_alpha(255)
         scene.watercolor_mix = None
@@ -192,6 +230,7 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
     """Diorama ilustrado e obras localizadas (também usado na tela de cuidado)."""
     app, t = scene.app, scene.time
     progress = village_progress(app.profile)
+    ensure_village_requests(app.profile)
     background_layers = _watercolor_background(scene, progress)
     illustrated = background_layers is not None
     if background_layers is None:
@@ -272,15 +311,82 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
         else:
             px, py, height, shirt, phase = data
             paper.person(screen, (px, py), height, shirt, rgb("e8b48a"), phase)
+    _draw_village_neighbors(scene, screen, prop_atlas, highlight)
     if not illustrated:
         paper.smoke(screen, (1035, 150), t, 1.0 - progress, 1)
         paper.sparkles(screen, pygame.Rect(0, 280, C.WIDTH, 220), t, progress, rgb("f6c33b"))
+
+
+def _draw_village_neighbors(scene: Scene, screen: pygame.Surface, prop_atlas, highlight: str) -> None:
+    """Moradores apresentam pedidos persistentes por pictogramas no cenário."""
+    app, profile = scene.app, scene.app.profile
+    requests = profile.pedidos_vila
+    states = [(u, requests.get(u.key, "solicitada")) for u in VILLAGE_UPGRADES]
+    visible = [(u, state) for u, state in states if state == "solicitada"][:3]
+    if len(visible) < 3:
+        visible.extend([(u, state) for u, state in states if state == "concluida"][: 3 - len(visible)])
+    atlas = app.assets.sprite("watercolor", "villagers_sprint3")
+    looks = (
+        {**DEFAULT_PILOT, "pele": "pele2", "cabelo": "cacheado", "cor_cabelo": "castanho", "roupa": "verde"},
+        {**DEFAULT_PILOT, "pele": "pele5", "cabelo": "crespo", "cor_cabelo": "preto", "roupa": "amarela"},
+        {**DEFAULT_PILOT, "pele": "pele3", "cabelo": "trancas", "cor_cabelo": "ruivo", "roupa": "azul"},
+    )
+    for index, (upgrade, state) in enumerate(visible):
+        person_x, person_y = VILLAGE_NEIGHBOR_POSITIONS[index]
+        pose = "pedido" if state == "solicitada" else "feliz"
+        npc = village_resident(atlas, index % 2, pose)
+        if npc is not None:
+            image = _fit_resident(scene, npc, (68, 90), ("villager-sprint3", index % 2, pose))
+        else:
+            expression = "curious" if state == "solicitada" else "happy"
+            source = app.view.skin.pilots.compose("menu", normalize_pilot(looks[index]), expression=expression)
+            if source is None:
+                continue
+            image = _fit_resident(scene, source, (68, 90), ("villager-fallback", index, expression))
+        bob = 0 if app.options.reduzir_movimento else round(2 * math.sin(scene.time * 3.2 + index * 1.8))
+        screen.blit(image, image.get_rect(midbottom=(person_x, person_y + bob)))
+        bubble = pygame.Rect(person_x - 24, person_y - 132 + bob, 48, 42)
+        pygame.draw.ellipse(screen, paper.INK, bubble.inflate(4, 4))
+        pygame.draw.ellipse(screen, (250, 243, 222), bubble)
+        pygame.draw.polygon(
+            screen,
+            (250, 243, 222),
+            ((person_x - 2, bubble.bottom - 2), (person_x + 4, bubble.bottom + 7), (person_x + 7, bubble.bottom - 3)),
+        )
+        icon = scene.scaled(village_prop(upgrade.key, prop_atlas), (34, 32), ("village-request-icon", upgrade.key))
+        screen.blit(icon, icon.get_rect(center=bubble.center))
+        if state == "concluida":
+            mark = (bubble.right - 3, bubble.top + 2)
+            pygame.draw.circle(screen, (66, 160, 95), mark, 8)
+            pygame.draw.lines(
+                screen,
+                (255, 255, 245),
+                False,
+                [(mark[0] - 4, mark[1]), (mark[0] - 1, mark[1] + 3), (mark[0] + 4, mark[1] - 4)],
+                2,
+            )
+        elif upgrade.key == highlight:
+            pygame.draw.ellipse(screen, (246, 195, 59), bubble.inflate(8, 8), 3)
+
+
+def _fit_resident(scene: Scene, source: pygame.Surface, bounds, key) -> pygame.Surface:
+    """Preserva a proporção do atlas: cabeças e corpos não são achatados."""
+    width, height = bounds
+    factor = min(width / max(1, source.get_width()), height / max(1, source.get_height()))
+    size = max(1, round(source.get_width() * factor)), max(1, round(source.get_height() * factor))
+    return scene.scaled(source, size, ("villager-fit", key, size))
 
 
 class VillageScene(Scene):
     def __init__(self, app) -> None:
         super().__init__(app)
         self.confirm_exit = False  # ESC na vila pergunta se é para sair do jogo
+
+    def enter(self) -> None:
+        changed = ensure_village_requests(self.app.profile)
+        super().enter()
+        if changed:
+            self.app.save()
 
     def build(self) -> None:
         if self.confirm_exit:
@@ -296,6 +402,17 @@ class VillageScene(Scene):
 
         # Alvos grandes, separados para que as zonas de retenção do dwell não se
         # sobreponham. Opções e créditos ficam atrás do destino secundário.
+        pilot_look = self.app.profile.piloto
+        pilot_face = self.app.view.skin.pilots.compose("menu", pilot_look, expression="curious")
+        pilot_icon = destination_icon("piloto")
+        if pilot_face is not None:
+            head = pygame.Rect(
+                round(pilot_face.get_width() * 0.12),
+                0,
+                max(1, round(pilot_face.get_width() * 0.76)),
+                max(1, round(pilot_face.get_height() * 0.29)),
+            )
+            pilot_icon = pygame.transform.smoothscale(pilot_face.subsurface(head).copy(), (48, 48))
         self.menu.set_buttons(
             [
                 self.button(
@@ -319,7 +436,7 @@ class VillageScene(Scene):
                     (565, 548, 210, 86),
                     "PILOTO",
                     lambda: self.goto("piloto"),
-                    icon=destination_icon("piloto"),
+                    icon=pilot_icon,
                     key="piloto",
                     size=T.SIZES["label"],
                 ),

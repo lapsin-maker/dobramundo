@@ -16,6 +16,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
 Landmark = Tuple[float, float, float]  # x, y, visibilidade
 MIN_VISIBILITY = 0.5
+HEAD_MIN_VISIBILITY = 0.35
 PREVIEW_SIZE = (160, 120)  # miniatura mostrada ao supervisor
 CAMERA_SIZE = (640, 480)
 
@@ -79,6 +80,16 @@ def segment_point(landmarks: Optional[Sequence[Landmark]], segment: Segment) -> 
     """Ponto do segmento (média dos pontos visíveis), ou None se não estiver visível."""
     if not landmarks:
         return None
+    if segment.key == "cabeca":
+        # O nariz é a âncora estável. Se ele some ao virar de lado, as orelhas
+        # ainda permitem estimar o centro; BodyControl compensa a troca de âncora.
+        nose = landmarks[0] if len(landmarks) > 0 and landmarks[0][2] >= HEAD_MIN_VISIBILITY else None
+        ears = [landmarks[i] for i in (7, 8) if i < len(landmarks) and landmarks[i][2] >= HEAD_MIN_VISIBILITY]
+        if nose is not None:
+            return nose[0], nose[1]
+        if ears:
+            return (sum(p[0] for p in ears) / len(ears), sum(p[1] for p in ears) / len(ears))
+        return None
     visible = [landmarks[i] for i in segment.landmarks if i < len(landmarks) and landmarks[i][2] >= MIN_VISIBILITY]
     if len(visible) < segment.min_points:
         return None
@@ -137,6 +148,33 @@ class AxisMapper:
         self.base: Optional[Point] = None
         self.ax = 0.0
         self.ay = 0.0
+        self.extents = {"right": None, "left": None, "up": None, "down": None}
+        self.extent_sensitivities = {"right": 1.0, "left": 1.0, "up": 1.0, "down": 1.0}
+
+    def set_comfortable_extent(self, direction: str, points: Sequence[Point]) -> bool:
+        """Define o extremo confortável por direção, mantendo alcances assimétricos."""
+        if direction not in self.extents or self.base is None or len(points) < 3:
+            return False
+        def distance(point: Point) -> float:
+            if direction == "right":
+                return point[0] - self.base[0]
+            if direction == "left":
+                return self.base[0] - point[0]
+            if direction == "up":
+                return self.base[1] - point[1]
+            return point[1] - self.base[1]
+        value = median([distance(point) for point in points])
+        if value < 0.015:
+            return False
+        self.extents[direction] = max(self.segment.dead * 2, value)
+        self.extent_sensitivities[direction] = self.sensitivity
+        return True
+
+    def _extent(self, direction: str, nominal: float) -> float:
+        captured = self.extents[direction]
+        if captured is None:
+            return nominal / self.sensitivity
+        return captured * self.extent_sensitivities[direction] / self.sensitivity
 
     @property
     def calibrated(self) -> bool:
@@ -165,8 +203,13 @@ class AxisMapper:
             return
         seg = self.segment
         dead = seg.dead * self.dead_scale
-        target_x = shape(point[0] - self.base[0], dead, max(dead * 2, seg.range_x / self.sensitivity))
-        target_y = shape(self.base[1] - point[1], dead, max(dead * 2, seg.range_y / self.sensitivity))
+        dx, dy = point[0] - self.base[0], self.base[1] - point[1]
+        right = self._extent("right", seg.range_x)
+        left = self._extent("left", seg.range_x)
+        up = self._extent("up", seg.range_y)
+        down = self._extent("down", seg.range_y)
+        target_x = shape(dx, dead, max(dead * 2, (right if dx >= 0 else left)))
+        target_y = shape(dy, dead, max(dead * 2, (up if dy >= 0 else down)))
         if self.invert_y:
             target_y = -target_y
         if self.invert_x:
@@ -225,6 +268,12 @@ class BodyControl:
         self._seq = -1
         self._since_reading = 0.0
         self._frames = 0
+        self.reading_age = float("inf")
+        self.frame_size: Optional[Tuple[int, int]] = None
+        self._head_ear_offsets: Dict[int, Point] = {}
+        self._last_point: Optional[Point] = None
+        self.confidence = 0.0
+        self.valid_point_count = 0
 
     @property
     def error(self) -> Optional[str]:
@@ -244,20 +293,37 @@ class BodyControl:
 
     def recalibrate(self) -> None:
         self.mapper.reset()
+        self._head_ear_offsets = {}
 
     def poll(self, dt: float) -> None:
         """Consome a leitura nova da fonte, se houver (chamado a cada quadro)."""
         self._since_reading += dt
+        self.reading_age += dt
         seq, landmarks, preview = self.source.snapshot()
+        try:
+            source_size = self.source.frame_size
+        except AttributeError:
+            source_size = None
+        if source_size is not None:
+            self.frame_size = source_size
         if seq != 0 and seq != self._seq:
             self._seq = seq
             self._frames += 1
             self.landmarks = landmarks
             self.preview = preview
             point = self.locate(landmarks)
-            self.visible = point is not None
+            self.reading_age = 0.0
+            self.visible = point is not None and self.reading_age <= 0.35
+            threshold = HEAD_MIN_VISIBILITY if self.segment.key == "cabeca" else MIN_VISIBILITY
+            self.valid_point_count = sum(
+                1 for i in self.segment.landmarks if landmarks and i < len(landmarks) and landmarks[i][2] >= threshold
+            )
+            confidences = [landmarks[i][2] for i in self.segment.landmarks if landmarks and i < len(landmarks)]
+            self.confidence = sum(confidences) / len(confidences) if confidences else 0.0
             self.feed(point, self._since_reading)
             self._since_reading = 0.0
+        if self.reading_age > 0.35:
+            self.visible = False
         if self.receiving:
             if self.visible:
                 self.seen_time += dt
@@ -269,7 +335,33 @@ class BodyControl:
                     self.recalibrate()
 
     def locate(self, landmarks: Optional[Sequence[Landmark]]) -> Optional[Point]:
-        return segment_point(landmarks, self.segment)
+        if self.segment.key == "cabeca" and landmarks:
+            nose = landmarks[0] if len(landmarks) > 0 and landmarks[0][2] >= HEAD_MIN_VISIBILITY else None
+            ears = [(i, landmarks[i]) for i in (7, 8) if i < len(landmarks) and landmarks[i][2] >= HEAD_MIN_VISIBILITY]
+            if nose is not None:
+                point = (nose[0], nose[1])
+                for index, ear in ears:
+                    self._head_ear_offsets[index] = (ear[0] - nose[0], ear[1] - nose[1])
+            else:
+                corrected = [
+                    (ear[0] - self._head_ear_offsets[index][0], ear[1] - self._head_ear_offsets[index][1])
+                    for index, ear in ears
+                    if index in self._head_ear_offsets
+                ]
+                if corrected:
+                    point = (
+                        sum(p[0] for p in corrected) / len(corrected),
+                        sum(p[1] for p in corrected) / len(corrected),
+                    )
+                elif len(ears) == 2:
+                    point = ((ears[0][1][0] + ears[1][1][0]) / 2, (ears[0][1][1] + ears[1][1][1]) / 2)
+                else:
+                    point = None
+        else:
+            point = segment_point(landmarks, self.segment)
+        if point is not None:
+            self._last_point = point
+        return point
 
     def feed(self, point: Optional[Point], elapsed: float) -> None:
         self.mapper.feed(point, elapsed)

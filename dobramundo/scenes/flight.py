@@ -78,6 +78,7 @@ class FlightScene(Scene):
         self.banners: List[Banner] = []
         self.flash = 0.0
         self.shake = 0.0
+        self.celebration = 0.0
         self.cam_surface: Optional[pygame.Surface] = None
         self.cam_bytes: Optional[bytes] = None
         self.music = self.stage_music(0)
@@ -182,12 +183,15 @@ class FlightScene(Scene):
         self.banners = [b for b in self.banners if b.ttl > 0]
         self.flash = max(0.0, self.flash - dt)
         self.shake = max(0.0, self.shake - dt)
+        self.celebration = max(0.0, self.celebration - dt)
         if self.run.finished:
             self.goto("resultado", self.run)
 
     def handle_run_events(self) -> None:
         audio = self.app.audio
         for name, data in self.run.take_events():
+            if name in ("star", "mission", "complete"):
+                self.celebration = 1.8
             if name == "collect":
                 audio.collect(data)
             elif name == "powerup":
@@ -232,7 +236,7 @@ class FlightScene(Scene):
 
     def draw(self, screen: pygame.Surface) -> None:
         view = self.app.view
-        view.draw_run(screen, self.run, self.look)
+        view.draw_run(screen, self.run, self.look, celebration=self.celebration)
         strong = self.app.options.efeitos_fortes and not self.app.options.reduzir_movimento
         if self.shake > 0:
             # tremor só do cenário (o HUD fica parado e legível)
@@ -244,6 +248,14 @@ class FlightScene(Scene):
             screen.blit(focus_vignette(screen.get_size(), strong), (0, 0))
         self.draw_hud(screen)
         self.draw_focus(screen)
+        if self.celebration > 0 and self.run.focus.state != "pending":
+            player = self.run.player
+            sx, sy, _ = project(player.x, player.y, C.PLAYER_Z, view.cam)
+            sx, sy = view.screen_point((sx, sy))
+            # Mesmo selo estático no movimento reduzido; a recompensa continua
+            # visível sem balanço, flash nem necessidade de escutar a fanfarra.
+            center = (max(30, min(C.WIDTH - 30, round(sx))), max(244, round(sy) - 105))
+            screen.blit(T.icon_surface("reward", 48, T.NAVY), (center[0] - 24, center[1] - 24))
         self.draw_banners(screen)
         self.draw_camera(screen)
         if self.paused:
@@ -281,10 +293,19 @@ class FlightScene(Scene):
         for i in range(C.MAX_LIVES):
             self.draw_life(screen, (status.left + 32 + i * 41, 48), i < run.lives)
         if run.shield_timer > 0 or run.magnet_timer > 0:
-            active = "shield" if run.shield_timer > 0 else "powerup"
-            screen.blit(T.icon_surface(active, 30, T.TEAL), (status.left + 56, status.bottom + 4))
-            seconds = math.ceil(max(run.shield_timer, run.magnet_timer))
-            text.blit(screen, f"{seconds}s", (status.left + 92, status.bottom + 7), T.SIZES["small"], T.TEAL, True)
+            # Ambos os benefícios têm um relógio visual próprio. A leitura de
+            # segundos é auxiliar; o arco se esvazia sem piscar.
+            benefits = (("shield", run.shield_timer, C.SHIELD_S), ("magnet", run.magnet_timer, C.MAGNET_S))
+            for i, (active, timer, total) in enumerate(benefits):
+                if timer <= 0:
+                    continue
+                center = (status.left + 36 + i * 74, status.bottom + 36)
+                pygame.draw.circle(screen, T.PAPER, center, 27)
+                pygame.draw.circle(screen, T.NAVY, center, 27, 2)
+                screen.blit(T.icon_surface(active, 30, T.NAVY), (center[0] - 15, center[1] - 15))
+                arc = pygame.Rect(center[0] - 23, center[1] - 23, 46, 46)
+                pygame.draw.arc(screen, T.TEAL, arc, math.pi / 2,
+                                math.pi / 2 + math.tau * min(1.0, timer / total), 5)
         elif run.invincible:
             text.blit(
                 screen,
@@ -303,8 +324,18 @@ class FlightScene(Scene):
             return
         player = self.run.player
         sx, sy, _ = project(player.x, player.y, C.PLAYER_Z, self.app.view.cam)
+        sx, sy = self.app.view.screen_point((sx, sy))
         if focus.state != "pending":
             ok = focus.state == "success"
+            center = (int(sx), max(178, int(sy) - 120))
+            pygame.draw.circle(screen, T.PAPER, center, 26)
+            pygame.draw.circle(screen, T.NAVY, center, 26, 3)
+            if ok:
+                pygame.draw.lines(screen, T.TEAL, False,
+                                  [(center[0] - 13, center[1]), (center[0] - 3, center[1] + 10),
+                                   (center[0] + 15, center[1] - 12)], 6)
+            else:
+                screen.blit(T.icon_surface("plane", 36, T.NAVY), (center[0] - 18, center[1] - 18))
             self.text.blit(
                 screen,
                 texts.FOCUS_SUCCESS if ok else texts.FOCUS_MISS,
@@ -385,6 +416,11 @@ class FlightScene(Scene):
             T.NAVY,
             True,
         )
+        # Uma conta por ação: permite acompanhar a missão sem ler números.
+        for i in range(mission.target):
+            center = (box.left + 145 + i * 24, box.top + 18)
+            pygame.draw.circle(screen, T.TEAL if i < self.run.missions.progress else T.PAPER, center, 8)
+            pygame.draw.circle(screen, T.NAVY, center, 8, 2)
         instruction = mission.text(0).split(" (")[0]
         self.text.blit(screen, instruction, (box.left + 68, box.top + 34), T.SIZES["small"], T.INK, True)
 

@@ -4,7 +4,9 @@ Fundos e atlases produzidos com a ferramenta integrada de geração de imagens
 por IA, em 25/10/2026, a partir do conceito visual aprovado pelo projeto.
 Prompts e identificadores: generation.json (primeiros fundos),
 generation-sprint2.json (mundos, terrenos, objetos, aviões e base do piloto),
-generation-pilot-sprint2.json (cabelos e complementos do piloto).
+generation-pilot-sprint2.json (cabelos e complementos do piloto),
+generation-sprint3.json (vila industrial/intermediária, quatro páginas narrativas,
+duas paisagens de viagem, fauna regional, moradores e terreno suave).
 
 Manaus e Petrolina: indústria, despertar ecológico e cidade solarpunk.
 Vila: estados inicial poluído, intermediário e solarpunk. São interpretações dos

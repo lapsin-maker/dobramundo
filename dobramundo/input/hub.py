@@ -29,7 +29,7 @@ FLIGHT_KEYS = {
     pygame.K_DOWN: "down",
     pygame.K_s: "down",
 }
-POINTER_REACH = 0.46  # fração da tela que o cursor corporal alcança a partir do centro
+POINTER_REACH = 0.50  # alcança os limites úteis; os pixels finais são limitados abaixo
 AUTO_PAUSE_S = 1.0  # segundos fora da área de captura até pausar
 RESUME_S = 1.2  # segundos de volta à área até liberar a retomada
 RECENTER_S = 3.0  # ausência que apaga o repouso de cabeça, mãos e tronco (calibra de novo sozinho)
@@ -51,7 +51,7 @@ class InputHub:
         self.source = None  # fonte da câmera, compartilhada entre segmentos
         self.segment_key = "teclado"
         self.position_control = True  # o corpo indica onde o avião fica (senão, a velocidade)
-        self.auto_center = True  # repouso refeito sozinho depois de uma ausência longa
+        self.auto_center = False  # recalibração automática é opt-in para evitar saltos
         self.invert_x = False
         # Pés sobre a projeção: função dos pontos do corpo -> posição na imagem do jogo.
         # Definida pela plataforma (calibração do chão no executável; o próprio console no T-TEA).
@@ -129,7 +129,7 @@ class InputHub:
     @property
     def body_ready(self) -> bool:
         body = self.body
-        return body is not None and body.error is None and body.calibrated
+        return body is not None and body.error is None and body.calibrated and body.visible
 
     def update(self, dt: float) -> None:
         self.mouse_moved += dt
@@ -185,25 +185,33 @@ class InputHub:
         held = self.held()
         ix = (1 if "right" in held else 0) - (1 if "left" in held else 0)
         iy = (1 if "up" in held else 0) - (1 if "down" in held else 0)
-        if self.body_ready and self.position_control and not (ix or iy):
-            return 0.0, 0.0, self.body.axes()
+        if self.body is not None and self.position_control and not (ix or iy) and self.body.calibrated:
+            if self.body.visible:
+                return 0.0, 0.0, self.body.axes()
+            return 0.0, 0.0, None  # quadro perdido: não reaproveita o último eixo como velocidade
         return self.flight_axes() + (None,)
 
     def body_pointer(self) -> Optional[Tuple[int, int]]:
         """Cursor corporal nos menus (None antes da calibração ou sem câmera)."""
         if not self.body_ready:
             return None
+        if not self.body.visible:
+            return None
         position = self.body.position()
         if position is not None:  # pés sobre a projeção: o cursor fica onde a criança pisa
             return int(position[0] * (C.WIDTH - 1)), int(position[1] * (C.HEIGHT - 1))
         ax, ay = self.body.axes()
-        return (int(C.WIDTH / 2 + ax * C.WIDTH * POINTER_REACH), int(C.HEIGHT / 2 - ay * C.HEIGHT * POINTER_REACH))
+        x = round(C.WIDTH / 2 + ax * C.WIDTH * POINTER_REACH)
+        y = round(C.HEIGHT / 2 - ay * C.HEIGHT * POINTER_REACH)
+        return max(0, min(C.WIDTH - 1, x)), max(0, min(C.HEIGHT - 1, y))
 
     def pointer(self) -> Optional[Tuple[int, int]]:
         """Cursor que seleciona por permanência: corpo; senão, o mouse parado na tela."""
         body = self.body_pointer()
-        if body is not None and (self.mouse_pos is None or self.mouse_moved > 2.0):
-            return body
+        if self.body is not None:
+            if self.mouse_pos is not None and self.mouse_moved <= 2.0:
+                return self.mouse_pos
+            return body  # None suspende permanência durante perda/atraso de quadro
         return self.mouse_pos
 
     def out_of_area(self) -> bool:

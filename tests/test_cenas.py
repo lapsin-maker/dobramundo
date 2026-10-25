@@ -89,19 +89,23 @@ def test_inicio_passa_pelo_aviso_na_primeira_vez(app):
 
 
 def test_a_primeira_tela_e_montar_o_piloto(app):
-    """Piloto (1ª vez) -> aviso -> vila; a história fica opcional nas opções."""
+    """Aviso e treino de permanência precedem a primeira personalização."""
     from dobramundo.scenes.pilot import PilotScene
+    from dobramundo.scenes.tutorial import DwellPracticeScene
 
     app.profile.consentimento = False
     app.profile.piloto_montado = False
     app.profile.abertura_vista = False
     first = first_scene(app)
-    assert isinstance(first, PilotScene) and first.first_time
-    assert isinstance(first.return_to, ConsentScene)
-    assert isinstance(first.return_to.next_scene, VillageScene)
-    first.finish()
+    assert isinstance(first, ConsentScene)
+    practice = first.next_scene
+    assert isinstance(practice, DwellPracticeScene)
+    pilot = practice.next_scene
+    assert isinstance(pilot, PilotScene) and pilot.first_time
+    assert isinstance(pilot.return_to, VillageScene)
+    pilot.finish()
     assert app.profile.piloto_montado
-    assert app.next_scene is first.return_to
+    assert app.next_scene is pilot.return_to
 
 
 def test_historia_nao_bloqueia_primeiro_uso(app):

@@ -13,7 +13,6 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..content.biomes import BIOME_MAP_COLORS, BIOME_ORDER, BIOMES, LOCKED_BIOMES
-from ..content.progress import PLANE_PARTS
 from ..ui import theme as T
 from ..ui.widgets import star
 from .base import Scene
@@ -145,6 +144,31 @@ def to_screen(point: LonLat, rect: pygame.Rect = MAP_RECT) -> Tuple[int, int]:
     return int(x), int(y)
 
 
+def _part_icon(key: str, size: int = 36) -> pygame.Surface:
+    """Peças de papel com silhuetas diferentes para cada requisito de voo."""
+    icon = pygame.Surface((size, size), pygame.SRCALPHA)
+    center = size // 2
+    pygame.draw.circle(icon, T.PAPER, (center, center), center - 1)
+    pygame.draw.circle(icon, T.TEAL, (center, center), center - 1, 2)
+    if key == "estabilizador":
+        shape = [(4, center - 3), (center - 3, 7), (center + 3, 7), (size - 4, center - 3),
+                 (center + 4, center + 5), (center - 4, center + 5)]
+        pygame.draw.polygon(icon, T.NAVY, shape)
+        pygame.draw.line(icon, T.WHITE, (center, 9), (center, size - 9), 2)
+    elif key == "leme":
+        shape = [(center - 4, size - 6), (center - 4, center - 1), (center - 8, 8),
+                 (center + 8, 8), (center + 4, center - 1), (center + 4, size - 6)]
+        pygame.draw.polygon(icon, T.NAVY, shape)
+        pygame.draw.polygon(icon, T.ORANGE, [(center + 4, 11), (size - 6, 7), (center + 4, 19)])
+    else:  # quilha: a lâmina vertical no centro do avião
+        shape = [(center, 5), (center + 7, center - 2), (center + 4, size - 6),
+                 (center, size - 11), (center - 4, size - 6), (center - 7, center - 2)]
+        pygame.draw.polygon(icon, T.NAVY, shape)
+        pygame.draw.line(icon, T.WHITE, (center, 9), (center, size - 12), 2)
+        pygame.draw.line(icon, T.ORANGE, (center - 9, center + 4), (center + 9, center + 4), 2)
+    return icon
+
+
 _map_cache: Optional[pygame.Surface] = None
 
 
@@ -176,6 +200,27 @@ CITY_RECTS = (pygame.Rect(635, 260, 440, 100), pygame.Rect(635, 420, 440, 100))
 
 
 class MapScene(Scene):
+    def _travel_card(self, name: str, size: Tuple[int, int]) -> Optional[pygame.Surface]:
+        key = ("travel-card-cover", name, size)
+        cached = self.watercolor_backgrounds.get(key)
+        if cached is not None:
+            return cached
+        source = self.app.assets.sprite("watercolor", name)
+        if source is None:
+            return None
+        scale = max(size[0] / source.get_width(), size[1] / source.get_height())
+        scaled_size = (
+            max(size[0], round(source.get_width() * scale)),
+            max(size[1], round(source.get_height() * scale)),
+        )
+        resized = pygame.transform.smoothscale(source, scaled_size)
+        left = (resized.get_width() - size[0]) // 2
+        top = (resized.get_height() - size[1]) // 2
+        card = pygame.Surface(size, pygame.SRCALPHA)
+        card.blit(resized, (0, 0), pygame.Rect(left, top, *size))
+        self.watercolor_backgrounds[key] = card
+        return card
+
     def build(self) -> None:
         app = self.app
         profile = app.profile
@@ -238,6 +283,19 @@ class MapScene(Scene):
         T.veil(screen, (10, 18, 40), 110)
         T.panel(screen, MAP_RECT.inflate(20, 20), T.PAPER, T.NAVY, 240, 22, 3)
         screen.blit(brazil_map(), (0, 0))
+        # A rota de aventura é uma pincelada sobre o mapa geográfico existente.
+        city_a, city_b = [to_screen(BIOMES[key].map_point) for key in BIOME_ORDER]
+        route = [
+            city_a,
+            (city_a[0] + 10, city_a[1] + 34),
+            ((city_a[0] + city_b[0]) // 2, max(city_a[1], city_b[1]) + 72),
+            (city_b[0] - 22, city_b[1] + 26),
+            city_b,
+        ]
+        route_layer = pygame.Surface((C.WIDTH, C.HEIGHT), pygame.SRCALPHA)
+        pygame.draw.lines(route_layer, (255, 255, 248, 220), False, route, 13)
+        pygame.draw.lines(route_layer, (238, 132, 69, 245), False, route, 5)
+        screen.blit(route_layer, (0, 0))
         for k in BIOME_ORDER:
             biome = BIOMES[k]
             x, y = to_screen(biome.map_point)
@@ -247,7 +305,7 @@ class MapScene(Scene):
             pygame.draw.circle(screen, T.ORANGE if active else T.NAVY, (x, y), radius)
             self.text.blit(screen, biome.city, (x + 18, y - 14), T.SIZES["label"], T.NAVY_DARK, True)
             for i in range(3):
-                star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
+                star(screen, (x + 30 + i * 22, y + 26), 10, i < self.app.profile.estrelas.get(k, 0))
         self.title(screen, "Mapa dos biomas", "Escolha o destino e o ritmo do voo")
         self.text.blit(screen, "Ritmo", (642, 68), T.SIZES["small"], T.WHITE, True)
         self.menu.draw(screen, self.text, self.app.options.permanencia)
@@ -255,24 +313,34 @@ class MapScene(Scene):
             biome = BIOMES[key_city]
             button = next(b for b in self.menu.buttons if b.key == key_city)
             rect = button.rect
-            sprite_name = "amazonia_2" if key_city == "amazonia" else "caatinga_2"
-            art = self.app.assets.sprite("watercolor", sprite_name)
+            sprite_name = "travel_amazonia" if key_city == "amazonia" else "travel_caatinga"
+            art = self._travel_card(sprite_name, (156, 88))
             if art is not None:
-                image = self.scaled(art, (156, 88), ("map-card", sprite_name))
-                screen.blit(image, image.get_rect(midleft=(rect.left + 8, rect.centery)))
+                screen.blit(art, art.get_rect(midleft=(rect.left + 8, rect.centery)))
             else:
-                pygame.draw.rect(
-                    screen,
-                    BIOME_MAP_COLORS[key_city],
-                    pygame.Rect(rect.left + 12, rect.top + 14, 140, 72),
-                    border_radius=14,
-                )
+                fallback = "amazonia_2" if key_city == "amazonia" else "caatinga_2"
+                art = self.app.assets.sprite("watercolor", fallback)
+                if art is not None:
+                    image = self.scaled(art, (156, 88), ("map-card", fallback))
+                    screen.blit(image, image.get_rect(midleft=(rect.left + 8, rect.centery)))
+                else:
+                    pygame.draw.rect(
+                        screen,
+                        BIOME_MAP_COLORS[key_city],
+                        pygame.Rect(rect.left + 12, rect.top + 14, 140, 72),
+                        border_radius=14,
+                    )
             color = T.NAVY if button.enabled else T.MUTED
             self.text.blit(
                 screen, biome.city, (rect.left + 178, rect.top + 14), T.SIZES["label"], color, True, "topleft"
             )
             self.text.blit(
-                screen, biome.name, (rect.left + 178, rect.top + 52), T.SIZES["small"], color, anchor="topleft"
+                screen,
+                biome.name,
+                (rect.left + 178, rect.top + 48),
+                T.SIZES["small"],
+                color,
+                anchor="topleft",
             )
             for star_index in range(3):
                 star(
@@ -282,28 +350,41 @@ class MapScene(Scene):
                     star_index < self.app.profile.estrelas.get(key_city, 0),
                 )
             if not button.enabled:
-                self.text.paragraph(
+                screen.blit(T.icon_surface("star", 27, T.RED), (rect.left + 179, rect.top + 67))
+                self.text.blit(
                     screen,
-                    "Ganhe 1 estrela na fase anterior",
-                    pygame.Rect(rect.left + 178, rect.top + 74, rect.width - 190, 38),
+                    "1 estrela antes",
+                    (rect.left + 214, rect.top + 80),
                     T.SIZES["small"],
                     T.RED,
-                    spacing=1.05,
-                    bold=True,
+                    True,
+                    "midleft",
                 )
             elif biome.required_parts:
-                part_names = {part.key: part.name for part in PLANE_PARTS}
-                requirement = ", ".join(
-                    f"{part_names.get(part, part)} {level}" for part, level in biome.required_parts.items()
-                )
-                self.text.paragraph(
+                screen.blit(T.icon_surface("star", 25, T.ORANGE), (rect.left + 179, rect.top + 68))
+                self.text.blit(
                     screen,
-                    f"3ª estrela: {requirement}",
-                    pygame.Rect(rect.left + 178, rect.top + 74, rect.width - 190, 38),
+                    "3ª",
+                    (rect.left + 208, rect.top + 81),
                     T.SIZES["small"],
-                    T.MUTED,
-                    spacing=1.05,
+                    T.NAVY,
+                    True,
+                    "midleft",
                 )
+                x = rect.left + 239
+                for part_key, level in biome.required_parts.items():
+                    icon = _part_icon(part_key, 36)
+                    screen.blit(icon, (x, rect.top + 66))
+                    self.text.blit(
+                        screen,
+                        str(level),
+                        (x + 37, rect.top + 84),
+                        T.SIZES["small"],
+                        T.NAVY,
+                        True,
+                        "midleft",
+                    )
+                    x += 70
         # Os biomas futuros ficam em duas colunas dentro de um painel legível.
         legend = pygame.Rect(635, 530, 440, 94)
         T.panel(screen, legend, T.PAPER, T.NAVY, 242, 14, 2)

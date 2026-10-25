@@ -4,7 +4,15 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
-## Prévia — sprint 2: aquarela em movimento
+## Prévia — sprint 3: controle confortável e mundo vivo
+
+O editor confirma escolhas mais devagar e exige sair do alvo antes de repetir. O controle de cabeça tolera melhor a perda de um marco facial, oferece calibração dos quatro alcances confortáveis e interrompe o cursor quando a leitura envelhece. Alto contraste também amplia avião, objetos e passagens, com escala ajustável. A vila começa industrial e colorida, tem moradores e pedidos persistentes e evolui para jardins, energia e alimentos integrados às construções.
+
+As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
+
+Baixe **Windows, cartucho e galeria** na [prévia da sprint 3](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint3-controle-e-vida-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT3.md) inclui instalação, validação, desempenho medido e aceite presencial pendente.
+
+## Entrega anterior — sprint 2: aquarela em movimento
 
 Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).
 
@@ -93,9 +101,9 @@ Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a cria
 
 ### Primeira execução
 
-Na primeira execução, a criança começa com um **piloto neutro** e escolhe sua aparência. Depois vêm o **Aviso ao supervisor**, quando necessário, a **Calibração**, se o controle for corporal, e a **vila**. Na primeira decolagem pelo mapa, um treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. O treino pode ser pulado ou repetido em Opções. A história fica disponível em Opções ("Ver a abertura"), e o personagem pode ser modificado pelo botão Piloto da vila.
+Na primeira execução, o **aviso ao supervisor** e a **calibração corporal**, quando necessários, preparam a interação. Um treino opcional ensina mirar, esperar e sair do alvo. A criança então começa com um **piloto neutro**, escolhe sua aparência e chega à **vila**. Na primeira decolagem pelo mapa, outro treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. Ambos podem ser pulados ou repetidos em Opções. A história fica disponível em Opções, e o personagem pode ser modificado pelo botão Piloto da vila.
 
-A abertura é um livro ilustrado de quatro páginas: uma cidade cinzenta e cheia de fumaça; uma criança que encontra um jornal na rua; a dobradura do avião, passo a passo, sobre uma mesa de papel, com a legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo enquanto a cidade ganha cor.
+A abertura é um livro ilustrado de quatro páginas: uma cidade industrial colorida, com fumaça e resíduos; uma criança que encontra um jornal na rua; a dobradura do avião sobre uma mesa de trabalho, com setas e legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo.
 
 ### Resíduos e recursos
 
@@ -217,7 +225,7 @@ O controle usa visão computacional (MediaPipe Pose). O jogo acompanha o segment
 
 Em Opções, a opção **Controle do avião** escolhe o modo:
 
-- **Posição (padrão):** a postura calibrada corresponde ao centro da pista, em altura média. O corpo indica o ponto em que o avião deve ficar, e o avião vai até lá suavemente. Ficar parado mantém o avião parado. Se a câmera perder o segmento, o avião mantém o rumo.
+- **Posição (padrão):** a postura calibrada corresponde ao centro da pista, em altura média. O corpo indica o ponto em que o avião deve ficar, e o avião vai até lá suavemente. Ficar parado mantém o avião parado. Se a leitura some ou envelhece, o comando fica neutro até voltar; o último eixo não vira velocidade.
 - **Velocidade:** o deslocamento do corpo define a velocidade do avião, como nas versões anteriores.
 
 | Segmento | Pontos do MediaPipe Pose usados |
@@ -230,10 +238,10 @@ Em Opções, a opção **Controle do avião** escolhe o modo:
 | Cabeça | Nariz e orelhas (índices 0, 7 e 8) |
 
 - **Calibração:** a criança fica parada na postura confortável por cerca de 2 segundos, com pelo menos 15 leituras. O jogo usa a mediana como centro, e o repouso só é aceito se o segmento ficou parado; se ele se mexer, a calibração recomeça. A calibração pode ser refeita em Opções, na pausa ("Recalibrar") e ao trocar de segmento.
-- **Centrar sozinho:** com a opção ligada (padrão), cabeça, mãos e tronco refazem a postura neutra sozinhos depois de 3 segundos sem o segmento. Os pés não se recalibram sozinhos.
+- **Recentralizar:** desligado por padrão na sprint 3. Quando ligado, cabeça, mãos e tronco refazem a postura neutra depois de 3 segundos sem o segmento. Uma preferência já salva continua valendo; a calibração explícita permite definir também quatro alcances confortáveis na sessão.
 - **Trocar lados:** inverte esquerda e direita, para câmeras que não espelham a imagem.
 - No console T-TEA, os mesmos segmentos usam os pontos da câmera do console (veja [Console T-TEA (cartucho)](#console-t-tea-cartucho)).
-- **Menus:** um cursor acompanha o segmento. O botão é acionado quando o cursor permanece sobre ele pelo tempo de permanência, que é de 2,0 segundos por padrão e pode ser ajustado de 1,0 a 3,5 segundos em Opções.
+- **Menus:** um cursor acompanha o segmento. A permanência geral é de 2 s (ajustável de 1 a 3,5 s); Piloto e Hangar usam 3 s (ajustável de 1 a 5 s). Depois de confirmar, saia do alvo para repetir. Sem rastreamento válido a contagem pausa brevemente e depois é cancelada.
 - **Sensibilidade:** de 0,5 a 2,0 vezes (padrão 1,0). Valores maiores exigem um movimento menor.
 - **Pausa automática:** se o segmento sai da área de captura por 1 segundo durante o voo, o jogo pausa. Ao voltar, espera a presença estável por 1,2 segundo e faz uma contagem de 3 segundos antes de retomar.
 - Sem webcam, sem as bibliotecas ou sem o modelo de pose, o jogo segue com teclado e mouse. Se a câmera falhar com um segmento selecionado, o motivo aparece em Opções e na calibração.
@@ -274,7 +282,7 @@ Em **Opções > Projeção e chão** (só no executável), a imagem inteira pode
 
 ## Acessibilidade, segurança e privacidade
 
-- **Alto contraste:** dessatura o fundo e destaca avião, resíduos, obstáculos e alertas com cores intensas e contornos espessos.
+- **Alto contraste:** atenua o fundo e destaca avião, resíduos, obstáculos e alertas com cores e contornos. Também amplia o mundo, com escala de 1 a 1,6× (padrão 1,3×), mantendo passagens e colisões alinhadas. **Opções > Preparar** oferece atalhos Calmo e Mais visível.
 - **Efeitos fortes:** a opção "Efeitos fortes (clarão, tremor)", em Opções, quando desligada, tira o clarão vermelho da colisão, o clarão da estrela e o tremor da tela, e suaviza o tom do momento de foco. Para crianças com sensibilidade sensorial.
 - **Som:** volumes geral, de música e de efeitos, e opção de silêncio, que reduz a carga sensorial em casos de hipersensibilidade auditiva. Cada estágio tem sua própria trilha, com troca suave.
 - **Ritmo:** tempo de permanência e sensibilidade ajustáveis, pausa automática, pausa a qualquer momento com P ou Esc, e momento de foco desligável.

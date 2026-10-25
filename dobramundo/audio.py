@@ -16,6 +16,10 @@ from .log import log
 from .paths import find_asset_file
 
 MUSIC_FADE_MS = 1600
+CELEBRATION_PRIORITY = {
+    "sfx_powerup": 1, "sfx_compra": 2, "sfx_estrela": 3,
+    "sfx_estagio": 4, "sfx_fim_fase": 5, "sfx_game_over": 5,
+}
 COLLECT_SFX = {
     "papel": "sfx_coleta_papel",
     "plastico": "sfx_coleta_plastico",
@@ -34,6 +38,8 @@ class Audio:
         self.muted = False
         self.current: Optional[str] = None
         self.channels = []
+        self.effects = []
+        self.effect_priority = 0
         self.active = 0
         if not enabled:
             return
@@ -43,8 +49,9 @@ class Audio:
             return
         try:
             pygame.mixer.set_num_channels(16)
-            pygame.mixer.set_reserved(2)
+            pygame.mixer.set_reserved(4)
             self.channels = [pygame.mixer.Channel(0), pygame.mixer.Channel(1)]
+            self.effects = [pygame.mixer.Channel(2), pygame.mixer.Channel(3)]
             self.enabled = True
         except pygame.error as exc:
             log.warning("sem dispositivo de áudio: %s", exc)
@@ -59,6 +66,10 @@ class Audio:
             volume = self.effective_music()
             for channel in self.channels:
                 channel.set_volume(volume)
+            for channel in self.effects:
+                channel.set_volume(0.0 if self.muted else self.master * self.sfx_volume)
+                if self.muted:
+                    channel.stop()
 
     def effective_music(self) -> float:
         return 0.0 if self.muted else self.master * self.music_volume
@@ -82,8 +93,19 @@ class Audio:
         sound = self.sound(name)
         if sound is None:
             return
-        sound.set_volume(min(1.0, self.master * self.sfx_volume * volume))
-        sound.play()
+        priority = CELEBRATION_PRIORITY.get(name, 0)
+        channel = self.effects[1 if priority else 0]
+        if priority:
+            if channel.get_busy() and priority < self.effect_priority:
+                return
+            self.effect_priority = priority
+            # Uma conquista importante substitui a anterior. Não acumulamos
+            # fanfarras de missão, estrela e estágio no mesmo instante.
+            self.effects[0].fadeout(70)
+        elif name in COLLECT_SFX.values() and self.effects[1].get_busy():
+            return  # a coleta continua sinalizada visualmente durante a festa
+        channel.set_volume(min(1.0, self.master * self.sfx_volume * volume))
+        channel.play(sound, fade_ms=12)
 
     def collect(self, waste: str) -> None:
         self.play(COLLECT_SFX.get(waste, "sfx_coleta_papel"), 0.8)
@@ -116,6 +138,6 @@ class Audio:
 
     def stop(self) -> None:
         if self.enabled:
-            for channel in self.channels:
+            for channel in self.channels + self.effects:
                 channel.stop()
         self.current = None

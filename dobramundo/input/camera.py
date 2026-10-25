@@ -29,9 +29,9 @@ def create_landmarker(model_path: Path):
         base_options=mp_python.BaseOptions(model_asset_path=str(model_path)),
         running_mode=vision.RunningMode.VIDEO,
         num_poses=1,
-        min_pose_detection_confidence=0.5,
-        min_pose_presence_confidence=0.5,
-        min_tracking_confidence=0.5,
+        min_pose_detection_confidence=0.4,
+        min_pose_presence_confidence=0.4,
+        min_tracking_confidence=0.4,
     )
     return vision.PoseLandmarker.create_from_options(options)
 
@@ -54,6 +54,7 @@ class PoseCameraSource:
         self._preview: Optional[bytes] = None
         self._want_still = False
         self._still: Optional[Tuple[bytes, Tuple[int, int]]] = None
+        self.frame_size: Optional[Tuple[int, int]] = None  # resolução negociada, não a solicitada
         if model_path is None or not Path(model_path).is_file():
             self.fail("modelo de pose não encontrado")
 
@@ -134,6 +135,8 @@ class PoseCameraSource:
                 if not ok:
                     self.fail("a webcam não envia imagem")
                     break
+                with self._lock:
+                    self.frame_size = (int(frame.shape[1]), int(frame.shape[0]))
                 frame = cv2.flip(frame, 1)  # espelho: direita do jogador = direita da tela
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 timestamp = max(last_ts + 1, int(time.monotonic() * 1000))

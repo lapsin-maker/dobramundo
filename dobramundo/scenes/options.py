@@ -22,8 +22,8 @@ SURFACE_HINT = {
     "mesa": "uma das mãos",
     "chao": "pés, em pé sobre a projeção",
 }
-ROW_H = 52
-GAP = 8
+ROW_H = 48
+GAP = 6
 # Superfície -> segmento sugerido (aplicado quando a câmera já está em uso).
 SURFACE_SEGMENT = {"chao": "pes", "mesa": "mao_direita", "parede": "tronco_pe"}
 
@@ -36,14 +36,22 @@ class OptionsScene(Scene):
         width = 510
         buttons = []
 
-        def stepper(x: int, y: int, key: str, label: str, value: str, minus: Callable, plus: Callable) -> None:
-            buttons.append(self.button((x, y, 64, ROW_H), "<", minus, key=f"{key}-"))
+        def stepper(
+            x: int, y: int, key: str, label: str, value: str, minus: Callable, plus: Callable, w: int = width
+        ) -> None:
+            arrow = min(48, max(38, w // 5))
+            buttons.append(self.button((x, y, arrow, ROW_H), "<", minus, key=f"{key}-"))
             buttons.append(
                 self.button(
-                    (x + 72, y, width - 144, ROW_H), value, plus, sublabel=label, size=T.SIZES["body"], key=f"{key}="
+                    (x + arrow + 4, y, w - 2 * arrow - 8, ROW_H),
+                    value,
+                    plus,
+                    sublabel=label,
+                    size=T.SIZES["body"],
+                    key=f"{key}=",
                 )
             )
-            buttons.append(self.button((x + width - 64, y, 64, ROW_H), ">", plus, key=f"{key}+"))
+            buttons.append(self.button((x + w - arrow, y, arrow, ROW_H), ">", plus, key=f"{key}+"))
 
         def toggle(x: int, y: int, key: str, label: str, on: bool, action: Callable, w: int = width) -> None:
             buttons.append(
@@ -107,10 +115,21 @@ class OptionsScene(Scene):
             left,
             y,
             "perm",
-            "Tempo de permanência nos botões",
-            f"{o.permanencia:.1f} s",
+            "Geral",
+            f"{o.permanencia:.1f}s",
             lambda: self.adjust("permanencia", -0.25, 1.0, 3.5),
             lambda: self.adjust("permanencia", 0.25, 1.0, 3.5),
+            half,
+        )
+        stepper(
+            left + half + GAP,
+            y,
+            "perm_editor",
+            "Personalização",
+            f"{o.permanencia_editor:.1f}s",
+            lambda: self.adjust("permanencia_editor", -0.25, 1.0, 5.0),
+            lambda: self.adjust("permanencia_editor", 0.25, 1.0, 5.0),
+            half,
         )
         y += ROW_H + GAP
         s_index = SURFACES.index(o.superficie)
@@ -140,7 +159,7 @@ class OptionsScene(Scene):
             left + half + GAP,
             y,
             "centralizar",
-            "Centrar sozinho",
+            "Recentralizar",
             o.centralizar_sozinho,
             lambda: self.flip("centralizar_sozinho"),
             half,
@@ -168,7 +187,22 @@ class OptionsScene(Scene):
         if desktop:
             toggle(right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
         y += ROW_H + GAP
-        toggle(right, y, "contraste", texts.UI["alto_contraste"], o.alto_contraste, lambda: self.flip("alto_contraste"))
+        toggle(
+            right,
+            y,
+            "contraste",
+            texts.UI["alto_contraste"],
+            o.alto_contraste,
+            lambda: self.flip("alto_contraste"),
+            half,
+        )
+        stepper(
+            right + half + GAP, y, "escala_contraste", "Escala de contraste",
+            f"{o.escala_contraste:.1f}x",
+            lambda: self.adjust("escala_contraste", -0.1, 1.0, 1.6),
+            lambda: self.adjust("escala_contraste", 0.1, 1.0, 1.6),
+            half,
+        )
         y += ROW_H + GAP
         toggle(
             right, y, "inverter", "Trocar cima/baixo", o.inverter_vertical, lambda: self.flip("inverter_vertical"), half
@@ -191,16 +225,30 @@ class OptionsScene(Scene):
             o.efeitos_fortes,
             lambda: self.flip("efeitos_fortes"),
         )
-        buttons.append(self.button((24, 570, 132, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
-        buttons.append(self.button((164, 570, 154, 64), "Ver história", self.intro, key="abertura"))
-        buttons.append(self.button((326, 570, 164, 64), "Rever treino", self.replay_tutorial, key="treino"))
+        footer = (
+            (texts.UI["voltar"], lambda: self.goto("vila"), "voltar"),
+            ("História", self.intro, "abertura"),
+            ("Rever voo", self.replay_tutorial, "treino"),
+            ("Mirar", self.replay_dwell, "dwell_treino"),
+            ("Preparar", self.prepare, "preparar"),
+        )
+        for index, (label, action, key) in enumerate(footer):
+            buttons.append(
+                self.button(
+                    (24 + index * 210, 508, 202, ROW_H),
+                    label,
+                    action,
+                    key=key,
+                    icon=T.icon_surface("stabilizer", 28, T.GREEN) if key == "preparar" else None,
+                )
+            )
         toggle(
-            498, 570, "movimento", "Movimento reduzido", o.reduzir_movimento,
-            lambda: self.flip("reduzir_movimento"), 282,
+            24, 562, "movimento", "Movimento reduzido", o.reduzir_movimento,
+            lambda: self.flip("reduzir_movimento"), width,
         )
         toggle(
-            788, 570, "auto_abertura", "Abertura automática", o.abertura_automatica,
-            lambda: self.flip("abertura_automatica"), 288,
+            566, 562, "auto_abertura", "Abertura automática", o.abertura_automatica,
+            lambda: self.flip("abertura_automatica"), width,
         )
         self.menu.set_buttons(buttons)
 
@@ -251,6 +299,13 @@ class OptionsScene(Scene):
     def replay_tutorial(self) -> None:
         return_to = make_scene(self.app, "opcoes")
         self.goto("tutorial", next_scene=return_to, return_to=make_scene(self.app, "opcoes"))
+
+    def replay_dwell(self) -> None:
+        return_to = make_scene(self.app, "opcoes")
+        self.goto("dwell_treino", next_scene=return_to, return_to=make_scene(self.app, "opcoes"))
+
+    def prepare(self) -> None:
+        self.goto("preparar")
 
     def draw(self, screen: pygame.Surface) -> None:
         self.app.backdrop(screen, self.last_dt, None, 50.0)

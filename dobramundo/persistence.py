@@ -59,11 +59,13 @@ class Options:
     efeitos_fortes: bool = True  # clarões e tremor de tela (desligar para sensibilidade sensorial)
     reduzir_movimento: bool = False  # menos movimento decorativo; mantém avanço do percurso
     abertura_automatica: bool = False  # avança sozinha a história opcional
-    centralizar_sozinho: bool = True  # cabeça e mãos: posição neutra automática, refeita após ausência
+    centralizar_sozinho: bool = False  # recentralização automática após perda longa (opt-in)
     # Calibração do chão (projeção + webcam): onde a câmera vê os 4 alvos projetados
     # (superior esquerdo, superior direito, inferior direito, inferior esquerdo), 0..1.
     chao_pontos: List[List[float]] = field(default_factory=list)
     alvo_frente: float = 0.12  # cursor dos pés à frente dos dedos (fração da altura da imagem)
+    permanencia_editor: float = 3.0
+    escala_contraste: float = 1.3
 
 
 @dataclass
@@ -82,6 +84,7 @@ class Profile:
     pontos: int = 0  # carteira da loja de padrões
     padroes_comprados: List[str] = field(default_factory=list)
     vila: List[str] = field(default_factory=list)
+    pedidos_vila: Dict[str, str] = field(default_factory=dict)
     pecas: Dict[str, int] = field(default_factory=lambda: {k: 0 for k in PART_KEYS})
     aviao: str = DEFAULT_PLANE
     cores: Dict[str, str] = field(default_factory=dict)  # avião -> cor
@@ -124,6 +127,10 @@ class Profile:
         self.pontos = max(0, int(self.pontos))
         self.padroes_comprados = sorted({p for p in self.padroes_comprados if p in PATTERN_PRICES})
         self.vila = [k for k in VILLAGE_KEYS if k in set(self.vila)]
+        self.pedidos_vila = {
+            str(k): str(v) for k, v in self.pedidos_vila.items()
+            if k in VILLAGE_KEYS and v in ("solicitada", "concluida")
+        }
         self.pecas = {k: max(0, min(MAX_PART_LEVEL, int(self.pecas.get(k, 0)))) for k in PART_KEYS}
         self.cores = {m: c for m, c in self.cores.items() if m in PLANE_KEYS and c in PLANE_COLOR_KEYS}
         self.padroes = {m: c for m, c in self.padroes.items() if m in PLANE_KEYS and c in PLANE_PATTERN_KEYS}
@@ -138,6 +145,8 @@ class Profile:
         o.alvo_frente = max(0.0, min(0.35, float(o.alvo_frente)))
         o.chao_pontos = _floor_points(o.chao_pontos)
         o.permanencia = max(1.0, min(3.5, float(o.permanencia)))
+        o.permanencia_editor = max(1.0, min(5.0, float(o.permanencia_editor)))
+        o.escala_contraste = max(1.0, min(1.6, float(o.escala_contraste)))
         o.sensibilidade = max(0.5, min(2.0, float(o.sensibilidade)))
         return self
 

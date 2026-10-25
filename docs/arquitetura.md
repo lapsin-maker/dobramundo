@@ -77,8 +77,8 @@ Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por perm
 Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente, e cada tela de primeira vez só entra enquanto a condição do perfil não foi cumprida:
 
 ```
-PilotScene (1ª vez: piloto_montado) -> ConsentScene (1ª vez: consentimento)
-           -> CalibrationScene (se houver controle corporal)
+ConsentScene (quando necessário) -> CalibrationScene (controle corporal)
+           -> DwellPracticeScene -> PilotScene (se piloto_montado=False)
            -> VillageScene
 ```
 
@@ -90,8 +90,8 @@ VillageScene
   Melhorias .......... UpgradesScene (abas Vila e Avião)
   Hangar ............. HangarScene (abas Dobradura, Cor e Padrão)
   Piloto ............. PilotScene
-  Opções ............. OptionsScene -> IntroScene ("Ver a abertura"), CalibrationScene e
-                       ProjectionScene ("Projeção e chão", só no executável)
+  Opções ............. OptionsScene -> IntroScene, CalibrationScene, DwellPracticeScene,
+                       PreparationScene e ProjectionScene (só no executável)
   Sobre .............. AboutScene (O jogo, ODS, Créditos, Referências)
   Esc ................ OptionsScene
 
@@ -161,7 +161,7 @@ O caminho procedural de reserva de `WorldView` segue esta ordem:
 8. **Objetos à frente do avião**, com halos no solarpunk do Difícil e alertas de chão antes dos obstáculos que colidem.
 9. **Feixes de coleta** e **textos flutuantes** ("+65", "ESCUDO").
 
-`FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), tudo o que vem antes dos objetos é dessaturado (`desaturate`), e objetos e avião ganham contorno espesso.
+`FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), o fundo é dessaturado (`desaturate`), objetos/avião ganham contorno e o canvas do mundo recebe zoom uniforme de `contrast_scale` (1 a 1,6×). Setas externas usam `screen_point`; HUD conserva o tamanho nativo.
 
 **Papel e aquarela.** `engine/paper.py` desenha as formas de papel por código (`ink_polygon`, `blob`, `shadow`, `hill_points`, `ribbon`, `bezier`, `tree`, `person`, `wave_lines`, `smoke` e `sparkles`), usadas pela vila e pela abertura. Ao coletar, o `Beam` (em `game/entities.py`) leva a cor do resíduo, e `WorldView.splash` desenha o respingo de aquarela durante `SPLASH_S` (0,55 s, em `game/run.py`).
 
@@ -249,7 +249,7 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 
 ## 11. Controle por posição, momento de foco e abertura didática
 
-**Controle por posição** (`input/hub.py`, `game/player.py`). `InputHub.flight_command` devolve o alvo do corpo (-1..1, 0 na postura calibrada) quando o controle corporal está calibrado (ou quando os pés estão sobre a projeção, com `FloorControl`), o modo é posição (`controle_posicao`, padrão) e nenhuma tecla de direção está apertada. Caso contrário, devolve a velocidade do teclado somada ao corpo. `Player.command_target` converte o alvo em um ponto da pista: o centro do eixo horizontal e, na vertical, `REST_ALTITUDE` como centro, com os limites `MIN_ALTITUDE` e `MAX_ALTITUDE`. `Player.steer_to` aproxima o avião desse ponto com `POSITION_RESPONSE` (5,0 por segundo, em `config.py`), limitado por `MAX_LATERAL_SPEED` e `MAX_VERTICAL_SPEED` vezes o fator do avião. `AxisMapper.hold_when_lost` (`input/pose.py`) mantém a última leitura quando a câmera perde o segmento, então o avião conserva o rumo. Esse flag é definido ao abrir a câmera e em `InputHub.configure`.
+**Controle por posição** (`input/hub.py`, `game/player.py`). `InputHub.flight_command` devolve o alvo do corpo (-1..1, 0 na postura calibrada) quando o controle corporal está calibrado (ou quando os pés estão sobre a projeção, com `FloorControl`), o modo é posição (`controle_posicao`, padrão) e nenhuma tecla de direção está apertada. Caso contrário, devolve a velocidade do teclado somada ao corpo. `Player.command_target` converte o alvo em um ponto da pista: o centro do eixo horizontal e, na vertical, `REST_ALTITUDE` como centro, com os limites `MIN_ALTITUDE` e `MAX_ALTITUDE`. `Player.steer_to` aproxima o avião desse ponto com `POSITION_RESPONSE` (5,0 por segundo, em `config.py`), limitado por `MAX_LATERAL_SPEED` e `MAX_VERTICAL_SPEED` vezes o fator do avião. `AxisMapper.hold_when_lost` pode conservar internamente a última leitura em modo de posição, mas `InputHub.flight_command` só entrega alvos de leituras válidas. Na perda do segmento, retorna velocidade zero e nenhum alvo novo; a leitura antiga não vira velocidade contínua. O cursor corporal retorna `None`, suspendendo escolhas.
 
 **Momento de foco** (`game/focus.py`). `FocusMoment` tem três estados: `None` (voo normal), `"pending"` (a seta espera o movimento) e `"success"` ou `"miss"` (legenda de 0,8 s). `find_threat` escolhe o obstáculo cujo contato com o avião acontece em `FOCUS_IMPACT_S` (0,3 a 0,75 s de mundo), que bateria no ponto atual e no ponto para onde o avião vai (`intended_point`). `choose_escape` escolhe a direção do desvio, com a tabela `PREFERRED` por tipo de obstáculo. `moved_towards` mede se o comando andou pelo menos `FOCUS_STEP` (0,3, na escala de -1 a 1) a partir do comando que havia quando a seta apareceu. Acertar cria um desvio guiado (`guide_point`, com `exact=True` no `Player.update`) até o ponto seguro, e o obstáculo recebe `dodged`. Errar só deixa o tempo voltar ao normal. Intervalo de `FOCUS_COOLDOWN_S` (9 s), com `FOCUS_FIRST_S` (5 s) no início. A abertura didática ignora o intervalo (`entity.lesson`). Não abre com `invincible`, invulnerabilidade ou escudo. A opção `momento_foco` desliga o recurso.
 
@@ -265,7 +265,7 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 **BodyControl x FloorControl.** `InputHub.make_control` escolhe o controle de cada segmento:
 
 - `BodyControl` (`input/pose.py`) é relativo. O `AxisMapper` calibra o repouso (2 segundos e pelo menos 15 leituras, em `CALIBRATION_SECONDS` e `MIN_SAMPLES`) e só aceita o repouso se o desvio mediano das leituras fica até metade do alcance do segmento (`settle`, `STILL_SHARE`). Com `recenter_after` (`RECENTER_S`, 3 s, em `input/hub.py`), uma ausência longa apaga o repouso, e ele se refaz quando o segmento volta e fica parado. Isso vale para cabeça, mãos e tronco, com "Centrar sozinho" ligado, e para os pés na câmera sem chão calibrado.
-- `FloorControl` (subclasse de `BodyControl`, com `absolute = True`) é usado só com o segmento "pes" e um localizador de chão (`InputHub.set_floor`). O localizador converte os pontos na posição (0..1) da imagem do jogo, e o avião e o cursor vão até esse ponto. Não há repouso a calibrar, e, quando o pé some, o último ponto é mantido.
+- `FloorControl` (subclasse de `BodyControl`, com `absolute = True`) é usado só com o segmento "pes" e um localizador de chão (`InputHub.set_floor`). O localizador converte os pontos na posição (0..1) da imagem do jogo, e o avião e o cursor vão até esse ponto. Não há repouso a calibrar. O último ponto pode permanecer no localizador, mas, quando o pé some, a camada de entrada invalida o cursor e deixa de enviar alvos ao voo.
 
 **Orientação da projeção.** `engine/orientation.py` espelha primeiro e gira depois, no sentido horário. `game_to_screen` e `screen_to_game` fazem a conversão de ida e de volta, com as faixas pretas da imagem em pé. `App.to_logical` usa `screen_to_game` para o mouse, e `App.present` aplica `orient` na janela. A calibração do chão (`input/floor.py`, `FloorMap`) é uma homografia entre a câmera e a imagem projetada, medida nos quatro alvos (`TARGETS`, a 15% das bordas). `FloorMap.locator` desfaz a orientação e sobe o ponto em `alvo_frente`. `App.floor_setup` devolve esse localizador com um token que muda com os pontos, a rotação, o espelho e o cursor à frente, para refazê-lo só quando preciso. No console, `ConsoleCore.floor_setup` usa o localizador do próprio console.
 
@@ -310,7 +310,15 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 
 `engine/painted_route.py` projeta terreno e margens usando a distância do mundo; `engine/watercolor.py` compõe o horizonte e escolhe o cenário procedural de reserva quando o pacote está incompleto. O piloto usa `engine/painted_pilot.py`, os aviões usam `engine/painted_planes.py`, e `engine/pilot.py` integra o personagem às vistas. As camadas low-poly e `engine/paper_pilot.py` permanecem para compatibilidade e fallback.
 
-`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. O fluxo atual começa em piloto → aviso/calibração quando necessários → vila; a abertura narrativa é opcional. Implementação, capturas e validação: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md). Pacotes e instalação: [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. A abertura narrativa é opcional. Implementação, capturas e validação anteriores: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md) e [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+
+## Sprint 3: controle, legibilidade e vida
+
+O fluxo de primeira execução prepara aviso/calibração, oferece treino opcional de permanência, abre o piloto neutro e segue para a vila. `ui/widgets.py` conserva a trava do alvo ativado por chave/região após reconstruções do editor. Tempo de personalização e ampliação de contraste são campos próprios do perfil e acompanham o jogador registrado no console.
+
+`input/pose.py` usa nariz e orelhas compensadas para cabeça, rejeita leituras envelhecidas e permite alcances direcionais calibrados em sessão. O cursor sem leitura retorna `None`; eixos antigos não alimentam a velocidade do voo. `engine/accessible_view.py` aplica zoom uniforme do mundo; `screen_point` mantém setas e tutorial alinhados com a imagem ampliada, sem alterar a física. O fundo de alto contraste é atenuado em baixa resolução antes dos objetos interativos.
+
+`engine/painted_route.py` dissolve as formas das margens entre estágios, mantendo posição/distância. `engine/regional_life.py` desenha fauna decorativa atenuada perto de desafios, sem criar entidades. `engine/pilot.py` cacheia expressões. `scenes/village.py` mantém pedidos por obra e encena usos cotidianos. `audio.py` reserva dois canais de efeitos e prioriza uma fanfarra por vez. Os detalhes da implementação e o aceite presencial restante estão em [SPRINT3.md](SPRINT3.md).
 
 ## Histórico — versão 1.4
 

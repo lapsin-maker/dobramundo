@@ -273,6 +273,11 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
         pygame.draw.line(surface, ink, points([(-17, 0)])[0], points([(-17, 15)])[0], max(3, int(5*s)))
         pygame.draw.line(surface, ink, points([(17, 0)])[0], points([(17, 15)])[0], max(3, int(5*s)))
         pygame.draw.line(surface, TEAL, points([(-17, 14)])[0], points([(17, 14)])[0], max(2, int(3*s)))
+    elif kind == "magnet":
+        pygame.draw.lines(surface, ink, False, points([(-12, -15), (-12, 7), (-6, 15), (6, 15), (12, 7), (12, -15)]),
+                          max(5, int(8 * s)))
+        pygame.draw.line(surface, ORANGE, points([(-12, -15)])[0], points([(-12, -5)])[0], max(5, int(8*s)))
+        pygame.draw.line(surface, TEAL, points([(12, -15)])[0], points([(12, -5)])[0], max(5, int(8*s)))
     elif kind in {"powerup", "shield", "repair"}:
         pygame.draw.polygon(surface, ink, points([(0, -18), (16, -11), (13, 7), (0, 18), (-13, 7), (-16, -11)]))
         pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 9)])[0], max(2, int(3*s)))

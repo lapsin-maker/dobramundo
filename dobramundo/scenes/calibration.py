@@ -17,16 +17,19 @@ from ..ui import theme as T
 from ..ui.widgets import ring, row
 from .base import Scene
 
-CONFIRM_S = 1.0  # depois de calibrar, mostra "pronto" um instante antes de seguir
-
 
 class CalibrationScene(Scene):
-    def __init__(self, app, return_to: Optional[Scene] = None) -> None:
+    def __init__(self, app, return_to: Optional[Scene] = None, guided: bool = False) -> None:
         super().__init__(app)
         self.return_to = return_to
         self.done_time = 0.0
         self.preview: Optional[pygame.Surface] = None
         self.preview_bytes: Optional[bytes] = None
+        self.guided_index = -1
+        self.guided_after_center = guided
+        self.guided_samples = []
+        self.guided_last_seq = -1
+        self.guided_message = ""
 
     def enter(self) -> None:
         body = self.app.input.body
@@ -35,12 +38,16 @@ class CalibrationScene(Scene):
         super().enter()
 
     def build(self) -> None:
-        rects = row(pygame.Rect(140, 560, C.WIDTH - 280, 70), 3)
+        rects = row(pygame.Rect(60, 560, C.WIDTH - 120, 70), 5)
         self.menu.set_buttons(
             [
-                self.button(rects[0], "Recomeçar", self.restart, key="recomecar"),
-                self.button(rects[1], "Trocar segmento", self.options, key="segmento"),
-                self.button(rects[2], "Usar teclado", self.keyboard, key="teclado"),
+                self.button(rects[0], "Reiniciar", self.restart, key="recomecar"),
+                self.button(
+                    rects[1], "Alcances", self.begin_guided, key="extremos", sublabel="Calibração guiada"
+                ),
+                self.button(rects[2], "Segmento", self.options, key="segmento", sublabel="Trocar"),
+                self.button(rects[3], "Teclado", self.keyboard, key="teclado"),
+                self.button(rects[4], "Continuar", self.finish, key="continuar"),
             ]
         )
 
@@ -48,6 +55,43 @@ class CalibrationScene(Scene):
         if self.app.input.body is not None:
             self.app.input.body.recalibrate()
         self.done_time = 0.0
+        self.guided_index = -1
+
+    def begin_guided(self) -> None:
+        body = self.app.input.body
+        if body is None or not body.calibrated:
+            self.guided_message = "Conclua primeiro a posição neutra."
+            return
+        self.guided_index = 0
+        self.guided_samples = []
+        self.guided_last_seq = body._seq
+        self.guided_message = "Mova-se confortavelmente para a direita e confirme com Enter."
+
+    def capture_guided(self) -> None:
+        body = self.app.input.body
+        directions = ("right", "left", "up", "down")
+        labels = ("direita", "esquerda", "cima", "baixo")
+        if body is None or self.guided_index < 0:
+            return
+        if not body.mapper.set_comfortable_extent(directions[self.guided_index], self.guided_samples[-18:]):
+            self.guided_message = "Movimento curto: tente novamente ou volte ao centro."
+            self.guided_samples = []
+            return
+        self.guided_index += 1
+        self.guided_samples = []
+        if self.guided_index >= len(directions):
+            self.guided_index = -1
+            self.guided_message = "Alcances confortáveis salvos."
+        else:
+            self.guided_message = f"Agora mova-se para {labels[self.guided_index]} e confirme com Enter."
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if self.guided_index >= 0 and event.type == pygame.KEYDOWN and event.key in (
+            pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER
+        ):
+            self.capture_guided()
+            return
+        super().handle_event(event)
 
     def options(self) -> None:
         self.goto("opcoes")
@@ -73,11 +117,19 @@ class CalibrationScene(Scene):
         if body is None:
             self.finish()
             return
+        if (
+            self.guided_index >= 0
+            and body.visible
+            and body._seq != self.guided_last_seq
+            and body._last_point is not None
+        ):
+            self.guided_last_seq = body._seq
+            self.guided_samples.append(body._last_point)
         if body.calibrated:
             self.done_time += dt
-            if self.done_time >= CONFIRM_S:
-                self.app.audio.play("sfx_selecao")
-                self.finish()
+            if self.guided_after_center:
+                self.guided_after_center = False
+                self.begin_guided()
 
     def draw(self, screen: pygame.Surface) -> None:
         self.app.backdrop(screen, self.last_dt, None, 20.0)
@@ -138,3 +190,21 @@ class CalibrationScene(Scene):
                 anchor="midtop",
             )
         self.draw_menu(screen)
+        mapper = body.mapper
+        size = body.frame_size or (0, 0)
+        diagnostic = (
+            f"Webcam {size[0]}×{size[1]} · pontos {body.valid_point_count}/{len(segment.landmarks) if segment else 0}"
+            f" · confiança {body.confidence:.2f} · eixos {mapper.ax:+.2f}, {mapper.ay:+.2f}"
+        )
+        self.text.blit(
+            screen, diagnostic, (card.centerx, card.bottom - 24), T.SIZES["small"], T.MUTED, anchor="midbottom"
+        )
+        if self.guided_message:
+            self.text.blit(
+                screen,
+                self.guided_message,
+                (card.centerx, card.bottom - 2),
+                T.SIZES["small"],
+                T.NAVY,
+                anchor="midbottom",
+            )
