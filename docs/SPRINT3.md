@@ -38,7 +38,7 @@ Em **Opções**, ajuste a permanência da personalização separadamente da nave
 
 ## Validação e limites
 
-O roteiro reproduzível `tools/qa_sprint3.py --out <pasta> --record` captura telas e duas sequências de 96 segundos, com distância contínua, mais de três ciclos conservadores de margens e ambas as mudanças de estágio. A progressão dessas sequências é forçada para inspecionar a renderização; elas não representam uma criança completando a fase. O relatório separa renderização normal e alto contraste.
+O roteiro reproduzível `tools/qa_sprint3.py --out <pasta> --record` captura telas e duas sequências de 96 segundos, com distância contínua, mais de seis ciclos de margens (período de 24 × 220 unidades) e ambas as mudanças de estágio. A progressão dessas sequências é forçada para inspecionar a renderização; elas não representam uma criança completando a fase. O relatório separa renderização normal e alto contraste. A [entrega e suas medições](ENTREGA_SPRINT3.md) registram os pacotes, os resultados e os limites de desempenho.
 
 A suíte verifica perda/retorno de rastreamento, calibração assimétrica, travas de permanência, persistência, continuidade das margens, ampliação, fauna, sons e fluxo das cenas. O self-test verifica a carga do detector de pose, sem provar rastreamento físico.
 

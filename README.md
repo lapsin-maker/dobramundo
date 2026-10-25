@@ -10,6 +10,8 @@ O editor confirma escolhas mais devagar e exige sair do alvo antes de repetir. O
 
 As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
 
+Baixe **Windows, cartucho e galeria** na [prévia da sprint 3](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint3-controle-e-vida-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT3.md) inclui instalação, validação, desempenho medido e aceite presencial pendente.
+
 ## Entrega anterior — sprint 2: aquarela em movimento
 
 Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).

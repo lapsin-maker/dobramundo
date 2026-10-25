@@ -1,0 +1,69 @@
+{
+  "source_commit": "87813ed8001195796c1a19a2d02239d26b7bfb45",
+  "date": "2026-10-25",
+  "preview": "sprint3-controle-e-vida",
+  "watercolor_pngs": 39,
+  "self_test_source": "ok",
+  "self_test_executable": "ok",
+  "pose_detector": "loaded; no physical webcam capture tested",
+  "tsdk_check": "505 portable files",
+  "packages": {
+    "Dobramundo-Sprint3-Galeria.zip": {
+      "bytes": 92299718,
+      "sha256": "47f312c302acc42786ffd75980baf7d1d19776d331eb1903d01815ff4cf92e8f"
+    },
+    "Dobramundo-Sprint3-Windows.zip": {
+      "bytes": 229560941,
+      "sha256": "01fce905c01171225f04656c8693c75e41570de8c21fe962d66a120f3fd114ca"
+    },
+    "Dobramundo-Sprint3.ttea": {
+      "bytes": 114321489,
+      "sha256": "856528da6496af07f78a724386c95b33da2482d9398a2747d385598a86741cfe"
+    }
+  },
+  "benchmark": {
+    "conditions": "SDL dummy; CPU; no webcam; warmup 60 frames; logical 1100x650",
+    "flights": {
+      "amazonia_normal": {
+        "median_ms": 6.817,
+        "p95_ms": 8.832,
+        "p99_ms": 10.325,
+        "max_ms": 14.722
+      },
+      "amazonia_contrast": {
+        "median_ms": 9.891,
+        "p95_ms": 18.903,
+        "p99_ms": 25.52,
+        "max_ms": 28.231
+      },
+      "caatinga_normal": {
+        "median_ms": 5.394,
+        "p95_ms": 9.568,
+        "p99_ms": 13.592,
+        "max_ms": 16.495
+      },
+      "caatinga_contrast": {
+        "median_ms": 9.265,
+        "p95_ms": 15.804,
+        "p99_ms": 21.264,
+        "max_ms": 25.609
+      }
+    }
+  },
+  "tests": {
+    "full_suite": 404,
+    "after_scaling_optimization": 14,
+    "ruff": "passed"
+  },
+  "recordings": {
+    "duration_s_each_route": 96,
+    "distance": 32606,
+    "bank_period": 5280,
+    "bank_cycles": 6.175,
+    "capture_fps": 10,
+    "source_commit": "95411abff7f14593cb2cec1f856008c9bcac2c52",
+    "note": "Only subsequent runtime change is high-contrast scaling; these recordings use normal mode."
+  },
+  "physical_acceptance": "pending: actual head motion, projector, children, physical console",
+  "gallery_check": "all referenced media present; automatic file:// browser preview blocked by tool policy"
+}
