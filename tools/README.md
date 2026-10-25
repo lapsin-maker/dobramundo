@@ -167,3 +167,18 @@ O agente sintético não representa uma criança nem mede conforto motor. Interp
 ## Preparação de imagens
 
 `python tools/prepare_assets.py` produz seis fundos na resolução de uso e sete atlas de aviões em `assets/watercolor_prepared/`. Mantém os originais e registra tamanho, SHA-256, vista, grade e pivô no manifesto. `python tools/audit_assets.py` confere o inventário. O runtime prefere os PNG preparados e conserva os originais como fallback; não há conversão de codec presumida compatível com o console.
+
+## Medições e entrega
+
+Execute benchmarks em processos novos e sem builds ou testes concorrentes. O padrão usa um piloto sintético personalizado; `--empty-pilot` reproduz a carga sem avatar da ferramenta 1.5. Os relatórios separam abertura, primeiros quadros, aquecimento, tempos de quadro e memória. Componentes aninhados não devem ser somados.
+
+```powershell
+python tools/benchmark_runtime.py --out build/benchmark --frames 600
+python tools/benchmark_runtime.py --out build/benchmark-camera --frames 600 --camera --paced
+python tools/soak_runtime.py --out build/soak --cycles 30 --frames 2400
+python tools/capture_release.py --out build/capturas
+```
+
+O benchmark com câmera mede processamento concorrente e a idade do último resultado disponível; não demonstra precisão dos gestos nem latência física de sensor/projetor. O soak alterna biomas, contraste, aparências e menus usando perfis sintéticos. Ele usa invencibilidade apenas para manter a carga de renderização; a economia é medida separadamente por `balance.py`, com colisões.
+
+`build_desktop.py` constrói o pacote nativo, invalida resultados antigos e roda o executável com `--self-test 1200 --exigir-camera` em diretório temporário. A CI gera Windows e Linux, publica cobertura e preserva a permissão de execução do Linux em `.tar.gz`. Linux requer `libegl1 libgles2` (Debian/Ubuntu); a CI verifica as dependências de `libmediapipe.so` com `ldd` antes de empacotar. O diagnóstico manual só de Linux não substitui a matriz completa de testes e builds.

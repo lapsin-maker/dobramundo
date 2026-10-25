@@ -47,7 +47,7 @@ jobs:
       - name: Formatação
         run: ruff format --check .
       - name: Testes
-        run: python -m pytest -q --cov=dobramundo --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml
+        run: python -m pytest -q -ra --cov=dobramundo --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml
       - name: Self-test
         run: python -m dobramundo --self-test 60
       - name: Cobertura por comportamento (sem meta artificial de percentual)

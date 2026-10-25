@@ -120,7 +120,7 @@ O tempo e o número de voos para completar o conteúdo variam com a coleta, assi
 
 ### Metas curtas
 
-Durante o voo aparece uma meta por vez, de 20 a 60 segundos: coletar resíduos de um tipo, desviar de obstáculos na faixa do avião, passar por baixo de portais ou pegar power-ups. No Normal os alvos são menores (por exemplo, 2 resíduos ou 3 desvios; no Difícil, 6 e 6). Cada meta cumprida rende 0,5% de transformação, 6 recursos e 50 pontos.
+Durante o voo aparece uma meta por vez: coletar resíduos de um tipo, desviar de obstáculos na faixa do avião, passar por baixo de portais ou pegar power-ups. Ela começa após as lições iniciais e usa alvos presentes à frente. No Normal os alvos são menores (até 2 resíduos ou 3 desvios; no Difícil, 6 e 6). Cada meta cumprida rende 0,5% de transformação, 6 recursos e 50 pontos. Após 60 segundos ativos do mundo sem conclusão, a meta dá lugar a outra oferta, sem perder pontos ou recursos; pausas não contam nesse prazo.
 
 ### Vila-base
 
@@ -128,8 +128,8 @@ A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar
 
 | Melhoria | Custo | Descrição |
 |---|---|---|
-| Ponto de troca | 72 papel, 72 plástico | Separa os resíduos e os transforma em recursos |
-| Horta urbana | 96 papel, 72 vidro | Alimento fresco plantado no meio da vila |
+| Ponto de troca | 8 papel, 8 plástico | Separa os resíduos e os transforma em recursos |
+| Horta urbana | 24 papel, 16 vidro | Alimento fresco plantado no meio da vila |
 | Painéis solares | 144 metal, 120 vidro | Microgeração de energia limpa nos telhados |
 | Compostor | 96 plástico, 72 metal | Restos orgânicos viram adubo para a horta |
 | Cisterna | 120 plástico, 96 metal | Guarda a água da chuva para regar e beber |
@@ -320,7 +320,7 @@ O script procura o Python 3, cria o ambiente `.venv`, instala `requirements-webc
 ./build_linux.sh
 ```
 
-O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramundo` (modo de pasta). Ele confere se o relatório do self-test contém `"status": "ok"`. No Debian ou no Ubuntu, instale antes o pacote `python3-venv`.
+O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramundo` (modo de pasta). Ele confere se o relatório do self-test contém `"status": "ok"`. No Debian ou no Ubuntu, instale antes `python3-venv`, `libegl1` e `libgles2`. O detector MediaPipe carrega `libEGL.so.1` e `libGLESv2.so.2`, dependências de sistema que não são embutidas no pacote; o build com `--exigir-camera` verifica essas bibliotecas e falha com instrução se alguma estiver ausente. Quem receber o pacote Linux também precisa dos dois runtimes instalados.
 
 ### Especificação e assets
 

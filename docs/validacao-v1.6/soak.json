@@ -1,0 +1,1092 @@
+{
+  "version": "1.6.0",
+  "cycles": [
+    {
+      "cycle": 0,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 439873536,
+      "loaded_surface_bytes": 44752248,
+      "loaded_images": 11,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 306346720,
+        "surface_bytes_by_owner": {
+          "assets": 83809864,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29801864,
+          "world_transient": 22843368,
+          "sky": 4818952,
+          "ground": 917504,
+          "watercolor": 108715360,
+          "plane_skin": 41015524,
+          "paper_items": 12328732
+        },
+        "cache_items": {
+          "scaled": 94,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 121,
+          "ground_groups": 0,
+          "asset_images": 11
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 15,
+      "median_ms": 7.989,
+      "p95_ms": 13.091,
+      "p99_ms": 34.476,
+      "max_ms": 44.469
+    },
+    {
+      "cycle": 1,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 461238272,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 284298440,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 27700896,
+          "world_transient": 26991736,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 113818384,
+          "plane_skin": 43018516,
+          "paper_items": 17930632
+        },
+        "cache_items": {
+          "scaled": 61,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 129,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 21,
+      "median_ms": 5.861,
+      "p95_ms": 9.064,
+      "p99_ms": 12.437,
+      "max_ms": 206.604
+    },
+    {
+      "cycle": 2,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 501501952,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 293388300,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29639840,
+          "world_transient": 34678504,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 114594088,
+          "plane_skin": 47985584,
+          "paper_items": 11580840
+        },
+        "cache_items": {
+          "scaled": 88,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 172,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 20,
+      "median_ms": 11.68,
+      "p95_ms": 17.283,
+      "p99_ms": 22.815,
+      "max_ms": 38.456
+    },
+    {
+      "cycle": 3,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 516481024,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 291591168,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29645472,
+          "world_transient": 27344264,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 114501604,
+          "plane_skin": 55776384,
+          "paper_items": 9485168
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 124,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 21,
+      "median_ms": 9.652,
+      "p95_ms": 14.9,
+      "p99_ms": 18.081,
+      "max_ms": 225.028
+    },
+    {
+      "cycle": 4,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 539521024,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 295374688,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29784464,
+          "world_transient": 26513592,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 114987560,
+          "plane_skin": 51767676,
+          "paper_items": 17411952
+        },
+        "cache_items": {
+          "scaled": 91,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 148,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 23,
+      "median_ms": 8.489,
+      "p95_ms": 13.183,
+      "p99_ms": 18.684,
+      "max_ms": 43.37
+    },
+    {
+      "cycle": 5,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 551194624,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 306611112,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29798000,
+          "world_transient": 33252344,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 114491060,
+          "plane_skin": 56480740,
+          "paper_items": 17750692
+        },
+        "cache_items": {
+          "scaled": 114,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 198,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 21,
+      "median_ms": 5.689,
+      "p95_ms": 8.43,
+      "p99_ms": 11.715,
+      "max_ms": 203.648
+    },
+    {
+      "cycle": 6,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 562851840,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 316312060,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29751280,
+          "world_transient": 34909240,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 115076704,
+          "plane_skin": 64525544,
+          "paper_items": 17139848
+        },
+        "cache_items": {
+          "scaled": 110,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 197,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 19,
+      "median_ms": 11.763,
+      "p95_ms": 17.031,
+      "p99_ms": 21.642,
+      "max_ms": 35.901
+    },
+    {
+      "cycle": 7,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 543842304,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 301217844,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29751456,
+          "world_transient": 32796424,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 114612464,
+          "plane_skin": 60770840,
+          "paper_items": 8448384
+        },
+        "cache_items": {
+          "scaled": 110,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 195,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 19,
+      "median_ms": 8.811,
+      "p95_ms": 13.078,
+      "p99_ms": 16.57,
+      "max_ms": 223.88
+    },
+    {
+      "cycle": 8,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 545083392,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 299468528,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 27749340,
+          "world_transient": 19019224,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 115169616,
+          "plane_skin": 65229900,
+          "paper_items": 17391004
+        },
+        "cache_items": {
+          "scaled": 61,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 73,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 18,
+      "median_ms": 7.93,
+      "p95_ms": 11.686,
+      "p99_ms": 15.008,
+      "max_ms": 42.394
+    },
+    {
+      "cycle": 9,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 547336192,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 296775360,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 26918176,
+          "world_transient": 19286104,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 114620012,
+          "plane_skin": 73020700,
+          "paper_items": 8092092
+        },
+        "cache_items": {
+          "scaled": 55,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 74,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 18,
+      "median_ms": 6.135,
+      "p95_ms": 9.691,
+      "p99_ms": 13.022,
+      "max_ms": 189.22
+    },
+    {
+      "cycle": 10,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 570183680,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 323541704,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29760544,
+          "world_transient": 37334584,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 115253388,
+          "plane_skin": 68896336,
+          "paper_items": 17387408
+        },
+        "cache_items": {
+          "scaled": 90,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 179,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 27,
+      "median_ms": 12.157,
+      "p95_ms": 26.301,
+      "p99_ms": 33.236,
+      "max_ms": 57.766
+    },
+    {
+      "cycle": 11,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 556720128,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 314031064,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28137360,
+          "world_transient": 31862872,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 114643856,
+          "plane_skin": 72800744,
+          "paper_items": 11747956
+        },
+        "cache_items": {
+          "scaled": 62,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 131,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 22,
+      "median_ms": 10.646,
+      "p95_ms": 17.415,
+      "p99_ms": 44.885,
+      "max_ms": 254.415
+    },
+    {
+      "cycle": 12,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 579002368,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 336600628,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29677152,
+          "world_transient": 45178008,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 115141584,
+          "plane_skin": 78145252,
+          "paper_items": 13549188
+        },
+        "cache_items": {
+          "scaled": 112,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 273,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 26,
+      "median_ms": 8.609,
+      "p95_ms": 12.337,
+      "p99_ms": 14.962,
+      "max_ms": 38.134
+    },
+    {
+      "cycle": 13,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 548413440,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 306641932,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29704400,
+          "world_transient": 24422312,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 115893632,
+          "plane_skin": 72473836,
+          "paper_items": 9309476
+        },
+        "cache_items": {
+          "scaled": 92,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 123,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 22,
+      "median_ms": 6.329,
+      "p95_ms": 8.926,
+      "p99_ms": 10.442,
+      "max_ms": 213.015
+    },
+    {
+      "cycle": 14,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 571858944,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 323197640,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29808224,
+          "world_transient": 27283448,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116575992,
+          "plane_skin": 76632248,
+          "paper_items": 17988284
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 147,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 17,
+      "median_ms": 12.1,
+      "p95_ms": 16.784,
+      "p99_ms": 19.913,
+      "max_ms": 48.19
+    },
+    {
+      "cycle": 15,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 586772480,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 340066496,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29803296,
+          "world_transient": 40395624,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116027624,
+          "plane_skin": 82230760,
+          "paper_items": 16770916
+        },
+        "cache_items": {
+          "scaled": 88,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 234,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 25,
+      "median_ms": 9.339,
+      "p95_ms": 14.118,
+      "p99_ms": 17.259,
+      "max_ms": 203.85
+    },
+    {
+      "cycle": 16,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 566026240,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 324501600,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29792544,
+          "world_transient": 33255912,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116669268,
+          "plane_skin": 75681676,
+          "paper_items": 14192756
+        },
+        "cache_items": {
+          "scaled": 113,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 201,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 14,
+      "median_ms": 8.526,
+      "p95_ms": 13.634,
+      "p99_ms": 18.476,
+      "max_ms": 31.096
+    },
+    {
+      "cycle": 17,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 578560000,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 334477576,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29811248,
+          "world_transient": 37462392,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 115978828,
+          "plane_skin": 78980876,
+          "paper_items": 17405956
+        },
+        "cache_items": {
+          "scaled": 93,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 180,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 18,
+      "median_ms": 6.307,
+      "p95_ms": 9.447,
+      "p99_ms": 11.4,
+      "max_ms": 209.945
+    },
+    {
+      "cycle": 18,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 566550528,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 320724948,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28168044,
+          "world_transient": 20065384,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116568896,
+          "plane_skin": 83836552,
+          "paper_items": 17176628
+        },
+        "cache_items": {
+          "scaled": 61,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 75,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 21,
+      "median_ms": 12.085,
+      "p95_ms": 17.256,
+      "p99_ms": 21.449,
+      "max_ms": 32.245
+    },
+    {
+      "cycle": 19,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 575082496,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 330938244,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29672288,
+          "world_transient": 41869272,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116048668,
+          "plane_skin": 77541472,
+          "paper_items": 10968268
+        },
+        "cache_items": {
+          "scaled": 90,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 203,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 22,
+      "median_ms": 9.243,
+      "p95_ms": 13.425,
+      "p99_ms": 17.352,
+      "max_ms": 223.375
+    },
+    {
+      "cycle": 20,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 574377984,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 327712316,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29785696,
+          "world_transient": 29097704,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116331384,
+          "plane_skin": 80586668,
+          "paper_items": 17001420
+        },
+        "cache_items": {
+          "scaled": 91,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 147,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 20,
+      "median_ms": 8.424,
+      "p95_ms": 11.823,
+      "p99_ms": 13.601,
+      "max_ms": 16.725
+    },
+    {
+      "cycle": 21,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 581918720,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 335278940,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29797472,
+          "world_transient": 40089672,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 115922084,
+          "plane_skin": 85188340,
+          "paper_items": 9443096
+        },
+        "cache_items": {
+          "scaled": 114,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 243,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 16,
+      "median_ms": 6.022,
+      "p95_ms": 9.574,
+      "p99_ms": 11.848,
+      "max_ms": 243.886
+    },
+    {
+      "cycle": 22,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 564092928,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 316161140,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28261396,
+          "world_transient": 20065384,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116546784,
+          "plane_skin": 78866004,
+          "paper_items": 17512128
+        },
+        "cache_items": {
+          "scaled": 62,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 75,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 20,
+      "median_ms": 12.215,
+      "p95_ms": 17.724,
+      "p99_ms": 21.322,
+      "max_ms": 30.869
+    },
+    {
+      "cycle": 23,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 578899968,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 329486140,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28132960,
+          "world_transient": 31824360,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116276528,
+          "plane_skin": 81629940,
+          "paper_items": 16784076
+        },
+        "cache_items": {
+          "scaled": 61,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 132,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 24,
+      "median_ms": 10.427,
+      "p95_ms": 15.307,
+      "p99_ms": 18.168,
+      "max_ms": 279.424
+    },
+    {
+      "cycle": 24,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 576028672,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 328949628,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29801864,
+          "world_transient": 25518872,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116440836,
+          "plane_skin": 85442344,
+          "paper_items": 16836268
+        },
+        "cache_items": {
+          "scaled": 94,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 126,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 18,
+      "median_ms": 9.393,
+      "p95_ms": 15.593,
+      "p99_ms": 20.566,
+      "max_ms": 33.701
+    },
+    {
+      "cycle": 25,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 570695680,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 317360144,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28241616,
+          "world_transient": 22712264,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116006796,
+          "plane_skin": 78612000,
+          "paper_items": 16949192
+        },
+        "cache_items": {
+          "scaled": 73,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 95,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 19,
+      "median_ms": 6.152,
+      "p95_ms": 9.359,
+      "p99_ms": 12.427,
+      "max_ms": 214.845
+    },
+    {
+      "cycle": 26,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 563351552,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 317617588,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29639840,
+          "world_transient": 26640488,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116713444,
+          "plane_skin": 81629940,
+          "paper_items": 8084432
+        },
+        "cache_items": {
+          "scaled": 88,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 121,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 22,
+      "median_ms": 12.933,
+      "p95_ms": 17.439,
+      "p99_ms": 20.735,
+      "max_ms": 26.095
+    },
+    {
+      "cycle": 27,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 579690496,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 334090848,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 28137888,
+          "world_transient": 31488728,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116408424,
+          "plane_skin": 85696348,
+          "paper_items": 17521184
+        },
+        "cache_items": {
+          "scaled": 62,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 130,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 21,
+      "median_ms": 9.603,
+      "p95_ms": 13.893,
+      "p99_ms": 18.38,
+      "max_ms": 222.357
+    },
+    {
+      "cycle": 28,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 578326528,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 333261756,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29798000,
+          "world_transient": 36038792,
+          "sky": 5841780,
+          "ground": 917504,
+          "watercolor": 116524808,
+          "plane_skin": 78612000,
+          "paper_items": 17378712
+        },
+        "cache_items": {
+          "scaled": 114,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 198,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 16,
+      "median_ms": 8.772,
+      "p95_ms": 12.487,
+      "p99_ms": 14.843,
+      "max_ms": 17.89
+    },
+    {
+      "cycle": 29,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 568856576,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 324027596,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 2095552,
+          "world_sprite_cache": 29704400,
+          "world_transient": 24886616,
+          "sky": 5770612,
+          "ground": 917504,
+          "watercolor": 116119444,
+          "plane_skin": 81375936,
+          "paper_items": 17102924
+        },
+        "cache_items": {
+          "scaled": 92,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 125,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      },
+      "entities": 20,
+      "median_ms": 6.239,
+      "p95_ms": 8.729,
+      "p99_ms": 10.753,
+      "max_ms": 204.26
+    }
+  ],
+  "camera": false,
+  "dt_s": 0.016666666666666666,
+  "scope": "synthetic rendering and scene lifecycle; not physical acceptance",
+  "wall_seconds": 758.138,
+  "simulated_seconds": 1215.5,
+  "failures": [],
+  "status": "ok"
+}

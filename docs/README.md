@@ -1,5 +1,11 @@
 # Documentação do Dobramundo
 
+## Entrega atual
+
+- [Entrega 1.6](ENTREGA_1_6.md): recursos implementados, validação e limites.
+- [Desempenho e webcam](validacao-v1.6/desempenho.md): medições, picos e memória.
+- [Economia e rotas comunitárias](validacao-v1.6/economia/sintese.md): modelo sintético e resultados.
+
 ## Jogar e operar
 
 - [Guia do jogo](GUIA_DO_JOGO.md): fluxo, controles, opções e superfícies.

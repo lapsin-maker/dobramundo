@@ -4,8 +4,11 @@
 
 - Perfis locais independentes com cartões anônimos, preservação do save legado e recuperação a partir de cópias anteriores; falhas de leitura bloqueiam gravação destrutiva.
 - Preparação de sessão: exploração sem eliminação, limite opcional de 120/180/240 s, assistência previsível e sementes comunitárias repetíveis. Resultados parciais preservam ganhos sem registrar conclusão não alcançada.
-- Missões oferecidas conforme alvos disponíveis; repetição de desafio mantém parâmetros selecionados. Exceções do cartucho passam a ser registradas sem conteúdo dos perfis.
-- Arquitetura de cenas permite fábrica injetável para testes e integração. Validação de release e aceite presencial desta versão ainda pendentes.
+- Missões oferecidas conforme alvos disponíveis, com expiração após 60 s sem penalidade e nova oferta após um intervalo; repetição mantém parâmetros e preferência de material. Ponto de troca custa 8 papel/8 plástico e Horta custa 24 papel/16 vidro, antecipando a transformação inicial.
+- Oito variações regionais com sementes publicadas; relatório de economia usa movimento, colisões, reação, erros e pausas.
+- Treze imagens preparadas para o tamanho de uso, manifesto de procedência, caches limitados por bytes e descarte por bioma. Render de pista, objetos, avião e piloto dividido por responsabilidade; fallback preservado.
+- Fábrica de cenas injetável, contratos de leitura do desenho, fontes e ajuste de texto comuns; testes organizados por comportamento. Formatação global em commit separado, sem alteração das árvores sintáticas.
+- CI com versões fixadas por Python, cobertura, formatação e builds Windows/Linux com self-test. Exceções do cartucho passam a ser registradas sem conteúdo dos perfis.
 
 ## 1.5.0 — 2026-10-25
 

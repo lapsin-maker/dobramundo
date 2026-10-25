@@ -11,15 +11,17 @@
 
 | Amazônia · Manaus | Caatinga · Petrolina |
 |---|---|
-| ![Voo em Manaus](docs/screenshots/v150-manaus.png) | ![Voo em Petrolina](docs/screenshots/v150-petrolina.png) |
+| ![Voo em Manaus](docs/screenshots/v160-manaus.png) | ![Voo em Petrolina](docs/screenshots/v160-petrolina.png) |
 
 ## Baixar e jogar
 
-1. Abra a [última versão](https://github.com/lapsin-maker/dobramundo/releases/latest) e baixe o pacote **Windows**.
+1. Abra a [última versão](https://github.com/lapsin-maker/dobramundo/releases/latest) e baixe o pacote **Windows** ou **Linux**.
 2. Extraia **toda** a pasta; mantenha o executável junto da pasta `_internal`.
-3. Abra **Jogar-Dobramundo.bat**. Não é necessário instalar Python. A versão 1.6 mantém o perfil principal legado e oferece slots locais independentes para outros pilotos.
+3. No Windows, abra **Jogar-Dobramundo.bat**; no Linux, instale os runtimes `libegl1` e `libgles2` (Debian/Ubuntu), extraia o `.tar.gz` e execute `./Dobramundo/Dobramundo`. Não é necessário instalar Python. A versão 1.6 mantém o perfil principal legado e oferece slots locais independentes para outros pilotos.
 
-A release também oferece o cartucho `.ttea`, a galeria e hashes SHA-256, quando publicados junto ao pacote. [Entrega 1.6.0 e validação pendente](docs/ENTREGA_1_6.md) · [Histórico](CHANGELOG.md).
+A release também oferece o cartucho `.ttea`, a galeria, o manifesto de build e hashes SHA-256. [Entrega 1.6.0 e resultados](docs/ENTREGA_1_6.md) · [Histórico](CHANGELOG.md).
+
+Se jogou a release 1.5 pelo seu lançador, use **Continuar-perfil-1.5.bat** para retomar aquela pasta de progresso. O atalho usa `%LOCALAPPDATA%\Dobramundo-1.5.0`, sem copiar ou apagar dados. O lançador padrão usa `%APPDATA%\Dobramundo`; os slots da tela **Trocar piloto** pertencem à pasta escolhida.
 
 ## O jogo
 
@@ -46,7 +48,7 @@ O jogo oferece permanência ajustável, cores e formas distintas, movimento redu
 
 A câmera é processada localmente; o jogo não grava vídeo nem envia imagens para serviços de IA. O diagnóstico exporta métricas técnicas. As ilustrações de IA são arquivos já incluídos no pacote.
 
-Testes automatizados não substituem o ensaio da pessoa com a câmera, da projeção a 2–3 m e do conforto em sessão mediada. A CI e a validação presencial desta entrega permanecem pendentes; veja [o roteiro presencial](docs/VALIDACAO_PRESENCIAL.md) e as [notas da entrega](docs/ENTREGA_1_6.md).
+Testes automatizados não substituem o ensaio da pessoa com a câmera, da projeção a 2–3 m e do conforto em sessão mediada. Os resultados de CI, builds e medições estão nas [notas da entrega](docs/ENTREGA_1_6.md); o [aceite presencial](docs/VALIDACAO_PRESENCIAL.md) continua pendente.
 
 ## Console T-TEA
 
@@ -71,13 +73,14 @@ Para webcam, instale as dependências opcionais descritas em [CONTRIBUTING.md](C
 ```powershell
 python -m pytest -q
 ruff check .
+ruff format --check .
 python -m dobramundo --self-test 1200 --exigir-camera
 python tools/benchmark_runtime.py --out build/benchmark --screenshots
 python tools/benchmark_camera.py --help
 python tools/check_routes.py --help
 ```
 
-O self-test percorre cenas/fases e carrega o detector de pose; **não abre a webcam**. A medição de câmera é uma ferramenta separada e explícita. `tools/legado` não faz parte do lint ativo. A formatação global ainda é trabalho separado.
+O self-test percorre cenas/fases e carrega o detector de pose; **não abre a webcam**. A medição de câmera é uma ferramenta separada e explícita. `tools/legado` não faz parte do lint ativo. A formatação global foi isolada em commit próprio e agora é verificada na CI.
 
 Executável: `build_windows.bat` / `build_linux.sh`, ou `python -m PyInstaller --noconfirm Dobramundo.spec`. Os geradores procedurais são fallback e não recriam a arte de IA. [Ferramentas](tools/README.md) · [Arquitetura](docs/arquitetura.md) · [Análise consolidada e prioridades](docs/ANALISE_CONSOLIDADA.md).
 

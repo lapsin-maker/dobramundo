@@ -1,4 +1,4 @@
-"""Capturas reprodutíveis das telas e estados de erro, usando perfil sintético."""
+"""Capturas reprodutíveis com perfil sintético; voos omitem partículas transitórias no quadro final."""
 
 from __future__ import annotations
 
@@ -32,12 +32,20 @@ def main() -> int:
     profile = Profile()
     profile.consentimento = True
     app = App(audio=False, profile=profile)
-    report = {"screens": [], "layout_failures": []}
+    report = {
+        "profile": "synthetic",
+        "flight_capture_note": "after 120 frames, clear transient run.beams and draw one clean final frame",
+        "screens": [],
+        "layout_failures": [],
+    }
 
-    def capture(name, scene, frames=6):
+    def capture(name, scene, frames=6, clean_flight=False):
         app.go(scene)
         for _ in range(frames):
             app.step(1 / 60, [])
+        if clean_flight:
+            scene.run.beams.clear()
+            scene.draw(app.canvas)
         screen_rect = app.canvas.get_rect()
         for button in scene.menu.buttons:
             if not screen_rect.contains(button.rect):
@@ -78,7 +86,7 @@ def main() -> int:
                 scene = make_scene(app, "voo", biome, seed=20261025, intro_override=False)
                 scene.run.invincible = True
                 scene.run.add_restoration(68)
-                capture(biome + ("-contraste" if contrast else ""), scene, frames=120)
+                capture(biome + ("-contraste" if contrast else ""), scene, frames=120, clean_flight=True)
         (args.out / "captures.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )

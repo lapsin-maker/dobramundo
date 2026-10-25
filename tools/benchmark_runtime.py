@@ -89,6 +89,7 @@ def main() -> int:
         "--camera", action="store_true", help="abre webcam local para medir CPU concorrente; sem salvar vídeo"
     )
     parser.add_argument("--device", type=int, default=0)
+    parser.add_argument("--empty-pilot", action="store_true", help="reproduz a carga sem avatar do benchmark 1.5")
     args = parser.parse_args()
     if args.frames < 1:
         parser.error("--frames deve ser maior que zero")
@@ -109,7 +110,12 @@ def main() -> int:
 
     memory_before = resident_bytes()
     start = time.perf_counter()
-    app = App(audio=False, profile=Profile(consentimento=True, piloto_montado=True))
+    profile = Profile(consentimento=True, piloto_montado=True)
+    if not args.empty_pilot:
+        profile.piloto.update(
+            pele="pele4", cabelo="crespo", cor_cabelo="preto", roupa="amarela", olhos="castanhos", oculos="redondo"
+        )
+    app = App(audio=False, profile=profile)
     init_ms = (time.perf_counter() - start) * 1000
     memory_after = resident_bytes()
     watercolor = [(path, surf) for path, surf in app.assets._loaded.items() if "watercolor" in path]
@@ -126,6 +132,7 @@ def main() -> int:
         "startup_watercolor_count": len(watercolor),
         "startup_watercolor_bytes": sum(s.get_pitch() * s.get_height() for _, s in watercolor),
         "seed": 7,
+        "pilot": "empty (1.5 comparison)" if args.empty_pilot else "customized synthetic avatar",
         "flights": {},
     }
     camera = None

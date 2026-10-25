@@ -41,6 +41,7 @@ def main() -> int:
 
     from dobramundo import __version__
     from dobramundo.app import App
+    from dobramundo.content.pilot import HAIR_STYLES, SKIN_TONES
     from dobramundo.persistence import Profile
     from dobramundo.scenes import make_scene
 
@@ -64,6 +65,15 @@ def main() -> int:
     try:
         for cycle in range(args.cycles):
             biome = ("amazonia", "caatinga")[cycle % 2]
+            profile.piloto.update(
+                pele=SKIN_TONES[cycle % len(SKIN_TONES)].key,
+                cabelo=HAIR_STYLES[cycle % len(HAIR_STYLES)].key,
+                cor_cabelo="preto",
+                roupa="amarela",
+                olhos="castanhos",
+                cadeira="sim" if cycle % 3 == 1 else "nao",
+                andador="sim" if cycle % 3 == 2 else "nao",
+            )
             app.options.alto_contraste = bool((cycle // 2) % 2)
             app.apply_options()
             samples = []
@@ -104,6 +114,12 @@ def main() -> int:
                     "entities": entity_count,
                     **stats(samples),
                 }
+            )
+            print(
+                f"Ciclo {cycle + 1}/{args.cycles}: {biome}; "
+                f"RSS {report['cycles'][-1]['rss_bytes']}; objetos {entity_count}",
+                file=sys.stderr,
+                flush=True,
             )
         report["wall_seconds"] = round(time.perf_counter() - started, 3)
         report["simulated_seconds"] = round(args.cycles * (args.frames + 31) * dt, 3)
