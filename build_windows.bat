@@ -64,7 +64,7 @@ if errorlevel 1 goto :fail_venv
 :venv_ok
 
 echo [2/5] Instalando dependencias (jogo, webcam e PyInstaller)...
-"%VENV_PY%" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7"
+"%VENV_PY%" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" -c constraints-build.txt
 if errorlevel 1 goto :fail_pip
 
 echo [3/5] Limpando build e dist...

@@ -35,7 +35,7 @@ fi
 PY=".venv/bin/python"
 
 echo "[2/5] Instalando dependencias (jogo, webcam e PyInstaller)..."
-"$PY" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" \
+"$PY" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" -c constraints-build.txt \
     || die "falha ao instalar as dependencias. Verifique a conexao com a internet."
 
 echo "[3/5] Limpando build/ e dist/..."
