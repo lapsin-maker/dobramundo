@@ -36,7 +36,13 @@ def load_image(path: Path, alpha: bool = True) -> Optional[pygame.Surface]:
     except (OSError, pygame.error) as exc:
         log.warning("imagem não carregou: %s (%s)", path, exc)
         return None
-    return display_format(image, alpha)
+    # O arquivo pode ser RGBA mesmo quando todos os pixels são opacos.
+    # Detectar uma vez evita pagar composição alfa em cada desenho de fundo.
+    needs_alpha = alpha and image.get_colorkey() is not None
+    if alpha and image.get_masks()[3]:
+        opaque_pixels = pygame.mask.from_surface(image, 254).count()
+        needs_alpha = needs_alpha or opaque_pixels != image.get_width() * image.get_height()
+    return display_format(image, needs_alpha)
 
 
 class Assets:

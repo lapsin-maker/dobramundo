@@ -145,7 +145,7 @@ Em `WorldView.draw_track`, a pista também se purifica em forma de onda (`wave_z
 
 ## 6. Renderização em camadas
 
-Na prévia aquarelada, `WorldView.background` usa `WatercolorWorld` para o horizonte e `PaintedRoute` para o percurso. `PaintedGround` projeta texturas de água/solo por faixas de dois pixels, com buffers reutilizados e coordenada vertical derivada de `world.distance`. `PaintedRoute.placements` mantém margens ancoradas no mundo e usa a mesma função `project` das entidades. Reduzir movimento remove efeitos decorativos e diminui a densidade das margens, mas conserva o avanço. Se faltarem terrenos ou células válidas do atlas, o motor prepara e usa o cenário procedural completo.
+Na prévia aquarelada, `WorldView.background` usa `WatercolorWorld` para o horizonte e `PaintedRoute` para o percurso. `PaintedGround` projeta texturas de água/solo por faixas de três pixels, com buffers reutilizados e coordenada vertical derivada de `world.distance`. `PaintedRoute.placements` mantém margens ancoradas no mundo e usa a mesma função `project` das entidades. Reduzir movimento remove efeitos decorativos e diminui a densidade das margens, mas conserva o avanço. Se faltarem terrenos ou células válidas do atlas, o motor prepara e usa o cenário procedural completo.
 
 Objetos interativos usam `PaperItems`, que separa resíduos circulares, benefícios hexagonais e obstáculos pintados. Depois entram avião/piloto, objetos em primeiro plano, efeitos e HUD. A cenografia não participa da colisão.
 
@@ -334,3 +334,22 @@ Os itens abaixo registram a implementação anterior à sprint aquarelada. Os fl
 - **Fluxo inicial** (`core.first_scene`): piloto, abertura, aviso, calibração e vila.
 - **Abertura em páginas** (`scenes/intro.py`): `PAGES` define quatro páginas, com viradas de `TURN_S`; a dobradura usa `FOLD_STEPS` numa mesa de papel, e o rastro usa as cores de `TRAIL`, as da logo.
 - **Voo, opções e padrões**: HUD mais fino em `scenes/flight.py`; `DEFAULT_PATTERN = "liso"` em `content/planes.py`; permanência padrão de 2,0 s, com faixa de 1,0 a 3,5 s em `persistence.py` e `scenes/options.py`.
+
+
+## Entrega 1.5 — confiabilidade e orçamento de recursos
+
+`PaintedPilot` solicita apenas suas camadas, sem decodificar cenários. O loader detecta fundos completamente opacos uma vez e conserva alfa em sprites com transparência. `WatercolorWorld` compõe apenas o horizonte visível quando o terreno cobre o restante; o fallback segue integral. `PaintedGround` usa faixas de 3 pixels e uma passagem de solo na Caatinga. Alto contraste reutiliza seus buffers; o conteúdo continua atualizado a cada desenho.
+
+`GameCore.advance` desconta o tempo já gasto antes de iniciar aquecimento e reserva 2 ms para apresentação. O orçamento é cooperativo: uma tarefa indivisível ainda pode exceder a folga, portanto o benchmark deve registrar picos.
+
+`Scene.settle_on_close` permite finalizar efeitos no fechamento normal. O voo só liquida após ter iniciado; `FlightRun.settlement` impede crédito duplicado na mesma execução, e o resultado usa o mesmo caminho para voos completos e parciais. Não é um checkpoint de recuperação de processo interrompido à força. Falha de save oferece retry no resultado.
+
+A câmera desktop mantém a fonte enquanto ela encerra, permite reabertura posterior e expõe métricas sem imagens. Metadados de idade usam relógio monotônico desde o retorno da captura; o console conserva sua fonte própria. A entrada rejeita leituras antigas; perda breve impede colisões antes da pausa automática.
+
+`BodyControl.reading_captured_at` pertence à sequência efetivamente consumida. Após `Scene.draw`, o núcleo chama `InputHub.note_rendered` para registrar captura→canvas pronto; a calibração mostra a última amostra concluída. Isso não mede exposição do sensor, apresentação física ou envio ao monitor. Fontes legadas/console sem timestamp exibem valor indisponível. Erro da webcam pausa imediatamente; retomada exige dados visíveis, calibração e tempo de presença, ou seleção explícita do teclado.
+
+`RoutePlanner` conserva a fronteira de posições seguras em coordenadas absolutas. A origem nasce no reset e inclui as lições; não é reiniciada a cada novo obstáculo. Grupos que se sobrepõem no eixo de profundidade exigem manter uma mesma posição durante toda a janela de colisão. O deslocamento permitido usa o menor limite entre posição exponencial saturada e aceleração por velocidade, 75% da velocidade comum, velocidade máxima da pista e margens de 0,35 s de reação e 0,15 s de reversão. O passo de posição é calibrado para `MAX_DT`. É um modelo conservador discreto, não prova de conforto individual. A auditoria completa fica em `tools/check_routes.py`, fora do laço de desenho. O respawn desloca entidades existentes antes de inserir as novas, mantendo `distance + z` coerente com o planejador.
+
+`plane_stats` entrega o mesmo conforto independentemente das peças. Os campos/níveis existentes são preservados para progressão e terceira estrela. A calibração e a zona morta não são modificadas por compras.
+
+[Análise consolidada](ANALISE_CONSOLIDADA.md) e [validação da entrega](ENTREGA_1_5.md) detalham o escopo e os limites.

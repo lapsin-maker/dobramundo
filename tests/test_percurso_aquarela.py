@@ -55,7 +55,7 @@ def test_ground_rescales_only_single_rows_never_full_images_in_flight(display, m
     original_scale = pygame.transform.scale
 
     def scale_row(source, size, dest=None):
-        assert source.get_height() == 1 and size[1] <= 2
+        assert source.get_height() == 1 and size[1] <= 3
         return original_scale(source, size, dest)
 
     monkeypatch.setattr(pygame.transform, "scale", scale_row)

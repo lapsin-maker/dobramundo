@@ -2,8 +2,9 @@
 
 Ciclo do GDD (seção 4): a criança decola da vila-base, coleta resíduos e
 conquista até três estrelas por fase; de volta à base, converte os recursos em
-melhorias da vila e em peças reaproveitadas do avião, que ampliam estabilidade e
-controle e são necessárias à terceira estrela.
+melhorias da vila e em peças reaproveitadas do avião, que completam a coleção e
+podem ser necessárias à terceira estrela. O conforto de controle é comum desde
+o primeiro voo e não é comprado.
 """
 
 from __future__ import annotations
@@ -114,19 +115,19 @@ PLANE_PARTS: Tuple[PlanePart, ...] = (
     PlanePart(
         "estabilizador",
         "Estabilizador",
-        "Asa de papelão: o avião balança menos e a colisão fica mais justa.",
+        "Asa de papelão reforçada para a coleção de peças da expedição.",
         (scaled({"papel": 10, "plastico": 6}), scaled({"papel": 18, "plastico": 12, "metal": 6})),
     ),
     PlanePart(
         "leme",
         "Leme reaproveitado",
-        "Tampa de garrafa no leme: o avião responde mais rápido.",
+        "Tampa reaproveitada, recortada para completar o conjunto do avião.",
         (scaled({"plastico": 10, "metal": 6}), scaled({"plastico": 16, "metal": 12, "vidro": 6})),
     ),
     PlanePart(
         "quilha",
         "Quilha de lata",
-        "Lata dobrada na quilha: mais agilidade e controle mais fino.",
+        "Lata dobrada em uma peça de coleção para a próxima expedição.",
         (scaled({"metal": 10, "vidro": 6}), scaled({"metal": 16, "vidro": 12, "papel": 6})),
     ),
 )
@@ -136,26 +137,23 @@ MAX_PART_LEVEL = 2
 
 
 class PlaneStats(NamedTuple):
-    """Efeito das peças sobre o voo (multiplicadores; 1.0 = avião sem peças)."""
+    """Conforto de voo comum; peças não alteram controle nem colisão."""
 
-    response: float = 1.0  # rapidez com que o avião atinge a velocidade pedida
-    max_speed: float = 1.0  # velocidade lateral e vertical máximas
-    hitbox: float = 1.0  # tamanho da caixa de colisão do avião
-    roll: float = 1.0  # inclinação visual nas curvas
-    dead_zone: float = 1.0  # zona morta do controle corporal (menor = mais fino)
+    response: float = 1.0
+    max_speed: float = 1.0
+    hitbox: float = 0.88  # tolerância base, igual antes/depois de construir peças
+    roll: float = 1.0
+    dead_zone: float = 1.0
 
 
 def plane_stats(parts: Mapping[str, int]) -> PlaneStats:
-    stab = parts.get("estabilizador", 0)
-    rudder = parts.get("leme", 0)
-    keel = parts.get("quilha", 0)
-    return PlaneStats(
-        response=1.0 + 0.18 * rudder,
-        max_speed=1.0 + 0.08 * keel,
-        hitbox=1.0 - 0.07 * stab,
-        roll=1.0 - 0.2 * stab,
-        dead_zone=1.0 - 0.25 * keel,
-    )
+    """Retorna a linha de base confortável, independente das peças instaladas.
+
+    As peças continuam sendo construções colecionáveis e podem ser requisito de
+    expedição/estrela, mas não compram velocidade, sensibilidade ou tolerância.
+    """
+    del parts  # a assinatura continua estável para os saves e chamadas existentes
+    return PlaneStats()
 
 
 # -------------------------------------------------------------------- estrelas

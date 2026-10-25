@@ -104,7 +104,10 @@ class App(GameCore):
 
     def step(self, dt: float, events: Optional[List[pygame.event.Event]] = None) -> None:
         """Um quadro: entrada, atualização, desenho e apresentação na janela."""
-        self.advance(dt, self.events() if events is None else events)
+        pending = self.events() if events is None else events
+        if not self.running:
+            return
+        self.advance(dt, pending)
         self.present()
 
     def run(self, first_scene, max_frames: Optional[int] = None) -> None:

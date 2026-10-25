@@ -60,6 +60,10 @@ class TrackingSource:
     def snapshot(self) -> Tuple[int, Optional[List[Landmark]], Optional[bytes]]:
         return self._seq, self._landmarks, None
 
+    def snapshot_with_metadata(self) -> tuple:
+        """Console input predates per-frame monotonic timestamps; keep its exact values."""
+        return self._seq, self._landmarks, None, None, None, 0.0
+
     def locate_floor(self, landmarks: Optional[Sequence[Landmark]] = None) -> Optional[Point]:
         """Localizador dos pés para o FloorControl: a posição que o console projetou."""
         return self.floor

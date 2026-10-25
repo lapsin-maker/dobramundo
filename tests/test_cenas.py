@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 import pytest
-from test_controle import CAL_READINGS, FakeSource
+from test_controle import CAL_READINGS, FakeSource, landmarks
 
 from dobramundo import config as C
 from dobramundo.content.progress import VILLAGE_BY_KEY
@@ -12,7 +12,7 @@ from dobramundo.core import first_scene
 from dobramundo.scenes.about import AboutScene
 from dobramundo.scenes.calibration import CalibrationScene
 from dobramundo.scenes.consent import ConsentScene
-from dobramundo.scenes.flight import FlightScene
+from dobramundo.scenes.flight import RESUME_COUNTDOWN, FlightScene
 from dobramundo.scenes.hangar import HangarScene
 from dobramundo.scenes.intro import IntroScene, fold_pose
 from dobramundo.scenes.map import MapScene
@@ -180,6 +180,49 @@ def test_pausa_automatica_e_retomada(app):
         source.show(landmarks({16: (0.5, 0.5)}))
         app.step(1 / 60, [])
     assert not scene.paused
+
+
+def test_desconexao_pausa_sem_colisao_e_retry_retoma_so_com_dados_frescos(app, monkeypatch):
+    sources = [FakeSource(), FakeSource()]
+    app.input.source_factory = lambda: sources.pop(0)
+    first = sources[0]
+    app.profile.controle = "mao_direita"
+    app.apply_options()
+    for _ in range(CAL_READINGS):
+        first.show(landmarks({16: (0.5, 0.5)}))
+        app.input.update(1 / 30)
+    scene = show(app, FlightScene(app, "amazonia"))
+    calls = []
+    monkeypatch.setattr(scene.run, "update", lambda *args, **kwargs: calls.append((args, kwargs)))
+    lives = scene.run.lives
+
+    first.error = "webcam desconectada"
+    app.step(1 / 60, [])
+    assert scene.paused and scene.auto_paused
+    assert not app.input.back_in_area()
+    assert calls == [] and scene.run.lives == lives
+    app.input.update(2.0)
+    scene.update(2.0)
+    assert scene.paused and scene.countdown == 0.0
+    assert calls == [] and scene.run.lives == lives
+
+    replacement = sources[0]
+    app.input.retry_camera()
+    assert not app.input.back_in_area()
+    assert scene.paused
+    for _ in range(CAL_READINGS):
+        replacement.show(landmarks({16: (0.5, 0.5)}))
+        app.input.update(1 / 30)
+    assert app.input.body_ready and app.input.back_in_area()
+
+    for _ in range(int(RESUME_COUNTDOWN * 60) + 2):
+        replacement.show(landmarks({16: (0.5, 0.5)}))
+        app.input.update(1 / 60)
+        scene.update(1 / 60)
+        if not scene.paused:
+            break
+    assert not scene.paused
+    assert calls == [] and scene.run.lives == lives
 
 
 def test_controle_corporal_sem_calibrar_pede_calibracao(app):

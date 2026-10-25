@@ -12,28 +12,372 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Dict, List, Optional
+from bisect import bisect_left, bisect_right
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
 from .. import config as C
 from ..content.biomes import Biome
 from ..content.items import OBSTACLE_KINDS, POWERUP_KINDS, WASTE_KEYS, ObstacleSpec
+from ..content.progress import plane_stats
 from ..util import clamp, smoothstep
 from .entities import Entity
 
 GOLDEN = 0.6180339887498949  # ordem espalhada em que os trechos viram verdes
 PLASTIC = 0.7548776662466927  # outra sequência para o estágio solarpunk
 
+# Contrato do gerador: uma rota de referência deve existir no modelo discreto,
+# partindo do avião centrado, com 0,35 s de reação + 0,15 s de reversão e só
+# 75% da velocidade máxima comum. O limite é o menor deslocamento possível entre
+# (a) d'=min(v,r*(D-d)), calibrado para o dt máximo de Player.steer_to, e (b) a
+# aceleração exponencial do comando de velocidade. Obstáculos sobrepostos mantêm
+# o mesmo ponto seguro durante toda a janela de colisão.
+# Isso protege contra sequências geométricas ruins, não garante alcançabilidade
+# física para toda pessoa/controle.
+ROUTE_REACTION_MARGIN_S = 0.35
+ROUTE_REVERSAL_MARGIN_S = 0.15
+ROUTE_CONTROL_FACTOR = 0.75
+ROUTE_X_STEP = 10.0
+ROUTE_Y_STEP = 11.0
+ROUTE_Z_HALF = 16.0 + 27.0
+ROUTE_POSITION_RESPONSE = (
+    1.0 - math.exp(-C.POSITION_RESPONSE * C.MAX_DT)
+) / C.MAX_DT
+
+
+def _route_grid() -> Tuple[List[float], List[float]]:
+    xs = [float(value) for value in range(int(-C.MAX_PLAYER_X), int(C.MAX_PLAYER_X) + 1, int(ROUTE_X_STEP))]
+    if xs[-1] != C.MAX_PLAYER_X:
+        xs.append(float(C.MAX_PLAYER_X))
+    ys = [float(value) for value in range(int(C.MIN_ALTITUDE), int(C.MAX_ALTITUDE) + 1, int(ROUTE_Y_STEP))]
+    ys.extend((float(C.START_ALTITUDE), float(C.REST_ALTITUDE), float(C.MAX_ALTITUDE)))
+    return sorted(set(xs)), sorted(set(ys))
+
+
+_ROUTE_XS, _ROUTE_YS = _route_grid()
+_ROUTE_Y_COUNT = len(_ROUTE_YS)
+# Um bit por célula (x * alturas + y). Estas máscaras repetem uma coluna de
+# alturas em intervalos de x; multiplicá-las pela máscara y forma o retângulo.
+_ROUTE_X_MASKS = tuple(
+    tuple(
+        (((1 << (_ROUTE_Y_COUNT * (end - start))) - 1) // ((1 << _ROUTE_Y_COUNT) - 1))
+        << (_ROUTE_Y_COUNT * start)
+        if end > start else 0
+        for end in range(len(_ROUTE_XS) + 1)
+    )
+    for start in range(len(_ROUTE_XS) + 1)
+)
+
+
+def _axis_reach_limit(
+    start: float,
+    direction: float,
+    elapsed: float,
+    speed: float,
+    minimum: float,
+    maximum: float,
+    position_response: float,
+    velocity_response: float,
+) -> float:
+    if abs(direction) < 1e-9 or elapsed <= 0.0:
+        return 0.0
+    target_limit = maximum if direction > 0.0 else minimum
+    target_distance = abs(target_limit - start)
+    saturation_time = max(0.0, (target_distance - speed / position_response) / speed)
+    if elapsed <= saturation_time:
+        distance = speed * elapsed
+    else:
+        distance = target_distance - min(target_distance, speed / position_response) * math.exp(
+            -position_response * (elapsed - saturation_time)
+        )
+    velocity_distance = speed * (
+        elapsed - (1.0 - math.exp(-velocity_response * elapsed)) / velocity_response
+    )
+    return min(distance, velocity_distance)
+
+
+def _axis_reachable(
+    start: float,
+    end: float,
+    elapsed: float,
+    speed: float,
+    minimum: float,
+    maximum: float,
+    position_response: float,
+    velocity_response: float,
+) -> bool:
+    if abs(end - start) < 1e-9:
+        return True
+    direction = 1.0 if end > start else -1.0
+    return abs(end - start) <= _axis_reach_limit(
+        start, direction, elapsed, speed, minimum, maximum, position_response, velocity_response
+    ) + 1e-9
+
+
+def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tuple[float, float]]]:
+    """Planeja uma rota de referência por grupos de obstáculos no eixo x/altura.
+
+    Cada obstáculo bloqueia a caixa real expandida pela hitbox comum do avião.
+    Grupos com janelas de colisão sobrepostas são resolvidos juntos; entre grupos,
+    o movimento usa o controlador de posição exponencial, 75% da velocidade
+    comum e margens explícitas de reação/reversão. A rota retorna um ponto seguro por
+    grupo ou None. É um filtro geométrico determinístico, não uma simulação de
+    câmera, input, latência, dinâmica contínua ou habilidade individual.
+    """
+    stats = plane_stats({})
+    half_w = C.PLANE_WIDTH * 0.42 * stats.hitbox
+    half_h = C.PLANE_HEIGHT * 0.5 * stats.hitbox
+    threats = [
+        entity for entity in entities
+        if entity.spec is not None and not entity.collected and not entity.hit and not entity.dodged
+        and entity.z - C.PLAYER_Z >= -ROUTE_Z_HALF
+    ]
+    if not threats:
+        return []
+
+    intervals = sorted(
+        [
+            (entity.z - C.PLAYER_Z - ROUTE_Z_HALF,
+             entity.z - C.PLAYER_Z + ROUTE_Z_HALF,
+             entity)
+            for entity in threats
+        ],
+        key=lambda item: (item[0], item[1]),
+    )
+    groups: List[Tuple[float, float, List[Entity]]] = []
+    for start, end, entity in intervals:
+        if groups and start <= groups[-1][1]:
+            old_start, old_end, members = groups[-1]
+            members.append(entity)
+            groups[-1] = (old_start, max(old_end, end), members)
+        else:
+            groups.append((start, end, [entity]))
+
+    factor = C.NORMAL_SPEED_FACTOR if mode == "normal" else 1.0
+    worst_case_speed = (C.BASE_SPEED + 100.0 * C.RESTORATION_SPEED_GAIN + C.DIFFICULTY_SPEED_GAIN) * factor
+    move_x = C.MAX_LATERAL_SPEED * stats.max_speed * ROUTE_CONTROL_FACTOR
+    move_y = C.MAX_VERTICAL_SPEED * stats.max_speed * ROUTE_CONTROL_FACTOR
+    position_response = ROUTE_POSITION_RESPONSE * stats.response
+    velocity_response = C.FLIGHT_RESPONSE * stats.response
+    movement_margin = ROUTE_REACTION_MARGIN_S + ROUTE_REVERSAL_MARGIN_S
+
+    def free_cells(members: List[Entity]) -> set[Tuple[int, int]]:
+        safe = set()
+        for xi, x in enumerate(_ROUTE_XS):
+            for yi, y in enumerate(_ROUTE_YS):
+                blocked = any(
+                    abs(x - entity.x) <= entity.spec.width * 0.5 + half_w
+                    and y + half_h >= entity.spec.y_min
+                    and y - half_h <= entity.spec.y_max
+                    for entity in members
+                )
+                if not blocked:
+                    safe.add((xi, yi))
+        return safe
+
+    parents: List[Dict[Tuple[int, int], Optional[Tuple[int, int]]]] = []
+    previous: set[Tuple[int, int]] = set()
+    previous_end = 0.0
+    for index, (start, end, members) in enumerate(groups):
+        safe = free_cells(members)
+        if not safe:
+            return None
+        if index == 0:
+            available = max(0.0, start / worst_case_speed - movement_margin)
+            reachable = {
+                (xi, yi) for xi, x in enumerate(_ROUTE_XS) for yi, y in enumerate(_ROUTE_YS)
+                if _axis_reachable(
+                    0.0, x, available, move_x, -C.MAX_PLAYER_X, C.MAX_PLAYER_X,
+                    position_response, velocity_response,
+                )
+                and _axis_reachable(
+                    C.START_ALTITUDE, y, available, move_y, C.MIN_ALTITUDE, C.MAX_ALTITUDE,
+                    position_response, velocity_response,
+                )
+            }
+            current = {cell: None for cell in safe & reachable}
+        else:
+            available = max(0.0, (start - previous_end) / worst_case_speed - movement_margin)
+            current: Dict[Tuple[int, int], Optional[Tuple[int, int]]] = {}
+            for px, py in previous:
+                if len(current) == len(safe):
+                    break  # todas as células já têm um predecessor válido
+                x0 = bisect_left(_ROUTE_XS, _ROUTE_XS[px] - move_x * available)
+                x1 = bisect_right(_ROUTE_XS, _ROUTE_XS[px] + move_x * available)
+                y0 = bisect_left(_ROUTE_YS, _ROUTE_YS[py] - move_y * available)
+                y1 = bisect_right(_ROUTE_YS, _ROUTE_YS[py] + move_y * available)
+                for xi in range(x0, x1):
+                    for yi in range(y0, y1):
+                        cell = (xi, yi)
+                        if (
+                            cell not in current
+                            and cell in safe
+                            and _axis_reachable(
+                                _ROUTE_XS[px], _ROUTE_XS[xi], available, move_x,
+                                -C.MAX_PLAYER_X, C.MAX_PLAYER_X, position_response, velocity_response,
+                            )
+                            and _axis_reachable(
+                                _ROUTE_YS[py], _ROUTE_YS[yi], available, move_y,
+                                C.MIN_ALTITUDE, C.MAX_ALTITUDE, position_response, velocity_response,
+                            )
+                        ):
+                            current.setdefault(cell, (px, py))
+            current = current or {}
+        if not current:
+            return None
+        parents.append(current)
+        previous = set(current)
+        previous_end = end
+
+    cell = next(iter(previous))
+    route: List[Tuple[float, float]] = []
+    for layer in reversed(parents):
+        route.append((_ROUTE_XS[cell[0]], _ROUTE_YS[cell[1]]))
+        parent = layer[cell]
+        if parent is not None:
+            cell = parent
+    route.reverse()
+    return route
+
+
+@dataclass
+class _RouteGroup:
+    start: float
+    end: float
+    members: List[Entity]
+    before_frontier: set[Tuple[int, int]]
+    before_end: float
+    frontier: set[Tuple[int, int]]
+
+
+class RoutePlanner:
+    """Mantém o corredor de uma sequência em append; não recomeça do centro no voo."""
+
+    def __init__(self, mode: str) -> None:
+        self.mode = mode
+        self.factor = C.NORMAL_SPEED_FACTOR if mode == "normal" else 1.0
+        self.speed = (C.BASE_SPEED + 100.0 * C.RESTORATION_SPEED_GAIN + C.DIFFICULTY_SPEED_GAIN) * self.factor
+        self.stats = plane_stats({})
+        self.move_x = C.MAX_LATERAL_SPEED * self.stats.max_speed * ROUTE_CONTROL_FACTOR
+        self.move_y = C.MAX_VERTICAL_SPEED * self.stats.max_speed * ROUTE_CONTROL_FACTOR
+        self.response = ROUTE_POSITION_RESPONSE * self.stats.response
+        self.velocity_response = C.FLIGHT_RESPONSE * self.stats.response
+        self.margin = ROUTE_REACTION_MARGIN_S + ROUTE_REVERSAL_MARGIN_S
+        self.reset()
+
+    def reset(self, base_player_global: float = C.PLAYER_Z) -> None:
+        self.base_player_global = base_player_global
+        center_x = bisect_left(_ROUTE_XS, 0.0)
+        start_y = bisect_left(_ROUTE_YS, C.START_ALTITUDE)
+        self.frontier: set[Tuple[int, int]] = {(center_x, start_y)}
+        self.end = 0.0
+        self.last_group: Optional[_RouteGroup] = None
+
+    def _safe_cells(self, members: List[Entity]) -> set[Tuple[int, int]]:
+        half_w = C.PLANE_WIDTH * 0.42 * self.stats.hitbox
+        half_h = C.PLANE_HEIGHT * 0.5 * self.stats.hitbox
+        safe = set()
+        for xi, x in enumerate(_ROUTE_XS):
+            for yi, y in enumerate(_ROUTE_YS):
+                if not any(
+                    abs(x - entity.x) <= entity.spec.width * 0.5 + half_w
+                    and y + half_h >= entity.spec.y_min
+                    and y - half_h <= entity.spec.y_max
+                    for entity in members
+                ):
+                    safe.add((xi, yi))
+        return safe
+
+    def _extend(
+        self,
+        start: float,
+        end: float,
+        members: List[Entity],
+        before_frontier: set[Tuple[int, int]],
+        before_end: float,
+    ) -> Optional[_RouteGroup]:
+        safe = self._safe_cells(members)
+        if not safe:
+            return None
+        available = max(0.0, (start - before_end) / self.speed - self.margin)
+        axis_masks = []
+        for grid, speed, minimum, maximum, horizontal in (
+            (_ROUTE_XS, self.move_x, -C.MAX_PLAYER_X, C.MAX_PLAYER_X, True),
+            (_ROUTE_YS, self.move_y, C.MIN_ALTITUDE, C.MAX_ALTITUDE, False),
+        ):
+            masks = []
+            for value in grid:
+                lower = _axis_reach_limit(
+                    value, -1.0, available, speed, minimum, maximum, self.response, self.velocity_response
+                )
+                upper = _axis_reach_limit(
+                    value, 1.0, available, speed, minimum, maximum, self.response, self.velocity_response
+                )
+                lo = bisect_left(grid, value - lower - 1e-9)
+                hi = bisect_right(grid, value + upper + 1e-9)
+                masks.append(_ROUTE_X_MASKS[lo][hi] if horizontal else ((1 << (hi - lo)) - 1) << lo)
+            axis_masks.append(masks)
+        safe_mask = sum(1 << (xi * _ROUTE_Y_COUNT + yi) for xi, yi in safe)
+        reachable = 0
+        for px, py in before_frontier:
+            # Y tem menos de 2**ny: a multiplicação replica bits em blocos
+            # disjuntos, sem carry entre colunas nem novas células.
+            reachable |= axis_masks[0][px] * axis_masks[1][py]
+            if reachable & safe_mask == safe_mask:
+                break
+        remaining = reachable & safe_mask
+        if not remaining:
+            return None
+        current: set[Tuple[int, int]] = set()
+        while remaining:
+            bit = remaining & -remaining
+            current.add(divmod(bit.bit_length() - 1, _ROUTE_Y_COUNT))
+            remaining ^= bit
+        return _RouteGroup(start, end, members, set(before_frontier), before_end, current)
+
+    def try_add(self, entity: Entity, entity_global_z: float) -> bool:
+        """Acrescenta um perigo futuro sem descartar o corredor já validado."""
+        if entity.spec is None or entity.collected or entity.hit or entity.dodged:
+            return True
+        start = entity_global_z - self.base_player_global - ROUTE_Z_HALF
+        end = entity_global_z - self.base_player_global + ROUTE_Z_HALF
+        if end < 0.0:
+            return True
+
+        last = self.last_group
+        if last is not None and start < last.start:
+            return False  # preserva a ordem planejada; não reancora num estado inventado
+        if last is not None and start <= last.end:
+            group = self._extend(
+                last.start, max(last.end, end), last.members + [entity],
+                last.before_frontier, last.before_end,
+            )
+        else:
+            group = self._extend(start, end, [entity], self.frontier, self.end)
+        if group is None:
+            return False
+        self.last_group = group
+        self.frontier = set(group.frontier)
+        self.end = group.end
+        return True
+
 
 class World:
     """Estado da pista: trechos, transformação e objetos."""
 
     def __init__(
-        self, biome: Biome, mode: str = "normal", rng: Optional[random.Random] = None, intro: bool = False
+        self,
+        biome: Biome,
+        mode: str = "normal",
+        rng: Optional[random.Random] = None,
+        intro: bool = False,
+        restoration: Optional[float] = None,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.intro = intro  # abertura didática: uma coisa por vez antes do sorteio
         self.rng = rng or random.Random()
+        self.route_planner = RoutePlanner(mode)
         self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
         self.visual = C.START_RESTORATION  # transformação desenhada (alcança a real aos poucos)
         self.segments: List[float] = []
@@ -41,12 +385,13 @@ class World:
         self.entities: List[Entity] = []
         self.green_since: Dict[int, float] = {}
         self.solar_since: Dict[int, float] = {}
-        self.reset()
+        self.reset(C.START_RESTORATION if restoration is None else restoration)
 
     # ------------------------------------------------------------ início
     def reset(self, restoration: float = C.START_RESTORATION) -> None:
         self.distance = 0.0
         self.elapsed = 0.0
+        self.route_planner.reset(self.distance + C.PLAYER_Z)
         self.segments: List[float] = [
             float(z) for z in range(int(C.SEGMENT_LENGTH), int(C.TRACK_LENGTH) + 1, int(C.SEGMENT_LENGTH))
         ]
@@ -54,6 +399,11 @@ class World:
         self.entities: List[Entity] = []
         self.waste_counter = 0
         self.waste_roll = 0
+        self.route_obstacles_requested = 0
+        self.route_obstacles_kept = 0
+        self.route_obstacles_adjusted = 0
+        self.route_obstacles_skipped = 0
+        self.route_tutorial_failures = 0
         self.obstacle_counters: Dict[str, int] = {
             f"{s}:{k}": 0 for s in ("industrial", "solar") for k in OBSTACLE_KINDS
         }
@@ -207,7 +557,10 @@ class World:
             z = position - self.distance
             solar = self.spawn_is_solar(z)
             spec = self.next_obstacle(kind, solar)
-            self.entities.append(Entity(z, 0, kind, 0.0, spec.sprite, spec, solar, lesson=kind))
+            obstacle = Entity(z, 0, kind, 0.0, spec.sprite, spec, solar, lesson=kind)
+            if not self.route_planner.try_add(obstacle, position):
+                self.route_tutorial_failures += 1
+            self.entities.append(obstacle)
             # um resíduo no caminho certo mostra a resposta: por cima, por baixo ou ao lado
             lane, height = {"low": (0, C.TRASH_HEIGHTS[2]), "gate": (0, C.TRASH_HEIGHTS[0])}.get(
                 kind, (self.rng.choice((-1, 1)), C.TRASH_HEIGHTS[1])
@@ -254,6 +607,33 @@ class World:
         self.obstacle_counters[key] += 1
         return spec
 
+    def add_reachable_obstacle(self, z: float, preferred_lane: int, preferred_kind: str, solar: bool) -> bool:
+        """Mantém desafio e procura variante com rota segura no modelo de referência."""
+        self.route_obstacles_requested += 1
+        alternate_lanes = [lane for lane in (-1, 0, 1) if lane != preferred_lane]
+        self.rng.shuffle(alternate_lanes)
+        lanes = [preferred_lane] + alternate_lanes
+        alternate_kinds = [kind for kind in OBSTACLE_KINDS if kind != preferred_kind]
+        self.rng.shuffle(alternate_kinds)
+        kinds = [preferred_kind] + alternate_kinds
+        for kind in kinds:
+            table = self.biome.solar_obstacles if solar else self.biome.industrial_obstacles
+            options = table[kind]
+            counter_key = f"{'solar' if solar else 'industrial'}:{kind}"
+            spec = options[self.obstacle_counters[counter_key] % len(options)]
+            for lane in lanes:
+                candidate = Entity(z, lane, kind, 0.0, spec.sprite, spec, solar)
+                if not self.route_planner.try_add(candidate, self.distance + z):
+                    continue
+                self.entities.append(candidate)
+                self.obstacle_counters[counter_key] += 1
+                self.route_obstacles_kept += 1
+                if lane != preferred_lane or kind != preferred_kind:
+                    self.route_obstacles_adjusted += 1
+                return True
+        self.route_obstacles_skipped += 1
+        return False
+
     def spawn_pattern(self, z: float) -> None:
         if self.in_intro(z):
             self.intro_pattern(z)
@@ -273,8 +653,7 @@ class World:
             roll = rng.random()
             kind = "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
             solar = self.spawn_is_solar(z)
-            spec = self.next_obstacle(kind, solar)
-            self.entities.append(Entity(z, rng.choice(available), kind, 0.0, spec.sprite, spec, solar))
+            self.add_reachable_obstacle(z, rng.choice(available), kind, solar)
         if rng.random() < 0.13:
             kind = rng.choice(POWERUP_KINDS)
             self.entities.append(Entity(z + 30.0, rng.choice(lanes), kind, rng.choice(C.TRASH_HEIGHTS)))
@@ -287,6 +666,11 @@ class World:
         self.ease_visual(dt)
         self._sweep(self.green_since, self.green_rank, self.green_share())
         self._sweep(self.solar_since, self.solar_rank, self.solar_share())
+        # Atualize a pista existente antes de adicionar objetos novos: o z local
+        # usado pelo planner deve ser o mesmo que a entidade manterá neste quadro.
+        for entity in self.entities:
+            entity.z -= dz
+        self.spawn_lessons()
         segments = self.segments
         for i in range(len(segments)):
             segments[i] -= dz
@@ -297,9 +681,6 @@ class World:
             new_z = (segments[-1] if segments else C.SEGMENT_LENGTH) + C.SEGMENT_LENGTH
             segments.append(new_z)
             self.spawn_pattern(new_z + 20.0)
-        for entity in self.entities:
-            entity.z -= dz
-        self.spawn_lessons()
 
     def prune(self) -> None:
         """Remove o que já passou pelo avião ou foi coletado (não cobre a visão)."""

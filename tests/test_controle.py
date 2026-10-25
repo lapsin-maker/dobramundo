@@ -108,6 +108,33 @@ def test_presenca_e_pausa_automatica():
     assert hub.back_in_area()
 
 
+def test_erro_de_camera_pausa_imediatamente_e_retry_exige_novos_dados():
+    hub = InputHub()
+    sources = [FakeSource(), FakeSource()]
+    hub.source_factory = lambda: sources.pop(0)
+    first = sources[0]
+    hub.set_segment("mao_direita")
+    for _ in range(CAL_READINGS):
+        first.show(landmarks({16: (0.5, 0.5)}))
+        hub.update(1 / 30)
+    assert hub.body_ready
+
+    first.error = "webcam desconectada"
+    assert hub.out_of_area()
+    assert not hub.back_in_area()
+
+    replacement = sources[0]
+    hub.retry_camera()
+    assert hub.source is replacement
+    assert not hub.out_of_area()
+    assert not hub.back_in_area()
+    for _ in range(CAL_READINGS):
+        replacement.show(landmarks({16: (0.5, 0.5)}))
+        hub.update(1 / 30)
+    assert hub.body_ready
+    assert hub.back_in_area()
+
+
 def test_cursor_corporal_cobre_a_tela():
     hub = InputHub()
     source = FakeSource()

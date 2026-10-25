@@ -106,6 +106,7 @@ class WorldView:
         self.celebration = 0.0
         self.viewport = pygame.Rect(0, 0, C.WIDTH, C.HEIGHT)
         self.accessible_canvas = None
+        self.gray_buffers = None
         self.player_rect = pygame.Rect(0, 0, 246, 180)
         self.reduce_motion = False
         self.show_hitboxes = False
@@ -693,15 +694,18 @@ class WorldView:
         if self.high_contrast:
             self.desaturate(screen)
 
-    @staticmethod
-    def desaturate(screen: pygame.Surface) -> None:
+    def desaturate(self, screen: pygame.Surface) -> None:
         """Fundo em cinza escurecido, processado em um quarto da resolução.
 
         A leve suavização que sobra ajuda o avião e os objetos contornados a saltarem à vista.
         """
         w, h = screen.get_size()
-        small = pygame.transform.scale(screen, (w // 4, h // 4))
-        gray = pygame.transform.grayscale(small)
+        size = max(1, w // 4), max(1, h // 4)
+        if self.gray_buffers is None or self.gray_buffers[0].get_size() != size:
+            self.gray_buffers = (pygame.Surface(size).convert(), pygame.Surface(size).convert())
+        small, gray = self.gray_buffers
+        pygame.transform.scale(screen, size, small)
+        pygame.transform.grayscale(small, gray)
         gray.fill(HC_DIM, special_flags=pygame.BLEND_RGB_MULT)
         pygame.transform.scale(gray, (w, h), screen)
 

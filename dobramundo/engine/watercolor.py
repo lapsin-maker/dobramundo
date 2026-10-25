@@ -46,7 +46,7 @@ class WatercolorWorld:
             return 0, 1, round(smoothstep(clamp((visual - C.ERA_SPAN) / 16, 0, 1)) * 32)
         return 1, 2, round(smoothstep(clamp((visual - 2 * C.ERA_SPAN) / 12, 0, 1)) * 32)
 
-    def backdrop(self, biome: str, visual: float) -> pygame.Surface | None:
+    def backdrop(self, biome: str, visual: float, visible_height: int = C.HEIGHT) -> pygame.Surface | None:
         layers = self.load(biome)
         if not layers:
             return None
@@ -55,24 +55,30 @@ class WatercolorWorld:
             return layers[a]
         if step == 32:
             return layers[b]
-        key = biome, a, b, step
+        key = biome, a, b, step, visible_height
         if key != self.composite_key:
             # A aquarela nova chega primeiro ao horizonte. Faixas sobrepostas
             # de alfa evitam borda dura, ruído e mudanças abruptas na região do avião.
             result = layers[a].copy()
             progress = step / 32
-            for y in range(0, C.HEIGHT, 26):
+            for y in range(0, visible_height, 26):
                 spatial = y / C.HEIGHT
                 alpha = clamp(progress * 1.5 - spatial * 0.5, 0, 1)
-                strip = layers[b].subsurface((0, y, C.WIDTH + 32, min(26, C.HEIGHT - y)))
-                strip.set_alpha(round(alpha * 255))
+                opacity = round(alpha * 255)
+                if opacity == 0:
+                    continue
+                strip = layers[b].subsurface((0, y, C.WIDTH + 32, min(26, visible_height - y)))
+                strip.set_alpha(None if opacity == 255 else opacity)
                 result.blit(strip, (0, y))
                 strip.set_alpha(None)
             self.composite_key, self.composite = key, result
         return self.composite
 
     def draw(self, screen, world, cam: float, reduce_motion: bool = False) -> bool:
-        painted = self.backdrop(world.biome.key, world.visual)
+        height = C.HEIGHT
+        if self.route.ready(world.biome.key) and self.route.ground.rows:
+            height = self.route.ground.rows[0][0]
+        painted = self.backdrop(world.biome.key, world.visual, height)
         if painted is None:
             return False
         drift = math.sin(world.distance / 1200) * 8

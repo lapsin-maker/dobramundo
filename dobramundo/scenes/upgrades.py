@@ -10,7 +10,7 @@ from .. import config as C
 from ..content import texts
 from ..content.items import WASTE_TYPES
 from ..content.pilot import DEFAULT_PILOT, normalize_pilot
-from ..content.progress import MAX_PART_LEVEL, PLANE_PARTS, VILLAGE_UPGRADES, can_afford, plane_stats
+from ..content.progress import MAX_PART_LEVEL, PLANE_PARTS, VILLAGE_UPGRADES, can_afford
 from ..engine.village_art import village_prop
 from ..ui import theme as T
 from .base import Scene
@@ -536,7 +536,6 @@ class UpgradesScene(Scene):
                     "center",
                 )
         else:
-            stats = plane_stats(self.app.profile.pecas)
             for part in PLANE_PARTS:
                 button = next((b for b in self.menu.buttons if b.key == part.key), None)
                 if button is None:
@@ -560,6 +559,6 @@ class UpgradesScene(Scene):
                     self._draw_cost_icons(
                         screen, part.level_costs[level], (button.rect.left + 24, button.rect.top + 40)
                     )
-            info = f"Resposta x{stats.response:.2f}   Agilidade x{stats.max_speed:.2f}   Colisão x{stats.hitbox:.2f}"
+            info = "Peças para coleção e estrelas; controle confortável desde o primeiro voo"
             self.text.blit(screen, info, (40, PLANE_STATS_Y), T.SIZES["body"], T.WHITE, True)
         self.toast.draw(screen, self.text, (C.WIDTH // 2, 630))
