@@ -1,0 +1,26 @@
+[project]
+name = "dobramundo"
+version = "1.0.0"
+description = "Exergame sério de voo: um avião de papel reciclado, pilotado com o corpo, transforma cidades brasileiras em cidades solarpunk."
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Liga de Psiquiatria e Neurociências – CENSUPEG" }]
+dependencies = ["pygame>=2.5,<3"]
+
+[project.optional-dependencies]
+webcam = ["mediapipe>=0.10.9", "opencv-python-headless>=4.8"]
+
+[project.scripts]
+dobramundo = "dobramundo.main:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["UP006", "UP007", "UP035", "UP045", "B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

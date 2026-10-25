@@ -1,6 +1,13 @@
-"""Configuração compartilhada da suíte do Eco Runner (headless, sem janela/áudio)."""
+"""Configuração da suíte do Dobramundo: sem janela nem áudio, dados isolados.
+
+Os sprites são carregados uma única vez por sessão (engine.assets.shared_assets),
+então a suíte inteira roda em poucos segundos.
+"""
+
+from __future__ import annotations
 
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -16,43 +23,63 @@ if str(PROJECT_DIR) not in sys.path:
 import pygame  # noqa: E402
 import pytest  # noqa: E402
 
-import eco_runner  # noqa: E402
+from dobramundo import config as C  # noqa: E402
+from dobramundo import paths  # noqa: E402
+from dobramundo.content.biomes import BIOMES  # noqa: E402
+from dobramundo.game.run import FlightRun  # noqa: E402
+from dobramundo.persistence import Profile  # noqa: E402
+
+DT = 1.0 / 60.0
+
+
+@pytest.fixture(scope="session", autouse=True)
+def display():
+    pygame.init()
+    surface = pygame.display.set_mode((C.WIDTH, C.HEIGHT))
+    yield surface
+    pygame.quit()
+
+
+@pytest.fixture(autouse=True)
+def data_dir(tmp_path, monkeypatch):
+    """Perfil e relatórios em tmp_path; nenhum save antigo do projeto é lido."""
+    folder = tmp_path / "dados"
+    monkeypatch.setenv(paths.DATA_DIR_ENV, str(folder))
+    monkeypatch.setattr(paths, "legacy_data_dirs", lambda: [tmp_path / "legado"])
+    import dobramundo.persistence as persistence
+
+    monkeypatch.setattr(persistence, "legacy_data_dirs", lambda: [tmp_path / "legado"])
+    paths.reset_data_dir_cache()
+    yield folder
+    paths.reset_data_dir_cache()
+
+
+def make_run(biome: str = "amazonia", mode: str = "dificil", parts=None, clear: bool = True) -> FlightRun:
+    """Voo determinístico; com clear=True, sem objetos (os testes os inserem à mão)."""
+    run = FlightRun(BIOMES[biome], mode, parts or {}, rng=random.Random(1))
+    run.player.maneuver = None
+    if clear:
+        run.world.entities.clear()
+        run.world.spawn_pattern = lambda z: None
+    return run
+
+
+def advance(run: FlightRun, seconds: float, ix: float = 0.0, iy: float = 0.0) -> None:
+    for _ in range(int(round(seconds / DT))):
+        run.update(DT, ix, iy)
 
 
 @pytest.fixture
-def game(monkeypatch):
-    """Jogo no hangar, com o sorteio de obstáculos desligado.
+def run():
+    return make_run()
 
-    Os testes inserem as Entity à mão (game.entities) na altura desejada.
-    """
-    instance = eco_runner.Game()
-    monkeypatch.setattr(instance, "spawn_pattern", lambda z: None)
-    instance.entities.clear()
+
+@pytest.fixture
+def app(monkeypatch):
+    from dobramundo.app import App
+
+    profile = Profile()
+    profile.consentimento = True
+    instance = App(audio=False, profile=profile)
     yield instance
-
-
-@pytest.fixture(autouse=True)
-def modo_dificil_por_padrao(monkeypatch):
-    """A suíte antiga descreve o jogo original, que hoje é o modo Difícil.
-
-    Para o jogador sem configuração salva o padrão é o Normal; os testes do Normal
-    trocam o modo explicitamente (tests/test_modos.py).
-    """
-    monkeypatch.setattr(eco_runner, "DEFAULT_GAME_MODE", "dificil")
-
-
-@pytest.fixture(autouse=True)
-def isolated_data_dir(tmp_path, monkeypatch):
-    """Isola recorde/relatórios em tmp_path e impede leitura do save legado do projeto."""
-    data_dir = tmp_path / "dados"
-    monkeypatch.setenv("ECO_RUNNER_DATA_DIR", str(data_dir))
-    monkeypatch.setattr(eco_runner, "_DATA_DIR_CACHE", None)
-    monkeypatch.setattr(
-        eco_runner,
-        "legacy_save_paths",
-        lambda: [tmp_path / "legado" / eco_runner.SAVE_FILENAME],
-    )
-    yield data_dir
-    eco_runner._DATA_DIR_CACHE = None
-    if pygame.get_init():
-        pygame.quit()
+    instance.input.stop_body()

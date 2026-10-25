@@ -1,0 +1,412 @@
+"""Céu em camadas de paralaxe: degradê, panorama poluído, nuvens, silhuetas do
+horizonte e decoração móvel (dirigível, balões, barco ou bonde, pássaros).
+
+Do fundo para a frente, cada camada anda uma fração diferente do deslocamento
+da câmera (o avião é o referencial): céu < nuvens < silhuetas < cenário.
+"""
+
+from __future__ import annotations
+
+import math
+import time
+from typing import Dict, List, Optional, Tuple
+
+import pygame
+
+from .. import config as C
+from ..content.biomes import Biome
+from ..util import Color, clamp, lerp_color, rgb
+from .assets import Assets
+
+# Silhuetas industriais do horizonte (assets/skyline_sprites): fileira de trás e da frente.
+SKYLINE_BACK = [
+    ("distant_factory", 70),
+    ("background_silo", 96),
+    ("power_pylon", 110),
+    ("industrial_chimney", 84),
+    ("distant_factory", 60),
+    ("industrial_tower_a", 92),
+    ("cargo_elevator", 52),
+    ("background_silo", 80),
+    ("power_pylon", 100),
+    ("fixed_crane", 88),
+    ("distant_factory", 66),
+    ("pressure_tank", 58),
+]
+SKYLINE_FRONT = [
+    ("industrial_tower_a", 128),
+    ("distant_factory", 92),
+    ("industrial_chimney", 140),
+    ("fixed_crane", 120),
+    ("power_pylon", 150),
+    ("pressure_tank", 74),
+    ("background_silo", 132),
+    ("distant_factory", 84),
+    ("cargo_elevator", 70),
+]
+CLOUD_LAYOUT = [  # x, y, largura, deriva, paralaxe, opacidade
+    (60, 18, 420, 0.010, 0.55, 0.95),
+    (520, 70, 300, 0.016, 0.80, 0.85),
+    (900, 30, 460, 0.008, 0.45, 0.95),
+    (1300, 110, 260, 0.020, 1.00, 0.75),
+    (1620, 52, 380, 0.012, 0.65, 0.90),
+    (260, 128, 220, 0.024, 1.15, 0.70),
+    (1120, 150, 240, 0.022, 1.10, 0.65),
+]
+
+
+def blit_tiled(screen: pygame.Surface, surface: pygame.Surface, offset: float, y: int) -> None:
+    """Desenha uma faixa que se repete na horizontal, deslocada por offset."""
+    tile = surface.get_width()
+    x = -(offset % tile)
+    while x < C.WIDTH:
+        screen.blit(surface, (int(x), y))
+        x += tile
+
+
+class SkyRenderer:
+    def __init__(self, assets: Assets) -> None:
+        self.assets = assets
+        atmosphere = assets.folder("atmosphere")
+        self.panorama = self.prepare_panorama(atmosphere.get("sky_panorama"))
+        self.clouds = self.prepare_clouds(atmosphere.get("smog_cloud"))
+        self.skyline_sprites = assets.folder("skyline_sprites")
+        self.gradients: Dict[tuple, pygame.Surface] = {}
+        self.decor_cache: Dict[tuple, pygame.Surface] = {}
+        self.biome: Optional[Biome] = None
+        self.pollution = 1.0
+        self.fog_color: Color = (92, 54, 26)
+        self.fog_sprite_color: Color = (92, 54, 26)
+        self.decor_x: List[float] = []
+        self.vehicle_x = 0.0
+        self.birds_x = 300.0
+        self.skyline_cache: Dict[str, Optional[pygame.Surface]] = {}
+        self.skyline_state: Dict[str, dict] = {}
+
+    def set_biome(self, biome: Biome) -> None:
+        if self.biome is biome:
+            return
+        self.biome = biome
+        self.skyline_cache = {}
+        self.skyline_state = {}
+        self.decor_cache = {}
+        count = max(1, len(biome.sky_decor))
+        self.decor_x = [i * C.DECOR_CYCLE / count + 120 * i for i in range(len(biome.sky_decor))]
+
+    # ------------------------------------------------------------ preparo
+    @staticmethod
+    def prepare_panorama(panorama: Optional[pygame.Surface]) -> Optional[pygame.Surface]:
+        """Recorta o céu do panorama do kit até a linha do horizonte e ajusta à tela."""
+        if panorama is None:
+            return None
+        w, h = panorama.get_size()
+        horizon_row = int(h * 0.725)  # faixa alaranjada do horizonte no panorama
+        scaled_w, scaled_h = int(w * C.SKY_PANORAMA_SCALE), int(h * C.SKY_PANORAMA_SCALE)
+        big = pygame.transform.smoothscale(panorama, (scaled_w, scaled_h))
+        top = max(0, int(horizon_row * C.SKY_PANORAMA_SCALE) - C.HORIZON_Y)
+        sky = pygame.Surface((scaled_w, C.HORIZON_Y))
+        sky.blit(big, (0, -top))
+        return sky.convert() if pygame.display.get_surface() else sky
+
+    @staticmethod
+    def prepare_clouds(smog: Optional[pygame.Surface]) -> List[dict]:
+        """Nuvens em posições fixas: versão de fumaça (estágio poluído) e versão limpa."""
+        if smog is None:
+            return []
+        clouds = []
+        for x, y, w, drift, parallax, opacity in CLOUD_LAYOUT:
+            smoke = pygame.transform.smoothscale(smog, (w, int(w * 0.42)))
+            smoke.fill((38, 30, 24, 0), special_flags=pygame.BLEND_RGBA_ADD)  # aparece sobre o céu escuro
+            clean = smoke.copy()
+            clean.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGB_MAX)
+            clouds.append(
+                {
+                    "x": float(x),
+                    "y": y,
+                    "w": w,
+                    "drift": drift,
+                    "parallax": parallax,
+                    "opacity": opacity,
+                    "smoke": smoke,
+                    "clean": clean,
+                    "baked": {},
+                }
+            )
+        return clouds
+
+    # --------------------------------------------------------- atmosfera
+    def update_atmosphere(self, visual: float, horizon: Color, haze: Color) -> None:
+        """Poluição do céu e cor da neblina conforme a transformação visual."""
+        self.pollution = clamp(
+            1.0 - (visual - C.POLLUTION_CLEAR_START) / (C.POLLUTION_CLEAR_END - C.POLLUTION_CLEAR_START), 0.0, 1.0
+        )
+        fog = lerp_color(horizon, haze, self.pollution * 0.8)
+        self.fog_color = fog
+        # Versão arredondada para os sprites: só refaz a neblina deles quando a cor muda de faixa.
+        self.fog_sprite_color = (fog[0] // 12 * 12 + 6, fog[1] // 12 * 12 + 6, fog[2] // 12 * 12 + 6)
+
+    def gradient(self, top: Color, horizon: Color) -> pygame.Surface:
+        key = (tuple(c // 4 for c in top), tuple(c // 4 for c in horizon))
+        surface = self.gradients.get(key)
+        if surface is None:
+            if len(self.gradients) > 24:
+                self.gradients.clear()
+            column = pygame.Surface((1, C.HORIZON_Y))
+            for y in range(C.HORIZON_Y):
+                column.set_at((0, y), lerp_color(top, horizon, y / max(1, C.HORIZON_Y - 1)))
+            surface = pygame.transform.scale(column, (C.WIDTH, C.HORIZON_Y))
+            self.gradients[key] = surface
+        return surface
+
+    # ---------------------------------------------------------- desenho
+    def draw(
+        self,
+        screen: pygame.Surface,
+        top: Color,
+        horizon: Color,
+        cam_x: float,
+        distance: float,
+        solar_share: float,
+        elapsed: float,
+    ) -> None:
+        screen.blit(self.gradient(top, horizon), (0, 0))
+        self.draw_panorama(screen, cam_x, distance)
+        self.draw_clouds(screen, cam_x, distance)
+        self.draw_skyline(screen, horizon, cam_x, distance, solar_share)
+        self.draw_sky_decor(screen, cam_x, solar_share, elapsed)
+        self.draw_horizon_vehicle(screen, cam_x, solar_share)
+
+    def draw_panorama(self, screen: pygame.Surface, cam_x: float, distance: float) -> None:
+        if self.panorama is None or self.pollution <= 0.01:
+            return
+        self.panorama.set_alpha(int(235 * self.pollution))
+        blit_tiled(screen, self.panorama, cam_x * C.SKY_SHIFT_PX + distance * C.SKY_DRIFT_PX + 260, 0)
+
+    def draw_clouds(self, screen: pygame.Surface, cam_x: float, distance: float) -> None:
+        for cloud in self.clouds:
+            shift = distance * cloud["drift"] + cam_x * C.CLOUD_SHIFT_PX * cloud["parallax"]
+            x = (cloud["x"] - shift) % C.CLOUD_TILE - cloud["w"]
+            if x > C.WIDTH:
+                continue
+            for variant, strength in (("smoke", 0.85 * self.pollution), ("clean", 0.6 * (1.0 - self.pollution))):
+                surface = self.cloud_surface(cloud, variant, strength * cloud["opacity"])
+                if surface is not None:
+                    screen.blit(surface, (int(x), cloud["y"]))
+
+    @staticmethod
+    def cloud_surface(cloud: dict, variant: str, strength: float) -> Optional[pygame.Surface]:
+        """Nuvem com a transparência já aplicada (12 níveis preparados uma vez)."""
+        level = int(clamp(strength, 0.0, 1.0) * 12 + 0.5)
+        if level <= 0:
+            return None
+        surface = cloud["baked"].get((variant, level))
+        if surface is None:
+            surface = cloud[variant].copy()
+            if level < 12:
+                surface.fill((255, 255, 255, int(255 * level / 12)), special_flags=pygame.BLEND_RGBA_MULT)
+            cloud["baked"][(variant, level)] = surface
+        return surface
+
+    # ----------------------------------------------------------- silhuetas
+    @staticmethod
+    def build_skyline(layout: List[Tuple[str, int]], sprites: dict) -> Optional[pygame.Surface]:
+        """Faixa contínua de silhuetas (repete a cada FAR_TILE px, emenda invisível)."""
+        items = [(sprites[name], h) for name, h in layout if name in sprites]
+        if not items:
+            return None
+        strip = pygame.Surface((C.FAR_TILE, C.SKYLINE_HEIGHT), pygame.SRCALPHA)
+        x, i = 0.0, 0
+        while x < C.FAR_TILE:
+            sprite, h = items[i % len(items)]
+            w = max(2, int(sprite.get_width() * h / sprite.get_height()))
+            scaled = pygame.transform.smoothscale(sprite, (w, h))
+            for dx in (0, -C.FAR_TILE):
+                strip.blit(scaled, (int(x) + dx, C.SKYLINE_HEIGHT - h))
+            x += w * 0.78 + 14 + (i * 37) % 45
+            i += 1
+        return strip
+
+    def skyline_base(self, name: str) -> Optional[pygame.Surface]:
+        if name not in self.skyline_cache:
+            biome = self.biome
+            if name == "green" and biome is not None:
+                strip = self.build_skyline(biome.green_skyline, self.assets.scenery)
+            elif name == "city" and biome is not None:
+                strip = self.build_skyline(biome.solar_skyline, self.assets.scenery)
+            else:
+                strip = self.build_skyline(SKYLINE_BACK if name == "back" else SKYLINE_FRONT, self.skyline_sprites)
+            self.skyline_cache[name] = strip
+        return self.skyline_cache[name]
+
+    def skyline_target(self, solar_share: float) -> tuple:
+        """Estado desejado: indústria -> flora -> cidade solarpunk, e cor da neblina."""
+        industrial = clamp(self.pollution * 1.4, 0.0, 1.0)
+        return int(industrial * 10 + 0.5), tuple(c // 16 for c in self.fog_color), int(solar_share * 10 + 0.5)
+
+    def skyline_job(self, name: str, target: tuple) -> dict:
+        """Prepara uma fileira nova em pedaços (o trabalho se espalha por alguns quadros)."""
+        level, _, city_level = target
+        parts = []
+        industrial = self.skyline_base(name)
+        if industrial is not None and level > 0:
+            parts.append((industrial, C.SKYLINE_HAZE[name], level / 10))
+        green = self.skyline_base("green") if name == "front" else None
+        if green is not None and level < 10:
+            parts.append((green, C.SKYLINE_HAZE["green"], 1.0 - level / 10))
+        city = self.skyline_base("city") if name == "back" and city_level > 0 else None
+        if city is not None:
+            parts.append((city, C.SKYLINE_HAZE["back"] * 0.8, city_level / 10))
+        surface = pygame.Surface((C.FAR_TILE, C.SKYLINE_HEIGHT), pygame.SRCALPHA) if parts else None
+        fog = self.fog_color
+
+        def steps():
+            for x in range(0, C.FAR_TILE, C.SKYLINE_CHUNK):
+                rect = pygame.Rect(x, 0, min(C.SKYLINE_CHUNK, C.FAR_TILE - x), C.SKYLINE_HEIGHT)
+                dest = surface.subsurface(rect)
+                for i, (base, haze, alpha) in enumerate(parts):
+                    piece = dest if i == 0 else pygame.Surface(rect.size, pygame.SRCALPHA)
+                    piece.blit(base.subsurface(rect), (0, 0), special_flags=pygame.BLEND_RGBA_MAX)
+                    keep = int(255 * (1.0 - haze))
+                    piece.fill((keep, keep, keep, int(255 * alpha)), special_flags=pygame.BLEND_RGBA_MULT)
+                    piece.fill(
+                        (int(fog[0] * haze), int(fog[1] * haze), int(fog[2] * haze), 0),
+                        special_flags=pygame.BLEND_RGBA_ADD,
+                    )
+                    if piece is not dest:
+                        dest.blit(piece, (0, 0))
+                yield
+
+        return {"target": target, "surface": surface, "steps": steps() if parts else iter(())}
+
+    def update_skyline(self, solar_share: float, budget_ms: float = C.SKYLINE_BUDGET_MS) -> None:
+        target = self.skyline_target(solar_share)
+        start = time.perf_counter()
+        for name in ("back", "front"):
+            state = self.skyline_state.setdefault(name, {"surface": None, "target": None, "job": None})
+            if state["job"] is None and state["target"] != target:
+                state["job"] = self.skyline_job(name, target)
+            job = state["job"]
+            if job is None:
+                continue
+            first_time = state["target"] is None  # primeira vez: monta tudo já
+            fading = (
+                state.get("previous") is not None
+                and time.perf_counter() - state.get("fade_start", 0.0) < C.SKYLINE_FADE_S
+            )
+            if fading and not first_time:
+                continue  # termina a transição atual antes da próxima
+            while first_time or (time.perf_counter() - start) * 1000.0 < budget_ms:
+                if next(job["steps"], StopIteration) is StopIteration:
+                    if not first_time and state["surface"] is not None:
+                        state["previous"], state["fade_start"] = state["surface"], time.perf_counter()
+                    state["surface"], state["target"], state["job"] = job["surface"], job["target"], None
+                    break
+
+    def draw_skyline(
+        self, screen: pygame.Surface, horizon: Color, cam_x: float, distance: float, solar_share: float
+    ) -> None:
+        self.update_skyline(solar_share)
+        drift = distance * C.FAR_DRIFT_PX
+        shift = cam_x * C.FAR_SHIFT_PX
+        drew = False
+        top = C.HORIZON_Y - C.SKYLINE_HEIGHT + 2
+        for name, ratio, extra in (("back", C.FAR_BACK_RATIO, 700), ("front", 1.0, 0)):
+            state = self.skyline_state.get(name, {})
+            layer, previous = state.get("surface"), state.get("previous")
+            if layer is None and previous is None:
+                continue
+            drew = True
+            offset = (shift + drift) * ratio + extra
+            fade = 1.0
+            if previous is not None:
+                fade = (time.perf_counter() - state.get("fade_start", 0.0)) / C.SKYLINE_FADE_S
+                if fade >= 1.0:
+                    state["previous"] = None
+                    fade = 1.0
+                elif layer is None:  # fileira esvaziou: a antiga some aos poucos
+                    previous.set_alpha(int(255 * (1.0 - fade)))
+                    blit_tiled(screen, previous, offset, top)
+                    previous.set_alpha(255)
+                else:
+                    blit_tiled(screen, previous, offset, top)
+            if layer is not None:
+                layer.set_alpha(int(255 * clamp(fade, 0.0, 1.0)))
+                blit_tiled(screen, layer, offset, top)
+                layer.set_alpha(255)
+        if not drew and self.skyline_base("back") is None and self.skyline_base("front") is None:
+            self.draw_far_fallback(screen, horizon, cam_x, distance)
+
+    @staticmethod
+    def draw_far_fallback(screen: pygame.Surface, base: Color, cam_x: float, distance: float) -> None:
+        """Silhueta de reserva (sem sprites): soma de senoides."""
+        offset = (-cam_x * C.FAR_SHIFT_PX - distance * C.FAR_DRIFT_PX) % C.FAR_TILE
+        color = lerp_color(base, (0, 0, 0), 0.35)
+        n = len(C.FAR_PROFILE)
+        left, right = -C.FAR_STEP * 2, C.WIDTH + C.FAR_STEP * 3
+        points = [
+            (sx, C.HORIZON_Y - C.FAR_PROFILE[int(((sx - offset) % C.FAR_TILE) // C.FAR_STEP) % n])
+            for sx in range(left, right, C.FAR_STEP)
+        ]
+        points += [(right, C.HORIZON_Y), (left, C.HORIZON_Y)]
+        pygame.draw.polygon(screen, color, points)
+
+    # ------------------------------------------------------ decoração móvel
+    def update_decor(self, dt: float) -> None:
+        """Dirigível, balões, barco/bonde e pássaros andam sozinhos (não colidem)."""
+        if self.biome is None:
+            return
+        for i, decor in enumerate(self.biome.sky_decor):
+            self.decor_x[i] = (self.decor_x[i] + decor.speed * dt) % C.DECOR_CYCLE
+        self.vehicle_x = (self.vehicle_x - self.biome.horizon_vehicle[2] * dt) % C.DECOR_CYCLE
+        self.birds_x = (self.birds_x + 32.0 * dt) % C.DECOR_CYCLE
+
+    def decor_sprite(self, name: str, height: int, alpha: int, haze: float = 0.0) -> Optional[pygame.Surface]:
+        sprite = self.assets.scenery.get(name)
+        if sprite is None or height < 2:
+            return None
+        fog = tuple(c // 16 * 16 for c in self.fog_color)
+        key = (name, height, alpha // 32, int(haze * 10), fog if haze else None)
+        cached = self.decor_cache.get(key)
+        if cached is None:
+            if len(self.decor_cache) > 64:
+                self.decor_cache.clear()
+            w = max(2, int(sprite.get_width() * height / sprite.get_height()))
+            cached = pygame.transform.smoothscale(sprite, (w, height))
+            if haze:
+                keep = int(255 * (1.0 - haze))
+                cached.fill((keep, keep, keep, 255), special_flags=pygame.BLEND_RGBA_MULT)
+                cached.fill(
+                    (int(fog[0] * haze), int(fog[1] * haze), int(fog[2] * haze), 0), special_flags=pygame.BLEND_RGBA_ADD
+                )
+            if alpha < 255:
+                cached.fill((255, 255, 255, alpha // 32 * 32 + 31), special_flags=pygame.BLEND_RGBA_MULT)
+            self.decor_cache[key] = cached
+        return cached
+
+    def draw_sky_decor(self, screen: pygame.Surface, cam_x: float, amount: float, elapsed: float) -> None:
+        if amount <= 0.0 or self.biome is None:
+            return
+        alpha = int(255 * amount)
+        for i, decor in enumerate(self.biome.sky_decor):
+            surf = self.decor_sprite(decor.sprite, decor.height, alpha, haze=0.15)
+            if surf is not None:
+                screen.blit(surf, (int((self.decor_x[i] - cam_x * decor.parallax) % C.DECOR_CYCLE - 350), decor.top))
+        bx = (self.birds_x - cam_x * 0.2) % C.DECOR_CYCLE - 350
+        color = lerp_color(rgb("37474f"), self.fog_color, 0.25)
+        for k in range(C.BIRDS):
+            px = bx + k * 17 - (k % 2) * 6
+            py = 150 + abs(k - C.BIRDS // 2) * 6 + math.sin(elapsed * 1.3 + k) * 2
+            flap = math.sin(elapsed * 9.0 + k * 1.7) * 3.0
+            pygame.draw.lines(screen, color, False, [(px - 5, py - 2 - flap), (px, py), (px + 5, py - 2 - flap)], 2)
+
+    def draw_horizon_vehicle(self, screen: pygame.Surface, cam_x: float, amount: float) -> None:
+        """Na linha do horizonte, à frente das silhuetas: barco (Manaus) ou bonde (Petrolina)."""
+        if amount <= 0.0 or self.biome is None:
+            return
+        name, height, _, parallax = self.biome.horizon_vehicle
+        surf = self.decor_sprite(name, height, int(255 * amount), haze=0.35)
+        if surf is None:
+            return
+        for k in range(2):
+            x = (self.vehicle_x + k * C.DECOR_CYCLE / 2 - cam_x * parallax) % C.DECOR_CYCLE - 350
+            screen.blit(surf, (int(x), C.HORIZON_Y - height + 3))
