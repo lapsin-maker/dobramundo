@@ -1,0 +1,114 @@
+{
+  "versao": "1.6.0",
+  "frozen": false,
+  "pygame": "2.6.1",
+  "sprites": {
+    "biome_sprites": 48,
+    "era_final_sprites": 26,
+    "dieselpunk_sprites": 8,
+    "scenario_sprites": 27,
+    "waste_sprites": 4,
+    "powerup_sprites": 3,
+    "plane_sprites": 22,
+    "plane_menu": 22,
+    "pilot_layers": 106,
+    "ui": 2,
+    "ground": 6
+  },
+  "telas": {
+    "abertura": {
+      "media_ms": 1.36,
+      "p95_ms": 1.42
+    },
+    "vila": {
+      "media_ms": 32.91,
+      "p95_ms": 19.21
+    },
+    "mapa": {
+      "media_ms": 14.1,
+      "p95_ms": 15.37
+    },
+    "hangar": {
+      "media_ms": 2.81,
+      "p95_ms": 3.16
+    },
+    "hangar_padrao": {
+      "media_ms": 3.29,
+      "p95_ms": 3.47
+    },
+    "piloto": {
+      "media_ms": 11.13,
+      "p95_ms": 11.86
+    },
+    "selecao": {
+      "media_ms": 8.19,
+      "p95_ms": 8.52
+    },
+    "preparar": {
+      "media_ms": 8.69,
+      "p95_ms": 9.42
+    },
+    "melhorias": {
+      "media_ms": 15.91,
+      "p95_ms": 16.01
+    },
+    "melhorias_aviao": {
+      "media_ms": 15.04,
+      "p95_ms": 15.33
+    },
+    "opcoes": {
+      "media_ms": 10.62,
+      "p95_ms": 9.73
+    },
+    "projecao": {
+      "media_ms": 8.0,
+      "p95_ms": 8.09
+    },
+    "sobre": {
+      "media_ms": 7.98,
+      "p95_ms": 7.19
+    },
+    "ods": {
+      "media_ms": 6.55,
+      "p95_ms": 6.68
+    }
+  },
+  "voos": {
+    "amazonia": {
+      "quadros": 1200,
+      "transformacao": 74.0,
+      "estrelas": 2,
+      "estagio": 2,
+      "recursos": {
+        "papel": 0,
+        "plastico": 8,
+        "metal": 0,
+        "vidro": 0
+      },
+      "pontos": 130,
+      "media_ms": 8.49,
+      "p95_ms": 12.43
+    },
+    "caatinga": {
+      "quadros": 1200,
+      "transformacao": 74.0,
+      "estrelas": 2,
+      "estagio": 2,
+      "recursos": {
+        "papel": 4,
+        "plastico": 0,
+        "metal": 4,
+        "vidro": 0
+      },
+      "pontos": 130,
+      "media_ms": 5.91,
+      "p95_ms": 8.59
+    }
+  },
+  "camera": {
+    "modelo": true,
+    "detector": "ok"
+  },
+  "falhas": [],
+  "status": "ok"
+}

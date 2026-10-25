@@ -1,5 +1,15 @@
 # Histórico do Dobramundo
 
+## 1.6.0 — 2026-10-25
+
+- Perfis locais independentes com cartões anônimos, preservação do save legado e recuperação a partir de cópias anteriores; falhas de leitura bloqueiam gravação destrutiva.
+- Preparação de sessão: exploração sem eliminação, limite opcional de 120/180/240 s, assistência previsível e sementes comunitárias repetíveis. Resultados parciais preservam ganhos sem registrar conclusão não alcançada.
+- Missões oferecidas conforme alvos disponíveis, com expiração após 60 s sem penalidade e nova oferta após um intervalo; repetição mantém parâmetros e preferência de material. Ponto de troca custa 8 papel/8 plástico e Horta custa 24 papel/16 vidro, antecipando a transformação inicial.
+- Oito variações regionais com sementes publicadas; relatório de economia usa movimento, colisões, reação, erros e pausas.
+- Treze imagens preparadas para o tamanho de uso, manifesto de procedência, caches limitados por bytes e descarte por bioma. Render de pista, objetos, avião e piloto dividido por responsabilidade; fallback preservado.
+- Fábrica de cenas injetável, contratos de leitura do desenho, fontes e ajuste de texto comuns; testes organizados por comportamento. Formatação global em commit separado, sem alteração das árvores sintáticas.
+- CI com versões fixadas por Python, cobertura, formatação e builds Windows/Linux com self-test. Exceções do cartucho passam a ser registradas sem conteúdo dos perfis.
+
 ## 1.5.0 — 2026-10-25
 
 - Câmera com encerramento seguro e métricas locais de latência.
@@ -8,13 +18,13 @@
 - Carregamento seletivo do piloto, fundos opacos, renderização e pré-carga otimizadas.
 - README, ferramentas e versão da entrega alinhados.
 
-## Prévia — sprint 3: controle confortável e mundo vivo
+## Entrega anterior — sprint 3: controle confortável e mundo vivo
 
 O editor confirma escolhas mais devagar e exige sair do alvo antes de repetir. O controle de cabeça tolera melhor a perda de um marco facial, oferece calibração dos quatro alcances confortáveis e interrompe o cursor quando a leitura envelhece. Alto contraste também amplia avião, objetos e passagens, com escala ajustável. A vila começa industrial e colorida, tem moradores e pedidos persistentes e evolui para jardins, energia e alimentos integrados às construções.
 
 As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
 
-Baixe **Windows, cartucho e galeria** na [prévia da sprint 3](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint3-controle-e-vida-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT3.md) inclui instalação, validação, desempenho medido e aceite presencial pendente.
+Os artefatos dessa sprint pertencem à publicação histórica correspondente. Consulte a release mais recente para os downloads atuais.
 
 ## Entrega anterior — sprint 2: aquarela em movimento
 

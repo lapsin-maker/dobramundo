@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-25",
+  "baseline_commit": "f80294b45508f4ba87cf22eeb3cc6e6e23ee56fc",
+  "runtime_game_tree": "447b012de46ec0b5110946d3bd64d9106a32e1f0",
+  "runtime_assets_tree": "d61e7e9ef7a9ab7cc58a9334cbec54bd4a6c2156",
+  "tree_reference_commit": "d47035cd9d1acb75ac01a81bb25bd87a7c1e71d4",
+  "benchmark_script_sha256": "57cfc9732bfe32d3e7d12746889bc35e2e7728848f262f9a9506d4dc4cc23bc7",
+  "notes": [
+    "baseline extracted from Git into a separate folder; same local Python executable",
+    "empty-pilot comparison uses seed 7; avatar runs add customized synthetic appearance",
+    "camera reports contain metrics, no images or landmarks",
+    "soak uses synthetic invincible flight solely for render lifecycle stress"
+  ]
+}

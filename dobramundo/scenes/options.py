@@ -8,10 +8,9 @@ import pygame
 
 from .. import config as C
 from ..content import texts
-from ..input.pose import SEGMENTS
+from ..input.api import SEGMENTS
 from ..persistence import CONTROL_SEGMENTS, SURFACES
 from ..ui import theme as T
-from . import make_scene
 from .base import Scene
 
 SEGMENT_LABELS = {"teclado": "Teclado e mouse", **{k: s.label for k, s in SEGMENTS.items()}}
@@ -30,44 +29,52 @@ SURFACE_SEGMENT = {"chao": "pes", "mesa": "mao_direita", "parede": "tronco_pe"}
 
 class OptionsScene(Scene):
     def build(self) -> None:
-        o = self.app.options
-        profile = self.app.profile
-        left, right = 24, 566
-        width = 510
         buttons = []
+        self._build_controls(buttons)
+        self._build_surface(buttons)
+        self._build_audio(buttons)
+        self._build_accessibility(buttons)
+        self._build_footer(buttons)
+        self.menu.set_buttons(buttons)
 
-        def stepper(
-            x: int, y: int, key: str, label: str, value: str, minus: Callable, plus: Callable, w: int = width
-        ) -> None:
-            arrow = min(48, max(38, w // 5))
-            buttons.append(self.button((x, y, arrow, ROW_H), "<", minus, key=f"{key}-"))
-            buttons.append(
-                self.button(
-                    (x + arrow + 4, y, w - 2 * arrow - 8, ROW_H),
-                    value,
-                    plus,
-                    sublabel=label,
-                    size=T.SIZES["body"],
-                    key=f"{key}=",
-                )
+    def _stepper(
+        self, buttons, x: int, y: int, key: str, label: str, value: str, minus: Callable, plus: Callable, w: int = 510
+    ) -> None:
+        arrow = min(48, max(38, w // 5))
+        buttons.append(self.button((x, y, arrow, ROW_H), "<", minus, key=f"{key}-"))
+        buttons.append(
+            self.button(
+                (x + arrow + 4, y, w - 2 * arrow - 8, ROW_H),
+                value,
+                plus,
+                sublabel=label,
+                size=T.SIZES["body"],
+                key=f"{key}=",
             )
-            buttons.append(self.button((x + w - arrow, y, arrow, ROW_H), ">", plus, key=f"{key}+"))
+        )
+        buttons.append(self.button((x + w - arrow, y, arrow, ROW_H), ">", plus, key=f"{key}+"))
 
-        def toggle(x: int, y: int, key: str, label: str, on: bool, action: Callable, w: int = width) -> None:
-            buttons.append(
-                self.button(
-                    (x, y, w, ROW_H),
-                    f"{label}: {'sim' if on else 'não'}",
-                    action,
-                    selected=on,
-                    size=T.SIZES["body"],
-                    key=key,
-                )
+    def _toggle(self, buttons, x: int, y: int, key: str, label: str, on: bool, action: Callable, w: int = 510) -> None:
+        buttons.append(
+            self.button(
+                (x, y, w, ROW_H),
+                f"{label}: {'sim' if on else 'não'}",
+                action,
+                selected=on,
+                size=T.SIZES["body"],
+                key=key,
             )
+        )
 
+    def _build_controls(self, buttons) -> None:
+        o = self.app.options
+        left, width = 24, 510
+        half = (width - GAP) // 2
+        profile = self.app.profile
         y = 128
         index = CONTROL_SEGMENTS.index(profile.controle)
-        stepper(
+        self._stepper(
+            buttons,
             left,
             y,
             "seg",
@@ -101,7 +108,8 @@ class OptionsScene(Scene):
             )
         )
         y += ROW_H + GAP
-        stepper(
+        self._stepper(
+            buttons,
             left,
             y,
             "sens",
@@ -111,7 +119,8 @@ class OptionsScene(Scene):
             lambda: self.adjust("sensibilidade", 0.1, 0.5, 2.0),
         )
         y += ROW_H + GAP
-        stepper(
+        self._stepper(
+            buttons,
             left,
             y,
             "perm",
@@ -121,7 +130,8 @@ class OptionsScene(Scene):
             lambda: self.adjust("permanencia", 0.25, 1.0, 3.5),
             half,
         )
-        stepper(
+        self._stepper(
+            buttons,
             left + half + GAP,
             y,
             "perm_editor",
@@ -132,8 +142,15 @@ class OptionsScene(Scene):
             half,
         )
         y += ROW_H + GAP
+
+    def _build_surface(self, buttons) -> None:
+        o = self.app.options
+        left, width = 24, 510
+        half = (width - GAP) // 2
+        y = 128 + 4 * (ROW_H + GAP)
         s_index = SURFACES.index(o.superficie)
-        stepper(
+        self._stepper(
+            buttons,
             left,
             y,
             "sup",
@@ -155,7 +172,8 @@ class OptionsScene(Scene):
                 sublabel=f"Girar {o.rotacao}°" + (", espelhada" if o.espelhar else ""),
             )
         )
-        toggle(
+        self._toggle(
+            buttons,
             left + half + GAP,
             y,
             "centralizar",
@@ -165,7 +183,21 @@ class OptionsScene(Scene):
             half,
         )
         y += ROW_H + GAP
-        toggle(left, y, "foco", "Momento de foco (câmera lenta)", o.momento_foco, lambda: self.flip("momento_foco"))
+        self._toggle(
+            buttons,
+            left,
+            y,
+            "foco",
+            "Momento de foco (câmera lenta)",
+            o.momento_foco,
+            lambda: self.flip("momento_foco"),
+        )
+
+    def _build_audio(self, buttons) -> None:
+        o = self.app.options
+        right, width = 566, 510
+        half = (width - GAP) // 2
+        desktop = self.app.platform == "desktop"
         y = 128
         for key, label in (
             ("volume_geral", "Volume geral"),
@@ -173,7 +205,8 @@ class OptionsScene(Scene):
             ("volume_efeitos", "Efeitos"),
         ):
             value = vars(o)[key]
-            stepper(
+            self._stepper(
+                buttons,
                 right,
                 y,
                 key,
@@ -183,11 +216,20 @@ class OptionsScene(Scene):
                 (lambda k=key: self.adjust(k, 0.1, 0.0, 1.0)),
             )
             y += ROW_H + GAP
-        toggle(right, y, "silencio", texts.UI["silencio"], o.silencio, lambda: self.flip("silencio"), half)
+        self._toggle(
+            buttons, right, y, "silencio", texts.UI["silencio"], o.silencio, lambda: self.flip("silencio"), half
+        )
         if desktop:
-            toggle(right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
+            self._toggle(buttons, right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
         y += ROW_H + GAP
-        toggle(
+
+    def _build_accessibility(self, buttons) -> None:
+        o = self.app.options
+        right, width = 566, 510
+        half = (width - GAP) // 2
+        y = 128 + 4 * (ROW_H + GAP)
+        self._toggle(
+            buttons,
             right,
             y,
             "contraste",
@@ -196,18 +238,30 @@ class OptionsScene(Scene):
             lambda: self.flip("alto_contraste"),
             half,
         )
-        stepper(
-            right + half + GAP, y, "escala_contraste", "Escala de contraste",
+        self._stepper(
+            buttons,
+            right + half + GAP,
+            y,
+            "escala_contraste",
+            "Escala de contraste",
             f"{o.escala_contraste:.1f}x",
             lambda: self.adjust("escala_contraste", -0.1, 1.0, 1.6),
             lambda: self.adjust("escala_contraste", 0.1, 1.0, 1.6),
             half,
         )
         y += ROW_H + GAP
-        toggle(
-            right, y, "inverter", "Trocar cima/baixo", o.inverter_vertical, lambda: self.flip("inverter_vertical"), half
+        self._toggle(
+            buttons,
+            right,
+            y,
+            "inverter",
+            "Trocar cima/baixo",
+            o.inverter_vertical,
+            lambda: self.flip("inverter_vertical"),
+            half,
         )
-        toggle(
+        self._toggle(
+            buttons,
             right + half + GAP,
             y,
             "inverter_lados",
@@ -217,7 +271,8 @@ class OptionsScene(Scene):
             half,
         )
         y += ROW_H + GAP
-        toggle(
+        self._toggle(
+            buttons,
             right,
             y,
             "efeitos",
@@ -225,6 +280,10 @@ class OptionsScene(Scene):
             o.efeitos_fortes,
             lambda: self.flip("efeitos_fortes"),
         )
+
+    def _build_footer(self, buttons) -> None:
+        o = self.app.options
+        width = 510
         footer = (
             (texts.UI["voltar"], lambda: self.goto("vila"), "voltar"),
             ("História", self.intro, "abertura"),
@@ -242,15 +301,26 @@ class OptionsScene(Scene):
                     icon=T.icon_surface("stabilizer", 28, T.GREEN) if key == "preparar" else None,
                 )
             )
-        toggle(
-            24, 562, "movimento", "Movimento reduzido", o.reduzir_movimento,
-            lambda: self.flip("reduzir_movimento"), width,
+        self._toggle(
+            buttons,
+            24,
+            562,
+            "movimento",
+            "Movimento reduzido",
+            o.reduzir_movimento,
+            lambda: self.flip("reduzir_movimento"),
+            width,
         )
-        toggle(
-            566, 562, "auto_abertura", "Abertura automática", o.abertura_automatica,
-            lambda: self.flip("abertura_automatica"), width,
+        self._toggle(
+            buttons,
+            566,
+            562,
+            "auto_abertura",
+            "Abertura automática",
+            o.abertura_automatica,
+            lambda: self.flip("abertura_automatica"),
+            width,
         )
-        self.menu.set_buttons(buttons)
 
     # ------------------------------------------------------------ ações
     def changed(self) -> None:
@@ -291,18 +361,18 @@ class OptionsScene(Scene):
         self.changed()
 
     def calibrate(self) -> None:
-        self.goto("calibracao", return_to=make_scene(self.app, "opcoes"))
+        self.goto("calibracao", return_to=self.app.create_scene("opcoes"))
 
     def intro(self) -> None:
         self.goto("abertura")
 
     def replay_tutorial(self) -> None:
-        return_to = make_scene(self.app, "opcoes")
-        self.goto("tutorial", next_scene=return_to, return_to=make_scene(self.app, "opcoes"))
+        return_to = self.app.create_scene("opcoes")
+        self.goto("tutorial", next_scene=return_to, return_to=self.app.create_scene("opcoes"))
 
     def replay_dwell(self) -> None:
-        return_to = make_scene(self.app, "opcoes")
-        self.goto("dwell_treino", next_scene=return_to, return_to=make_scene(self.app, "opcoes"))
+        return_to = self.app.create_scene("opcoes")
+        self.goto("dwell_treino", next_scene=return_to, return_to=self.app.create_scene("opcoes"))
 
     def prepare(self) -> None:
         self.goto("preparar")

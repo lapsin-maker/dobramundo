@@ -17,8 +17,12 @@ from .paths import find_asset_file
 
 MUSIC_FADE_MS = 1600
 CELEBRATION_PRIORITY = {
-    "sfx_powerup": 1, "sfx_compra": 2, "sfx_estrela": 3,
-    "sfx_estagio": 4, "sfx_fim_fase": 5, "sfx_game_over": 5,
+    "sfx_powerup": 1,
+    "sfx_compra": 2,
+    "sfx_estrela": 3,
+    "sfx_estagio": 4,
+    "sfx_fim_fase": 5,
+    "sfx_game_over": 5,
 }
 COLLECT_SFX = {
     "papel": "sfx_coleta_papel",

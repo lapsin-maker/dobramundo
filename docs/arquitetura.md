@@ -215,13 +215,15 @@ No fallback, `PilotRenderer.mount` escala o corpo para a caixa do avião (com o 
 
 A pintura legada do avião usa a camada `paint` e seu mapa UV, em que o verde (G) é a linha e o vermelho (R) é a coluna da textura de 256 x 256 pixels. A rota preferida da sprint usa a máscara de papel de `PaintedPlanes`.
 
-## 9. Perfil versionado e migração
+## 9. Perfis, persistência e migração
 
-O perfil fica num único JSON (`dobramundo_perfil.json`) e é modelado pela dataclass `Profile` em `persistence.py`. Ele tem o campo `versao`, com `SCHEMA_VERSION = 1`.
+`Profile` em `persistence.py` mantém o formato JSON legado (`dobramundo_perfil.json`) como slot `principal`, preservando migrações anteriores. No desktop, um índice (`profiles.json`) registra até oito slots e os demais arquivos ficam em `profiles/`; cada slot contém progresso, personalização, opções e consentimento. Os cartões são anônimos (“Piloto 1” etc.) e a prévia não ativa nem regrava o slot. O console T-TEA continua usando o armazenamento por jogador do SDK, sem substituí-lo por perfis desktop.
 
-- **Gravação:** `save_profile` escreve um arquivo temporário (`.tmp`) e troca pelo arquivo final, de forma atômica.
-- **Leitura:** `Profile.from_dict` lê campo a campo, só aceita valores do tipo esperado e ignora campos desconhecidos. Depois `normalize()` limita valores (volumes, permanência, sensibilidade, estrelas, recursos) e descarta opções que não existem mais (aviões, padrões, segmentos, melhorias). Se algo falhar, o resultado é o perfil padrão.
-- **Migração:** não há migração por versão. O campo `versao` é gravado, mas não é lido. Para uma mudança incompatível, é preciso aumentar `SCHEMA_VERSION`, criar o tratamento em `from_dict` e cobrir o caso em `tests/test_progress.py`.
+- **Gravação:** arquivo temporário, flush/fsync e substituição atômica. Antes de substituir um perfil ou índice válido, rotaciona até duas cópias `.bak`/`.bak.1` validadas. O limite é recuperação de arquivo: não é journal nem checkpoint de execução.
+- **Leitura e recuperação:** valida tipos e normaliza faixas; arquivo ausente ou inválido tenta cópias anteriores. Índices recuperáveis podem restaurar slots órfãos válidos sem ativá-los automaticamente. Arquivo corrompido é preservado com sufixo `.corrompido`; erro de leitura bloqueia gravação ao slot na sessão para evitar sobrescrever dados que não foram lidos.
+- **Falha de recuperação:** se a cópia íntegra só puder ser aberta em memória, o jogo apresenta aviso e não afirma que a restauração em disco ocorreu. A interface permite reconhecer o aviso; falhas de gravação no perfil ativo precisam ser resolvidas antes de trocar de piloto.
+- **Compatibilidade:** `SCHEMA_VERSION` permanece 1; campos opcionais novos recebem padrões e perfis antigos seguem legíveis. Para uma mudança incompatível, aumentar versão, adicionar migração explícita e cobrir o legado em testes. A opção antiga `girar` continua migrada para `rotacao`.
+- **Opções de sessão:** limites 0/120/180/240 segundos, exploração, assistência previsível e semente comunitária são validados antes do uso. A semente `0` escolhe uma rota aleatória por voo; o resultado registra a semente efetiva para replay.
 - **Importação do protótipo:** se não houver perfil, `import_legacy` lê `eco_runner_recorde.json` e `eco_runner_config.json` das pastas do protótipo (ver `legacy_data_dirs` em `paths.py`).
 - **Versão 1.2:** `voos_fase` e `historico` entram no perfil sem mudar `SCHEMA_VERSION` (continua 1). Campos ausentes em perfis antigos recebem o valor padrão.
 - **Versão 1.3:** a opção booleana `girar` vira `rotacao` (0, 90, 180 ou 270). Perfis com `girar` verdadeiro viram `rotacao = 180` (`persistence.py`). `SCHEMA_VERSION` continua 1, e campos novos, como `chao_pontos`, `alvo_frente` e `centralizar_sozinho`, recebem o valor padrão em perfis antigos.
@@ -336,7 +338,17 @@ Os itens abaixo registram a implementação anterior à sprint aquarelada. Os fl
 - **Voo, opções e padrões**: HUD mais fino em `scenes/flight.py`; `DEFAULT_PATTERN = "liso"` em `content/planes.py`; permanência padrão de 2,0 s, com faixa de 1,0 a 3,5 s em `persistence.py` e `scenes/options.py`.
 
 
-## Entrega 1.5 — confiabilidade e orçamento de recursos
+## Entrega 1.6 — sessão e recuperação
+
+`GameCore.create_scene` fornece a fachada da fábrica de cenas, com implementação padrão e injeção opcional usada em testes. `App` e `ConsoleCore` preservam argumentos existentes e aceitam fábrica ao final da assinatura.
+
+`FlightRun` encerra por conclusão, colisão final, limite escolhido ou pedido de encerramento. `scenes/result.py` liquida recursos, pontos e histórico de modo idempotente por instância; encerramentos parciais não criam conclusão ou estrela. Sementes efetivas e opções selecionadas permitem abrir novamente o mesmo desafio. Isso não recupera processo encerrado à força antes de uma gravação.
+
+`MissionTracker` consulta alvos existentes antes de oferecer meta e espera uma nova oferta quando não há suprimento; desafios comunitários têm sementes publicadas e temas associados. Exploração evita eliminação, mas colisões continuam contando. Assistência previsível altera ajuda de forma fixa durante o voo; não é uma garantia de adequação individual.
+
+`WorldView` delega chão, entidades e avião a `track_layer.py`, `entity_layer.py` e `plane_layer.py`, ligados por Protocols somente de leitura em `contracts.py`; a camada de render não importa os módulos de simulação. `set_biome` descarta o cache específico do bioma anterior. O código gerado/preparado mantém fallback procedural quando o asset preparado não está disponível.
+
+## Entrega 1.5 — confiabilidade e orçamento de recursos (histórico)
 
 `PaintedPilot` solicita apenas suas camadas, sem decodificar cenários. O loader detecta fundos completamente opacos uma vez e conserva alfa em sprites com transparência. `WatercolorWorld` compõe apenas o horizonte visível quando o terreno cobre o restante; o fallback segue integral. `PaintedGround` usa faixas de 3 pixels e uma passagem de solo na Caatinga. Alto contraste reutiliza seus buffers; o conteúdo continua atualizado a cada desenho.
 
@@ -352,4 +364,4 @@ A câmera desktop mantém a fonte enquanto ela encerra, permite reabertura poste
 
 `plane_stats` entrega o mesmo conforto independentemente das peças. Os campos/níveis existentes são preservados para progressão e terceira estrela. A calibração e a zona morta não são modificadas por compras.
 
-[Análise consolidada](ANALISE_CONSOLIDADA.md) e [validação da entrega](ENTREGA_1_5.md) detalham o escopo e os limites.
+[Análise consolidada](ANALISE_CONSOLIDADA.md), [notas da entrega 1.6](ENTREGA_1_6.md) e [roteiro presencial](VALIDACAO_PRESENCIAL.md) detalham o escopo e os limites. A [entrega 1.5](ENTREGA_1_5.md) é histórica.

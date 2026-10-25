@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import secrets
 from typing import Dict, List, Optional, Tuple
 
 import pygame
@@ -12,7 +13,7 @@ from ..content import texts
 from ..content.biomes import BIOMES
 from ..content.items import WASTE_TYPES
 from ..content.planes import load_maneuvers
-from ..content.progress import PART_BY_KEY, STAR_THRESHOLDS, parts_ok
+from ..content.progress import PART_BY_KEY, STAR_THRESHOLDS, VILLAGE_UPGRADES, parts_ok
 from ..engine.sprites import project
 from ..game.run import FlightRun
 from ..ui import theme as T
@@ -64,13 +65,66 @@ class Banner:
 class FlightScene(Scene):
     idle_warm_up = False
 
-    def __init__(self, app, biome_key: str) -> None:
+    def __init__(
+        self,
+        app,
+        biome_key: str,
+        seed: Optional[int] = None,
+        mode: Optional[str] = None,
+        session_limit_s: Optional[int] = None,
+        exploration: Optional[bool] = None,
+        predictable_assistance: Optional[bool] = None,
+        intro_override: Optional[bool] = None,
+        community_challenge: Optional[bool] = None,
+        mission_preferred_waste: Optional[str] = None,
+        mission_preference_fixed: bool = False,
+    ) -> None:
         super().__init__(app)
         self.biome = BIOMES[biome_key]
         p = app.profile
         # abertura didática: sempre no Normal; no Difícil, só no primeiro voo da fase
-        intro = p.modo == "normal" or p.voos_fase.get(biome_key, 0) == 0
-        self.run = FlightRun(self.biome, p.modo, p.pecas, maneuvers(), intro=intro, focus=app.options.momento_foco)
+        flight_mode = mode if mode in ("normal", "dificil") else p.modo
+        intro = (
+            intro_override
+            if intro_override is not None
+            else flight_mode == "normal" or p.voos_fase.get(biome_key, 0) == 0
+        )
+        option_seed = app.options.semente_desafio
+        flight_seed = seed if seed is not None else option_seed if option_seed > 0 else secrets.randbits(32)
+        limit = app.options.limite_voo_s if session_limit_s is None else session_limit_s
+        explore = app.options.modo_exploracao if exploration is None else exploration
+        assisted = app.options.assistencia_previsivel if predictable_assistance is None else predictable_assistance
+        community = (seed is None and option_seed > 0) if community_challenge is None else community_challenge
+        if mission_preference_fixed:
+            preferred_waste = mission_preferred_waste
+        elif community:
+            next_build = next((item for item in VILLAGE_UPGRADES if item.key not in p.vila), None)
+            shortages = (
+                {
+                    key: amount - p.recursos.get(key, 0)
+                    for key, amount in next_build.cost.items()
+                    if p.recursos.get(key, 0) < amount
+                }
+                if next_build is not None
+                else {}
+            )
+            preferred_waste = max(shortages, key=shortages.get) if shortages else None
+        else:
+            preferred_waste = None
+        self.run = FlightRun(
+            self.biome,
+            flight_mode,
+            p.pecas,
+            maneuvers(),
+            intro=intro,
+            focus=app.options.momento_foco,
+            seed=flight_seed,
+            session_limit_s=limit,
+            exploration=explore,
+            predictable_assistance=assisted,
+            community_challenge=community,
+            mission_preferred_waste=preferred_waste,
+        )
         self.look = app.plane_look()
         self.paused = False
         self.auto_paused = False
@@ -97,7 +151,12 @@ class FlightScene(Scene):
         if not self.started:
             self.started = True
             self.app.audio.play("sfx_decolagem")
-            self.banners.append(Banner(f"{self.biome.city} — {self.biome.name}", texts.STAGE_MESSAGES[0], T.WHITE, 3.2))
+            theme = self.run.world.challenge_theme
+            title = theme.title if theme is not None else f"{self.biome.city} — {self.biome.name}"
+            subtitle = (
+                f"Desafio comunitário · semente {self.run.seed}" if theme is not None else texts.STAGE_MESSAGES[0]
+            )
+            self.banners.append(Banner(title, subtitle, T.WHITE, 3.2))
 
     # ------------------------------------------------------------- pausa
     def build(self) -> None:
@@ -116,6 +175,7 @@ class FlightScene(Scene):
         if self.paused or self.run.finished:
             return
         self.paused = True
+        self.run.pause_count += 1
         self.auto_paused = auto
         self.countdown = 0.0
         self.app.input.clear_keys()
@@ -186,6 +246,7 @@ class FlightScene(Scene):
         if not self.paused and hub.out_of_area():
             self.pause(auto=True)
         if self.paused:
+            self.run.pause_duration_s += max(0.0, dt)
             if self.auto_paused and hub.back_in_area():
                 self.countdown += dt  # retomada automática com contagem
                 if self.countdown >= RESUME_COUNTDOWN:
@@ -262,9 +323,21 @@ class FlightScene(Scene):
                     data.kind, "star"
                 )
                 self.banners.append(Banner("Meta cumprida!", data.text(data.target), T.SUN, 2.4, action=action))
+            elif name == "mission_expired":
+                self.banners.append(
+                    Banner("Outra meta vem aí", "Esta não deu; nenhum recurso foi perdido.", T.TEAL, 2.4)
+                )
             elif name == "complete":
                 audio.play("sfx_fim_fase")
                 self.banners.append(Banner(f"{self.biome.city} solarpunk!", "A cidade se transformou.", T.SUN, 3.0))
+            elif name == "session_end":
+                self.banners.append(
+                    Banner("Tempo combinado", "O voo ficou guardado para continuar depois.", T.TEAL, 2.5)
+                )
+            elif name == "exploration_continue":
+                self.banners.append(
+                    Banner("Vamos continuar", "No modo Explorar, as batidas não encerram o voo.", T.TEAL, 2.2)
+                )
             elif name == "game_over":
                 audio.play("sfx_game_over")
 
@@ -321,11 +394,37 @@ class FlightScene(Scene):
             star(
                 screen, (x, bar.centery), 11, run.restoration >= limit - 1e-6 and (limit < 100 or run.stars >= 3), T.SUN
             )
+        if run.session_limit_s:
+            clock = max(0, run.session_limit_s - int(run.flight_time))
+            minutes, seconds = divmod(clock, 60)
+            timer_box = pygame.Rect(C.WIDTH // 2 - 62, 14, 124, 56)
+            T.panel(screen, timer_box, T.PAPER, T.TEAL, 245, 14, 2)
+            text.blit(
+                screen, "TEMPO", (timer_box.centerx, timer_box.top + 7), T.SIZES["small"], T.MUTED, True, "midtop"
+            )
+            text.blit(
+                screen,
+                f"{minutes:02d}:{seconds:02d}",
+                (timer_box.centerx, timer_box.top + 28),
+                T.SIZES["label"],
+                T.NAVY,
+                True,
+                "midtop",
+            )
         self.draw_mission(screen)
-        status = pygame.Rect(C.WIDTH - 164, 14, 146, 70)
+        status = pygame.Rect(C.WIDTH - 244, 14, 226, 70)
         T.panel(screen, status, T.PAPER, T.NAVY, 238, 16, 2)
-        for i in range(C.MAX_LIVES):
-            self.draw_life(screen, (status.left + 32 + i * 41, 48), i < run.lives)
+        spacing = 39
+        start_x = status.left + (status.width - (run.max_lives - 1) * spacing) // 2
+        life_y = 40 if run.exploration or run.predictable_assistance else 48
+        for i in range(run.max_lives):
+            self.draw_life(screen, (start_x + i * spacing, life_y), i < run.lives)
+        label_anchor = (status.centerx, status.bottom - 24)
+        if run.exploration:
+            label = "EXPLORAR" + (" · APOIO" if run.predictable_assistance else "")
+            text.blit(screen, label, label_anchor, T.SIZES["small"], T.TEAL, True, "midtop")
+        elif run.predictable_assistance:
+            text.blit(screen, "APOIO", label_anchor, T.SIZES["small"], T.TEAL, True, "midtop")
         if run.shield_timer > 0 or run.magnet_timer > 0:
             # Ambos os benefícios têm um relógio visual próprio. A leitura de
             # segundos é auxiliar; o arco se esvazia sem piscar.
@@ -338,8 +437,7 @@ class FlightScene(Scene):
                 pygame.draw.circle(screen, T.NAVY, center, 27, 2)
                 screen.blit(T.icon_surface(active, 30, T.NAVY), (center[0] - 15, center[1] - 15))
                 arc = pygame.Rect(center[0] - 23, center[1] - 23, 46, 46)
-                pygame.draw.arc(screen, T.TEAL, arc, math.pi / 2,
-                                math.pi / 2 + math.tau * min(1.0, timer / total), 5)
+                pygame.draw.arc(screen, T.TEAL, arc, math.pi / 2, math.pi / 2 + math.tau * min(1.0, timer / total), 5)
         elif run.invincible:
             text.blit(
                 screen,
@@ -365,9 +463,13 @@ class FlightScene(Scene):
             pygame.draw.circle(screen, T.PAPER, center, 26)
             pygame.draw.circle(screen, T.NAVY, center, 26, 3)
             if ok:
-                pygame.draw.lines(screen, T.TEAL, False,
-                                  [(center[0] - 13, center[1]), (center[0] - 3, center[1] + 10),
-                                   (center[0] + 15, center[1] - 12)], 6)
+                pygame.draw.lines(
+                    screen,
+                    T.TEAL,
+                    False,
+                    [(center[0] - 13, center[1]), (center[0] - 3, center[1] + 10), (center[0] + 15, center[1] - 12)],
+                    6,
+                )
             else:
                 screen.blit(T.icon_surface("plane", 36, T.NAVY), (center[0] - 18, center[1] - 18))
             self.text.blit(

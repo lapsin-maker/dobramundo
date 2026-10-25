@@ -109,4 +109,3 @@ def test_camera_descarta_resultado_que_envelheceu_durante_inferencia():
     assert report["stale_dropped"] == 1
     assert report["published"] == 0
     assert report["last_result_age_ms"] == 500.0
-

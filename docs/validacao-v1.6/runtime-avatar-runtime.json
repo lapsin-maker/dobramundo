@@ -1,0 +1,326 @@
+{
+  "conditions": "CPU; SDL dummy; no camera; 1100x650; fresh process; 60 warmup frames per case",
+  "pacing": "uncapped stress",
+  "python": "3.12.10",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "camera_clock_resolution_ms": 15.625,
+  "startup_ms": 1035.83,
+  "rss_before_bytes": 40759296,
+  "rss_after_bytes": 133038080,
+  "rss_delta_bytes": 92278784,
+  "startup_watercolor_count": 0,
+  "startup_watercolor_bytes": 0,
+  "seed": 7,
+  "pilot": "customized synthetic avatar",
+  "flights": {
+    "amazonia_normal": {
+      "frame": {
+        "median_ms": 7.936,
+        "p95_ms": 11.966,
+        "p99_ms": 14.17,
+        "max_ms": 18.544
+      },
+      "scene_setup_ms": 7.378,
+      "warmup": {
+        "median_ms": 8.05,
+        "p95_ms": 13.819,
+        "p99_ms": 399.529,
+        "max_ms": 399.529
+      },
+      "first_frame_ms": 399.529,
+      "frames_measured": 600,
+      "within_60fps_budget_fraction": 0.9983,
+      "components": {
+        "horizon": {
+          "median_ms": 0.005,
+          "p95_ms": 1.64,
+          "p99_ms": 2.244,
+          "max_ms": 2.373
+        },
+        "ground": {
+          "median_ms": 4.062,
+          "p95_ms": 5.767,
+          "p99_ms": 6.904,
+          "max_ms": 8.092
+        },
+        "background": {
+          "median_ms": 5.912,
+          "p95_ms": 9.394,
+          "p99_ms": 11.334,
+          "max_ms": 14.531
+        },
+        "world": {
+          "median_ms": 6.79,
+          "p95_ms": 10.531,
+          "p99_ms": 12.712,
+          "max_ms": 16.486
+        },
+        "present": {
+          "median_ms": 0.286,
+          "p95_ms": 0.622,
+          "p99_ms": 0.763,
+          "max_ms": 0.917
+        }
+      },
+      "rss_bytes": 256925696,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 174074604,
+        "surface_bytes_by_owner": {
+          "assets": 23554348,
+          "scene_sprites": 0,
+          "world_sprite_cache": 587260,
+          "world_transient": 1085032,
+          "sky": 4818952,
+          "ground": 917504,
+          "watercolor": 106342268,
+          "plane_skin": 27015716,
+          "paper_items": 9753524
+        },
+        "cache_items": {
+          "scaled": 2,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 7,
+          "ground_groups": 0,
+          "asset_images": 55
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      }
+    },
+    "amazonia_contrast": {
+      "frame": {
+        "median_ms": 11.944,
+        "p95_ms": 19.169,
+        "p99_ms": 25.004,
+        "max_ms": 40.274
+      },
+      "scene_setup_ms": 7.42,
+      "warmup": {
+        "median_ms": 11.044,
+        "p95_ms": 20.074,
+        "p99_ms": 21.656,
+        "max_ms": 21.656
+      },
+      "first_frame_ms": 21.656,
+      "frames_measured": 600,
+      "within_60fps_budget_fraction": 0.9083,
+      "components": {
+        "horizon": {
+          "median_ms": 0.005,
+          "p95_ms": 1.224,
+          "p99_ms": 1.924,
+          "max_ms": 2.195
+        },
+        "ground": {
+          "median_ms": 4.309,
+          "p95_ms": 7.551,
+          "p99_ms": 10.378,
+          "max_ms": 16.294
+        },
+        "desaturate": {
+          "median_ms": 1.919,
+          "p95_ms": 3.515,
+          "p99_ms": 4.303,
+          "max_ms": 6.506
+        },
+        "background": {
+          "median_ms": 8.509,
+          "p95_ms": 14.135,
+          "p99_ms": 18.214,
+          "max_ms": 25.147
+        },
+        "world": {
+          "median_ms": 10.782,
+          "p95_ms": 17.549,
+          "p99_ms": 22.951,
+          "max_ms": 38.21
+        },
+        "present": {
+          "median_ms": 0.31,
+          "p95_ms": 0.64,
+          "p99_ms": 0.967,
+          "max_ms": 2.155
+        }
+      },
+      "rss_bytes": 270548992,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 179692936,
+        "surface_bytes_by_owner": {
+          "assets": 23554348,
+          "scene_sprites": 0,
+          "world_sprite_cache": 1245368,
+          "world_transient": 5368672,
+          "sky": 4818952,
+          "ground": 917504,
+          "watercolor": 106342268,
+          "plane_skin": 27015716,
+          "paper_items": 10430108
+        },
+        "cache_items": {
+          "scaled": 3,
+          "mips": 2,
+          "outlines": 1,
+          "rotations": 14,
+          "ground_groups": 0,
+          "asset_images": 55
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      }
+    },
+    "caatinga_normal": {
+      "frame": {
+        "median_ms": 6.65,
+        "p95_ms": 10.351,
+        "p99_ms": 13.283,
+        "max_ms": 14.958
+      },
+      "scene_setup_ms": 10.029,
+      "warmup": {
+        "median_ms": 4.755,
+        "p95_ms": 10.915,
+        "p99_ms": 202.946,
+        "max_ms": 202.946
+      },
+      "first_frame_ms": 202.946,
+      "frames_measured": 600,
+      "within_60fps_budget_fraction": 1.0,
+      "components": {
+        "horizon": {
+          "median_ms": 0.005,
+          "p95_ms": 1.631,
+          "p99_ms": 2.305,
+          "max_ms": 3.345
+        },
+        "ground": {
+          "median_ms": 1.99,
+          "p95_ms": 3.393,
+          "p99_ms": 4.451,
+          "max_ms": 5.471
+        },
+        "background": {
+          "median_ms": 4.33,
+          "p95_ms": 7.321,
+          "p99_ms": 9.542,
+          "max_ms": 11.852
+        },
+        "world": {
+          "median_ms": 5.28,
+          "p95_ms": 8.583,
+          "p99_ms": 11.573,
+          "max_ms": 13.516
+        },
+        "present": {
+          "median_ms": 0.314,
+          "p95_ms": 0.64,
+          "p99_ms": 0.873,
+          "max_ms": 1.26
+        }
+      },
+      "rss_bytes": 264790016,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 181043368,
+        "surface_bytes_by_owner": {
+          "assets": 23483180,
+          "scene_sprites": 0,
+          "world_sprite_cache": 587260,
+          "world_transient": 4301432,
+          "sky": 4818952,
+          "ground": 917504,
+          "watercolor": 109932252,
+          "plane_skin": 27015716,
+          "paper_items": 9987072
+        },
+        "cache_items": {
+          "scaled": 2,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 7,
+          "ground_groups": 0,
+          "asset_images": 55
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      }
+    },
+    "caatinga_contrast": {
+      "frame": {
+        "median_ms": 9.371,
+        "p95_ms": 13.491,
+        "p99_ms": 15.672,
+        "max_ms": 18.831
+      },
+      "scene_setup_ms": 18.764,
+      "warmup": {
+        "median_ms": 8.623,
+        "p95_ms": 11.439,
+        "p99_ms": 35.198,
+        "max_ms": 35.198
+      },
+      "first_frame_ms": 35.198,
+      "frames_measured": 600,
+      "within_60fps_budget_fraction": 0.995,
+      "components": {
+        "horizon": {
+          "median_ms": 0.005,
+          "p95_ms": 1.376,
+          "p99_ms": 2.042,
+          "max_ms": 2.911
+        },
+        "ground": {
+          "median_ms": 1.881,
+          "p95_ms": 2.963,
+          "p99_ms": 3.503,
+          "max_ms": 5.225
+        },
+        "desaturate": {
+          "median_ms": 1.899,
+          "p95_ms": 3.04,
+          "p99_ms": 3.54,
+          "max_ms": 4.052
+        },
+        "background": {
+          "median_ms": 6.081,
+          "p95_ms": 8.797,
+          "p99_ms": 10.69,
+          "max_ms": 13.066
+        },
+        "world": {
+          "median_ms": 8.219,
+          "p95_ms": 11.925,
+          "p99_ms": 13.804,
+          "max_ms": 16.853
+        },
+        "present": {
+          "median_ms": 0.294,
+          "p95_ms": 0.632,
+          "p99_ms": 0.813,
+          "max_ms": 0.969
+        }
+      },
+      "rss_bytes": 269250560,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 183366244,
+        "surface_bytes_by_owner": {
+          "assets": 23483180,
+          "scene_sprites": 0,
+          "world_sprite_cache": 1245368,
+          "world_transient": 5368672,
+          "sky": 4818952,
+          "ground": 917504,
+          "watercolor": 109932252,
+          "plane_skin": 27015716,
+          "paper_items": 10584600
+        },
+        "cache_items": {
+          "scaled": 3,
+          "mips": 2,
+          "outlines": 1,
+          "rotations": 14,
+          "ground_groups": 0,
+          "asset_images": 55
+        },
+        "estimate": "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+      }
+    }
+  },
+  "status": "ok"
+}

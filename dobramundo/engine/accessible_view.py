@@ -22,10 +22,10 @@ def viewport(scale: float, focus: tuple, plane_size: tuple) -> pygame.Rect:
     half_h = min(180, plane_size[1] * scale / 2 + 12)
     target_x = clamp(x, half_w, C.WIDTH - half_w)
     target_y = clamp(y, 162 + half_h, C.HEIGHT - half_h - 8)
-    return pygame.Rect(round(clamp(x - target_x / scale, 0, C.WIDTH - w)),
-                       round(clamp(y - target_y / scale, 0, C.HEIGHT - h)), w, h)
+    return pygame.Rect(
+        round(clamp(x - target_x / scale, 0, C.WIDTH - w)), round(clamp(y - target_y / scale, 0, C.HEIGHT - h)), w, h
+    )
 
 
 def screen_point(point: tuple, rect: pygame.Rect) -> tuple:
-    return ((point[0] - rect.x) * C.WIDTH / rect.width,
-            (point[1] - rect.y) * C.HEIGHT / rect.height)
+    return ((point[0] - rect.x) * C.WIDTH / rect.width, (point[1] - rect.y) * C.HEIGHT / rect.height)

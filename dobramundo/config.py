@@ -52,6 +52,12 @@ PLANE_WIDTH = 130.0  # envergadura visual/colisão (mundo)
 PLANE_HEIGHT = 34.0
 MAX_LIVES = 3
 INVULNERABLE_S = 1.25
+# Assistência opcional: ajuste fixo desde a decolagem (não muda velocidade nem rota).
+ASSISTED_MAX_LIVES = 5
+ASSISTED_INVULNERABLE_S = 2.0
+# Durações selecionáveis na preparação. Zero mantém o voo livre histórico.
+SESSION_LIMITS_S = (0, 120, 180, 240)
+COMMUNITY_CHALLENGE_SEEDS = (20261025, 41721, 90817, 203011)
 HIT_FLASH_S = 0.28
 HIT_SHAKE_S = 0.35  # tremor curto da tela na colisão (opção "efeitos fortes")
 

@@ -115,7 +115,25 @@ class ResultScene(Scene):
         self.build()
 
     def again(self) -> None:
-        self.fly(self.run.biome.key)
+
+        flight = self.app.create_scene(
+            "voo",
+            self.run.biome.key,
+            seed=self.run.seed,
+            mode=self.run.mode,
+            session_limit_s=self.run.session_limit_s,
+            exploration=self.run.exploration,
+            predictable_assistance=self.run.predictable_assistance,
+            intro_override=self.run.intro,
+            community_challenge=self.run.community_challenge,
+            mission_preferred_waste=self.run.mission_preferred_waste,
+            mission_preference_fixed=True,
+        )
+        body = self.app.input.body
+        if body is not None and body.error is None and not body.calibrated:
+            flight = self.app.create_scene("calibracao", return_to=flight)
+        self.app.save()
+        self.app.go(flight)
 
     def draw(self, screen: pygame.Surface) -> None:
         run = self.run
@@ -137,6 +155,8 @@ class ResultScene(Scene):
             title = f"{run.biome.city} floresceu!"
         elif run.game_over:
             title = "Seu avião precisa de reparos"
+        elif run.timeout:
+            title = "Tempo combinado: voo guardado"
         elif run.interrupted:
             title = "Voo encerrado por agora"
         else:
@@ -184,8 +204,26 @@ class ResultScene(Scene):
                 True,
                 "midtop",
             )
-        self.text.blit(screen, "Recursos para a vila", (card.left + 38, card.top + 213), T.SIZES["body"], T.NAVY, True)
-        cells = row(pygame.Rect(card.left + 32, card.top + 242, card.width - 64, 66), 4, 12)
+        details = [f"Semente {run.seed}"]
+        if run.world.challenge_theme is not None:
+            details.append(run.world.challenge_theme.title)
+        if run.session_limit_s:
+            details.append(f"tempo combinado {run.session_limit_s // 60} min")
+        if run.exploration:
+            details.append("Explorar")
+        if run.predictable_assistance:
+            details.append("assistência previsível")
+        self.text.blit(
+            screen,
+            "  ·  ".join(details),
+            (card.centerx, card.top + 199),
+            T.SIZES["small"],
+            T.TEAL,
+            True,
+            "midtop",
+        )
+        self.text.blit(screen, "Recursos para a vila", (card.left + 38, card.top + 222), T.SIZES["body"], T.NAVY, True)
+        cells = row(pygame.Rect(card.left + 32, card.top + 251, card.width - 64, 66), 4, 12)
         for waste, rect in zip(WASTE_TYPES, cells):
             T.panel(screen, rect, T.PAPER, waste.color, 250, 14, 2)
             icon = self.app.assets.sprite("waste_sprites", waste.sprite)
@@ -200,10 +238,10 @@ class ResultScene(Scene):
                 True,
             )
             self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 39), T.SIZES["small"], T.MUTED)
-        self.draw_next_build(screen, pygame.Rect(card.left + 32, card.top + 322, 468, 92))
-        self.draw_missing_parts(screen, pygame.Rect(card.left + 520, card.top + 322, card.width - 552, 92))
+        self.draw_next_build(screen, pygame.Rect(card.left + 32, card.top + 331, 468, 92))
+        self.draw_missing_parts(screen, pygame.Rect(card.left + 520, card.top + 331, card.width - 552, 92))
         if self.app.save_failed:
-            warn = pygame.Rect(card.left + 32, card.top + 424, card.width - 64, 84)
+            warn = pygame.Rect(card.left + 32, card.top + 427, card.width - 64, 82)
             T.panel(screen, warn, T.PAPER, T.RED, 250, 16, 3)
             self.text.blit(
                 screen,
@@ -215,11 +253,11 @@ class ResultScene(Scene):
                 "center",
             )
         else:
-            self.text.blit(screen, "Curiosidade", (card.left + 38, card.top + 425), T.SIZES["small"], T.TEAL, True)
+            self.text.blit(screen, "Curiosidade", (card.left + 38, card.top + 428), T.SIZES["small"], T.TEAL, True)
             self.text.paragraph(
                 screen,
                 self.fact,
-                pygame.Rect(card.left + 38, card.top + 448, card.width - 76, 58),
+                pygame.Rect(card.left + 38, card.top + 451, card.width - 76, 56),
                 T.SIZES["small"],
                 T.INK,
                 spacing=1.1,

@@ -14,7 +14,7 @@ from typing import Dict, Mapping, NamedTuple, Tuple
 from ..config import ERA_SPAN
 
 Cost = Dict[str, int]  # tipo de resíduo -> quantidade
-COST_SCALE = 12  # custos-base x 12: tudo comprado em ~11 voos no Normal e ~5 no Difícil (tools/balance.py)
+COST_SCALE = 12  # escala dos custos posteriores; primeiras obras têm preço de entrada próprio.
 
 
 def scaled(cost: Cost) -> Cost:
@@ -39,7 +39,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "ponto_troca",
         "Ponto de troca",
         "Separa os resíduos e os transforma em recursos.",
-        scaled({"papel": 6, "plastico": 6}),
+        {"papel": 8, "plastico": 8},
         "VL_PontoTroca",
         (150, 470, 120),
     ),
@@ -47,7 +47,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "horta",
         "Horta urbana",
         "Alimento fresco plantado no meio da vila.",
-        scaled({"papel": 8, "vidro": 6}),
+        {"papel": 24, "vidro": 16},
         "VL_Horta",
         (330, 520, 70),
     ),

@@ -116,8 +116,8 @@ class SkyRenderer:
         self.panorama = self.panorama_base
         self.clouds = self.prepare_clouds(atmosphere.get("smog_cloud"))
         self.skyline_sprites = assets.folder("skyline_sprites")
-        self.gradients = BoundedCache(24)
-        self.decor_cache = BoundedCache(64)
+        self.gradients = BoundedCache(24, 20 * 1024 * 1024)
+        self.decor_cache = BoundedCache(64, 20 * 1024 * 1024)
         self.biome: Optional[Biome] = None
         self.pollution = 1.0
         self.fog_color: Color = (92, 54, 26)
@@ -127,17 +127,31 @@ class SkyRenderer:
         self.birds_x = 300.0
         self.skyline_cache: Dict[str, Optional[pygame.Surface]] = {}
         self.skyline_state: Dict[str, dict] = {}
+        self.decor_sprites: Dict[str, pygame.Surface] = {}
 
     def set_biome(self, biome: Biome) -> None:
         if self.biome is biome:
             return
         self.biome = biome
         self.panorama = self.tint_panorama(biome)
+        decor_names = {decor.sprite for decor in biome.sky_decor}
+        decor_names.add(biome.horizon_vehicle[0])
+        self.decor_sprites = self.assets.scenery_for(decor_names)
         self.skyline_cache = {}
         self.skyline_state = {}
-        self.decor_cache = BoundedCache(64)
+        self.decor_cache = BoundedCache(64, 20 * 1024 * 1024)
         count = max(1, len(biome.sky_decor))
         self.decor_x = [i * C.DECOR_CYCLE / count + 120 * i for i in range(len(biome.sky_decor))]
+
+    def release_biome_cache(self) -> None:
+        """Solta faixas e variações específicas de uma fase já encerrada."""
+        self.biome = None
+        self.panorama = self.panorama_base
+        self.skyline_cache.clear()
+        self.skyline_state.clear()
+        self.decor_cache.clear()
+        self.decor_sprites = {}
+        self.decor_x = []
 
     # ------------------------------------------------------------ preparo
     def tint_panorama(self, biome: Biome) -> Optional[pygame.Surface]:
@@ -193,7 +207,7 @@ class SkyRenderer:
                     "opacity": opacity,
                     "smoke": smoke,
                     "clean": clean,
-                    "baked": {},
+                    "baked": BoundedCache(24, 2 * 1024 * 1024),
                 }
             )
         return clouds
@@ -230,6 +244,7 @@ class SkyRenderer:
         distance: float,
         solar_share: float,
         elapsed: float,
+        challenge_theme=None,
     ) -> None:
         screen.blit(self.gradient(top, horizon), (0, 0))
         self.draw_sun(screen, cam_x, horizon)
@@ -237,7 +252,7 @@ class SkyRenderer:
         self.draw_clouds(screen, cam_x, distance)
         self.draw_skyline(screen, horizon, cam_x, distance, solar_share)
         self.draw_sky_decor(screen, cam_x, solar_share, elapsed)
-        self.draw_horizon_vehicle(screen, cam_x, solar_share)
+        self.draw_horizon_vehicle(screen, cam_x, solar_share, challenge_theme)
 
     def draw_sun(self, screen: pygame.Surface, cam_x: float, horizon: Color) -> None:
         """Sol de papel: pálido atrás da fumaça, amarelo e com halo quando o céu limpa."""
@@ -314,10 +329,11 @@ class SkyRenderer:
     def skyline_base(self, name: str) -> Optional[pygame.Surface]:
         if name not in self.skyline_cache:
             biome = self.biome
+            layout: List[Tuple[str, int]]
             if name == "green" and biome is not None:
-                strip = self.build_skyline(biome.green_skyline, self.assets.scenery)
+                layout = biome.green_skyline
             elif name == "city" and biome is not None:
-                strip = self.build_skyline(biome.solar_skyline, self.assets.scenery)
+                layout = biome.solar_skyline
             elif name == "back":
                 layout: List[Tuple[str, int]] = []
                 regional = list(biome.industrial_skyline) if biome is not None else []
@@ -325,9 +341,11 @@ class SkyRenderer:
                     layout.append(item)
                     if regional and i % 3 == 1:
                         layout.append(regional[(i // 3) % len(regional)])
-                strip = self.build_skyline(layout, {**self.skyline_sprites, **self.assets.scenery})
             else:
-                strip = self.build_skyline(SKYLINE_FRONT, self.skyline_sprites)
+                layout = SKYLINE_FRONT
+            names = {sprite for sprite, _ in layout}
+            scene_sprites = self.assets.scenery_for(names) if name != "front" else {}
+            strip = self.build_skyline(layout, {**self.skyline_sprites, **scene_sprites})
             self.skyline_cache[name] = strip
         return self.skyline_cache[name]
 
@@ -454,7 +472,7 @@ class SkyRenderer:
         self.birds_x = (self.birds_x + 32.0 * dt) % C.DECOR_CYCLE
 
     def decor_sprite(self, name: str, height: int, alpha: int, haze: float = 0.0) -> Optional[pygame.Surface]:
-        sprite = self.assets.scenery.get(name)
+        sprite = self.decor_sprites.get(name)
         if sprite is None or height < 2:
             return None
         fog = tuple(c // 16 * 16 for c in self.fog_color)
@@ -490,11 +508,17 @@ class SkyRenderer:
             flap = math.sin(elapsed * 9.0 + k * 1.7) * 3.0
             pygame.draw.lines(screen, color, False, [(px - 5, py - 2 - flap), (px, py), (px + 5, py - 2 - flap)], 2)
 
-    def draw_horizon_vehicle(self, screen: pygame.Surface, cam_x: float, amount: float) -> None:
+    def draw_horizon_vehicle(self, screen: pygame.Surface, cam_x: float, amount: float, challenge_theme=None) -> None:
         """Na linha do horizonte, à frente das silhuetas: barco (Manaus) ou bonde (Petrolina)."""
         if amount <= 0.0 or self.biome is None:
             return
         name, height, _, parallax = self.biome.horizon_vehicle
+        if challenge_theme is not None:
+            tags = challenge_theme.decorations
+            if name.startswith("AM_") and "boat" in tags:
+                amount = min(1.0, amount * 1.15)
+            elif name == "EF_BondeVLT" and "tram" in tags:
+                amount = min(1.0, amount * 1.15)
         surf = self.decor_sprite(name, height, int(255 * amount), haze=0.35)
         if surf is None:
             return

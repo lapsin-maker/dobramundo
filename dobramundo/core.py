@@ -33,20 +33,19 @@ from .ui.theme import Text
 
 def first_scene(app):
     """Aviso -> calibração -> treino de permanência -> piloto -> vila na primeira vez."""
-    from .scenes import make_scene
-
-    scene = make_scene(app, "vila")
+    scene = app.create_scene("vila")
     if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
-        pilot = make_scene(app, "piloto", first_time=True, return_to=scene)
-        scene = make_scene(app, "dwell_treino", next_scene=pilot, return_to=pilot)
+        pilot = app.create_scene("piloto", first_time=True, return_to=scene)
+        scene = app.create_scene("dwell_treino", next_scene=pilot, return_to=pilot)
     if app.input.uses_body:
-        scene = make_scene(app, "calibracao", return_to=scene)
+        scene = app.create_scene("calibracao", return_to=scene)
     if not app.profile.consentimento:
-        scene = make_scene(app, "aviso", scene)
+        scene = app.create_scene("aviso", scene)
     return scene
 
 
 class GameCore:
+    storage_notice: Optional[str] = None
     platform = "desktop"  # "ttea" no console: as cenas escondem o que é só do executável
 
     def __init__(
@@ -55,15 +54,17 @@ class GameCore:
         audio: bool = True,
         save: Optional[Callable[[Profile], bool]] = None,
         canvas: Optional[pygame.Surface] = None,
+        scene_factory: Optional[Callable] = None,
     ) -> None:
         self.profile = profile
         self.canvas = canvas if canvas is not None else display_format(pygame.Surface((C.WIDTH, C.HEIGHT)))
         self.assets = shared_assets()
         self.text = Text()
-        self.view = WorldView(self.assets)
+        self.view = WorldView(self.assets, font=self.text.font(20, True))
         self.audio = Audio(audio)
         self.input = InputHub()
         self.writer = save or save_profile
+        self.scene_factory = scene_factory
         self.running = True  # False: a plataforma encerra o jogo (sair na vila ou no aviso)
         self.save_failed = False
         self.frame = 0
@@ -80,6 +81,14 @@ class GameCore:
     def save(self) -> None:
         """Grava o perfil; se não der, a vila avisa (o jogo segue)."""
         self.save_failed = not self.writer(self.profile)
+
+    def create_scene(self, name: str, *args, **kwargs):
+        """Cria uma cena pela fábrica injetada ou pelo registro padrão, sob demanda."""
+        if self.scene_factory is not None:
+            return self.scene_factory(self, name, *args, **kwargs)
+        from .scenes import make_scene
+
+        return make_scene(self, name, *args, **kwargs)
 
     def apply_options(self) -> None:
         self.audio.apply(self.options)

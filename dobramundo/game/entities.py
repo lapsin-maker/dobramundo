@@ -30,6 +30,10 @@ class Entity:
     def x(self) -> float:
         return self.lane * LANE_WIDTH
 
+    def hitbox(self) -> Hitbox:
+        """Caixa física usada pela colisão, compartilhada com a representação visual."""
+        return entity_hitbox(self)
+
 
 @dataclass
 class Beam:

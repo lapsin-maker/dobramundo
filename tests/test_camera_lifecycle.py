@@ -132,4 +132,3 @@ def test_stop_real_nao_espera_thread_de_captura_bloqueada():
     thread.alive = False
     source.stop()
     assert source._thread is None
-

@@ -17,6 +17,7 @@ import pygame
 from .. import config as C
 from ..util import Color, haze_at, lerp_color
 from .assets import Assets, display_format
+from .cache import BoundedCache
 from .sprites import project
 
 Row = Tuple[int, float, int]  # y da tela, profundidade, grupo de escala
@@ -36,7 +37,7 @@ class GroundRenderer:
     def __init__(self, assets: Assets) -> None:
         self.textures = {name: display_format(s) for name, s in assets.folder("ground").items()}
         self.rows = compute_ground_rows()
-        self.groups: Dict[tuple, object] = {}
+        self.groups: BoundedCache = BoundedCache(256, 72 * 1024 * 1024)
         self.fog_cache: Dict[Color, pygame.Surface] = {}
 
     def has(self, name: Optional[str]) -> bool:

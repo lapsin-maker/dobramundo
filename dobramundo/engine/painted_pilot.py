@@ -33,8 +33,18 @@ POSES = {
 DEFAULT_SKIN_KEY = (252, 193, 128)
 DEFAULT_SHIRT_KEY = (162, 200, 225)
 HAIR_ORDER = (
-    "curto", "cacheado", "crespo", "longo", "trancas", "coque",
-    "franja", "chiquinhas", "puffs", "moicano", "hijab", "raspado",
+    "curto",
+    "cacheado",
+    "crespo",
+    "longo",
+    "trancas",
+    "coque",
+    "franja",
+    "chiquinhas",
+    "puffs",
+    "moicano",
+    "hijab",
+    "raspado",
 )
 HAIR_FIT = {
     # target head-width multiplier, crown offset as a fraction of body height
@@ -310,296 +320,313 @@ def _mobility_layer(sprites, pose: str, look: Mapping[str, str], size, padding: 
     return layer
 
 
-def _painted_overlays(
-    size,
-    pose,
-    look,
-    skin_key,
-    seated,
-    view,
-    padding=0,
-    hair_back_art=None,
-    hair_front_art=None,
-    mobility_art=None,
-):
-    """Paint hair, selectable eyes, accessories and mobility in a 3x transparent layer."""
-    width, height = size
-    padding = max(0, int(padding))
-    q = 3
-    layer = pygame.Surface(((width + 2 * padding) * q, height * q), pygame.SRCALPHA)
-    ink = (48, 54, 76)
-    style = look["cabelo"] if hair_back_art is None and hair_front_art is None else UNSELECTED
-    hair = find_option(HAIR_COLORS, look["cor_cabelo"]).color
-    if hair is None or look["cor_cabelo"] == UNSELECTED:
-        hair = (105, 76, 58)
-    dark_hair = tuple(round(c * 0.62) for c in hair)
-    light_hair = tuple(min(255, c + 48) for c in hair)
-    if seated:
-        hx, hy, hw, hh = width * 0.055, 0, width * 0.86, height * 0.33
-        eye_points = ((width * 0.333, height * 0.178), (width * 0.647, height * 0.178))
+def _painted_hair_back(canvas):
+    width = canvas["width"]
+    style = canvas["style"]
+    ellipse = canvas["ellipse"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
+    hair = canvas["hair"]
+    ink = canvas["ink"]
+
+    if style == UNSELECTED or style == "raspado":
+        return
+    if style == "hijab":
+        ellipse((hx - hw * 0.08, hy - hh * 0.05, hw * 1.16, hh * 1.03), hair, ink, max(2, round(width * 0.009)))
+        return
+    # Cap base is behind the painted face and leaves all original features intact.
+    cap_h = hh * 0.48
+    ellipse((hx - hw * 0.055, hy - hh * 0.08, hw * 1.11, cap_h), hair, ink, max(2, round(width * 0.008)))
+    if style in ("longo", "trancas"):
+        for side in (-1, 1):
+            x = hx + (0 if side < 0 else hw * 0.78)
+            w = hw * 0.22
+            ellipse((x, hy + hh * 0.28, w, hh * 1.05), hair, ink, max(2, round(width * 0.008)))
+    if style in ("coque", "chiquinhas"):
+        centers = (hx + hw * 0.12, hx + hw * 0.88) if style == "chiquinhas" else (hx + hw * 0.5,)
+        for x in centers:
+            ellipse((x - hw * 0.12, hy - hh * 0.16, hw * 0.24, hh * 0.27), hair, ink, max(2, round(width * 0.008)))
+    elif style == "puffs":
+        for x in (hx - hw * 0.09, hx + hw * 0.91):
+            ellipse((x - hw * 0.12, hy + hh * 0.04, hw * 0.24, hh * 0.28), hair, ink, max(2, round(width * 0.008)))
+
+
+def _painted_front_hair(canvas):
+    width = canvas["width"]
+    style = canvas["style"]
+    ellipse = canvas["ellipse"]
+    line = canvas["line"]
+    poly = canvas["poly"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
+    hair = canvas["hair"]
+    ink = canvas["ink"]
+    light_hair = canvas["light_hair"]
+    layer = canvas["layer"]
+    r = canvas["r"]
+
+    if style == UNSELECTED or style == "raspado":
+        return
+    if style == "hijab":
+        # Framing folds track the temple line without covering eyes or cheeks.
+        for side in (-1, 1):
+            x = hx - hw * 0.045 if side < 0 else hx + hw * 0.91
+            line(
+                [
+                    (x, hy + hh * 0.16),
+                    (x - hw * 0.025 if side < 0 else x + hw * 0.025, hy + hh * 0.42),
+                    (x + hw * 0.015 if side < 0 else x - hw * 0.015, hy + hh * 0.68),
+                ],
+                light_hair,
+                max(
+                    2,
+                    round(width * 0.008),
+                ),
+                None,
+            )
+        return
+    top = hy - hh * 0.015
+    cap_bottom = hy + hh * 0.39
+    if style in ("crespo", "cacheado", "puffs"):
+        count = 10 if style == "crespo" else 8
+        radius = hw * 0.085 if style == "crespo" else hw * 0.071
+        for i in range(count):
+            x = hx + hw * 0.02 + i * (hw * 0.96 / (count - 1))
+            y = top + hh * 0.18 + math.sin(i * 1.8) * hh * 0.045
+            ellipse((x - radius, y - radius, radius * 2, radius * 2), hair, ink, max(2, round(width * 0.006)))
+            pygame.draw.arc(
+                layer,
+                light_hair,
+                r(x - radius * 0.45, y - radius * 0.45, radius * 0.9, radius * 0.85),
+                3.5,
+                5.9,
+                max(1, round(width * 0.004)),
+            )
+    elif style == "moicano":
+        poly(
+            [(hx + hw * 0.31, cap_bottom), (hx + hw * 0.5, top - hh * 0.12), (hx + hw * 0.7, cap_bottom)],
+            hair,
+            ink,
+            max(2, round(width * 0.008)),
+        )
+    elif style == "franja":
+        poly(
+            [
+                (hx, hy + hh * 0.32),
+                (hx + hw * 0.18, hy + hh * 0.25),
+                (hx + hw * 0.35, hy + hh * 0.43),
+                (hx + hw * 0.5, hy + hh * 0.25),
+                (hx + hw * 0.67, hy + hh * 0.43),
+                (hx + hw * 0.84, hy + hh * 0.25),
+                (hx + hw, hy + hh * 0.35),
+                (hx + hw, top),
+                (hx, top),
+            ],
+            hair,
+            ink,
+            max(2, round(width * 0.006)),
+        )
     else:
-        hx, hy, hw, hh = width * 0.143, 0, width * 0.72, height * 0.253
-        eye_points = ((width * 0.377, height * 0.144), (width * 0.639, height * 0.144))
-
-    def r(x, y, w, h):
-        return pygame.Rect(round((x + padding) * q), round(y * q), max(1, round(w * q)), max(1, round(h * q)))
-
-    def ellipse(box, fill, outline=dark_hair, width_px=2):
-        pygame.draw.ellipse(layer, outline, r(box[0], box[1], box[2], box[3]).inflate(width_px * q, width_px * q))
-        pygame.draw.ellipse(layer, fill, r(*box))
-
-    def line(points, color, width_px=3, outline=ink):
-        pts = [(round((x + padding) * q), round(y * q)) for x, y in points]
-        if outline:
-            pygame.draw.lines(layer, outline, False, pts, max(1, round((width_px + 2) * q)))
-        pygame.draw.lines(layer, color, False, pts, max(1, round(width_px * q)))
-
-    def poly(points, color, outline=dark_hair, width_px=2):
-        pts = [(round((x + padding) * q), round(y * q)) for x, y in points]
-        pygame.draw.polygon(layer, outline, pts) if outline else None
-        pygame.draw.polygon(layer, color, pts)
-        if outline and width_px:
-            pygame.draw.lines(layer, outline, True, pts, width_px * q)
-
-    def hair_back():
-        if style == UNSELECTED or style == "raspado":
-            return
-        if style == "hijab":
-            ellipse((hx - hw * 0.08, hy - hh * 0.05, hw * 1.16, hh * 1.03), hair, ink, max(2, round(width * 0.009)))
-            return
-        # Cap base is behind the painted face and leaves all original features intact.
-        cap_h = hh * 0.48
-        ellipse((hx - hw * 0.055, hy - hh * 0.08, hw * 1.11, cap_h), hair, ink, max(2, round(width * 0.008)))
-        if style in ("longo", "trancas"):
-            for side in (-1, 1):
-                x = hx + (0 if side < 0 else hw * 0.78)
-                w = hw * 0.22
-                ellipse((x, hy + hh * 0.28, w, hh * 1.05), hair, ink, max(2, round(width * 0.008)))
-        if style in ("coque", "chiquinhas"):
-            centers = (hx + hw * 0.12, hx + hw * 0.88) if style == "chiquinhas" else (hx + hw * 0.5,)
-            for x in centers:
-                ellipse((x - hw * 0.12, hy - hh * 0.16, hw * 0.24, hh * 0.27), hair, ink, max(2, round(width * 0.008)))
-        elif style == "puffs":
-            for x in (hx - hw * 0.09, hx + hw * 0.91):
-                ellipse((x - hw * 0.12, hy + hh * 0.04, hw * 0.24, hh * 0.28), hair, ink, max(2, round(width * 0.008)))
-
-    def front_hair():
-        if style == UNSELECTED or style == "raspado":
-            return
-        if style == "hijab":
-            # Framing folds track the temple line without covering eyes or cheeks.
-            for side in (-1, 1):
-                x = hx - hw * 0.045 if side < 0 else hx + hw * 0.91
+        ellipse((hx, top, hw, hh * 0.42), hair, ink, max(2, round(width * 0.007)))
+    # Fine hand-painted strands pick up the selected hair color.
+    for i in range(5):
+        x = hx + hw * (0.14 + i * 0.18)
+        line(
+            [(x, hy + hh * 0.08), (x - hw * 0.025, hy + hh * 0.20), (x, hy + hh * 0.31)],
+            light_hair,
+            max(1, round(width * 0.004)),
+            None,
+        )
+    if style == "trancas":
+        for side in (-1, 1):
+            x = hx - hw * 0.02 if side < 0 else hx + hw * 0.98
+            for j in range(5):
+                y = hy + hh * (0.35 + j * 0.17)
+                ellipse((x - hw * 0.055, y, hw * 0.11, hh * 0.12), hair, ink, max(1, round(width * 0.005)))
                 line(
                     [
-                        (x, hy + hh * 0.16),
-                        (x - hw * 0.025 if side < 0 else x + hw * 0.025, hy + hh * 0.42),
-                        (x + hw * 0.015 if side < 0 else x - hw * 0.015, hy + hh * 0.68),
+                        (x - hw * 0.025, y + hh * 0.02),
+                        (x + hw * 0.025, y + hh * 0.07),
+                        (x - hw * 0.02, y + hh * 0.11),
                     ],
                     light_hair,
-                    max(
-                        2,
-                        round(width * 0.008),
-                    ),
+                    max(1, round(width * 0.004)),
                     None,
                 )
-            return
-        top = hy - hh * 0.015
-        cap_bottom = hy + hh * 0.39
-        if style in ("crespo", "cacheado", "puffs"):
-            count = 10 if style == "crespo" else 8
-            radius = hw * 0.085 if style == "crespo" else hw * 0.071
-            for i in range(count):
-                x = hx + hw * 0.02 + i * (hw * 0.96 / (count - 1))
-                y = top + hh * 0.18 + math.sin(i * 1.8) * hh * 0.045
-                ellipse((x - radius, y - radius, radius * 2, radius * 2), hair, ink, max(2, round(width * 0.006)))
-                pygame.draw.arc(
-                    layer,
-                    light_hair,
-                    r(x - radius * 0.45, y - radius * 0.45, radius * 0.9, radius * 0.85),
-                    3.5,
-                    5.9,
-                    max(1, round(width * 0.004)),
-                )
-        elif style == "moicano":
-            poly(
-                [(hx + hw * 0.31, cap_bottom), (hx + hw * 0.5, top - hh * 0.12), (hx + hw * 0.7, cap_bottom)],
-                hair,
-                ink,
-                max(2, round(width * 0.008)),
-            )
-        elif style == "franja":
-            poly(
-                [
-                    (hx, hy + hh * 0.32),
-                    (hx + hw * 0.18, hy + hh * 0.25),
-                    (hx + hw * 0.35, hy + hh * 0.43),
-                    (hx + hw * 0.5, hy + hh * 0.25),
-                    (hx + hw * 0.67, hy + hh * 0.43),
-                    (hx + hw * 0.84, hy + hh * 0.25),
-                    (hx + hw, hy + hh * 0.35),
-                    (hx + hw, top),
-                    (hx, top),
-                ],
-                hair,
-                ink,
-                max(2, round(width * 0.006)),
-            )
-        else:
-            ellipse((hx, top, hw, hh * 0.42), hair, ink, max(2, round(width * 0.007)))
-        # Fine hand-painted strands pick up the selected hair color.
-        for i in range(5):
-            x = hx + hw * (0.14 + i * 0.18)
+    elif style == "longo":
+        for side in (-1, 1):
+            x = hx + hw * 0.06 if side < 0 else hx + hw * 0.94
             line(
-                [(x, hy + hh * 0.08), (x - hw * 0.025, hy + hh * 0.20), (x, hy + hh * 0.31)],
+                [
+                    (x, hy + hh * 0.27),
+                    (x + side * hw * 0.035, hy + hh * 0.52),
+                    (x + side * hw * 0.01, hy + hh * 0.82),
+                ],
                 light_hair,
                 max(1, round(width * 0.004)),
                 None,
             )
-        if style == "trancas":
-            for side in (-1, 1):
-                x = hx - hw * 0.02 if side < 0 else hx + hw * 0.98
-                for j in range(5):
-                    y = hy + hh * (0.35 + j * 0.17)
-                    ellipse((x - hw * 0.055, y, hw * 0.11, hh * 0.12), hair, ink, max(1, round(width * 0.005)))
-                    line(
-                        [
-                            (x - hw * 0.025, y + hh * 0.02),
-                            (x + hw * 0.025, y + hh * 0.07),
-                            (x - hw * 0.02, y + hh * 0.11),
-                        ],
-                        light_hair,
-                        max(1, round(width * 0.004)),
-                        None,
-                    )
-        elif style == "longo":
-            for side in (-1, 1):
-                x = hx + hw * 0.06 if side < 0 else hx + hw * 0.94
-                line(
-                    [
-                        (x, hy + hh * 0.27),
-                        (x + side * hw * 0.035, hy + hh * 0.52),
-                        (x + side * hw * 0.01, hy + hh * 0.82),
-                    ],
-                    light_hair,
-                    max(1, round(width * 0.004)),
-                    None,
-                )
 
-    def device_back():
-        if look["cadeira"] == "sim":
-            radius = width * 0.20
-            cy = height * 0.73
-            for cx in (-width * 0.02, width * 1.02):
-                pygame.draw.circle(
-                    layer,
-                    ink,
-                    (round((cx + padding) * q), round(cy * q)),
-                    round(radius * q),
-                    max(2, round(width * 0.012 * q)),
-                )
-                pygame.draw.circle(
-                    layer,
-                    (228, 235, 227),
-                    (round((cx + padding) * q), round(cy * q)),
-                    round(radius * 0.88 * q),
-                    max(2, round(width * 0.007 * q)),
-                )
-                for angle in range(0, 360, 45):
-                    ex = cx + radius * 0.76 * math.cos(math.radians(angle))
-                    ey = cy + radius * 0.76 * math.sin(math.radians(angle))
-                    line([(cx, cy), (ex, ey)], (120, 151, 163), max(1, round(width * 0.004)), None)
-            line(
-                [(width * 0.31, height * 0.64), (width * 0.69, height * 0.64)],
-                (81, 139, 157),
-                max(3, round(width * 0.015)),
+
+def _painted_device_back(canvas):
+    width = canvas["width"]
+    height = canvas["height"]
+    look = canvas["look"]
+    layer = canvas["layer"]
+    ink = canvas["ink"]
+    q = canvas["q"]
+    padding = canvas["padding"]
+    line = canvas["line"]
+
+    if look["cadeira"] == "sim":
+        radius = width * 0.20
+        cy = height * 0.73
+        for cx in (-width * 0.02, width * 1.02):
+            pygame.draw.circle(
+                layer,
+                ink,
+                (round((cx + padding) * q), round(cy * q)),
+                round(radius * q),
+                max(2, round(width * 0.012 * q)),
             )
-            line(
-                [(width * 0.30, height * 0.70), (width * 0.70, height * 0.70)],
-                (235, 181, 111),
-                max(3, round(width * 0.018)),
+            pygame.draw.circle(
+                layer,
+                (228, 235, 227),
+                (round((cx + padding) * q), round(cy * q)),
+                round(radius * 0.88 * q),
+                max(2, round(width * 0.007 * q)),
             )
-        elif look["andador"] == "sim":
-            for x, inward in ((width * 0.045, width * 0.17), (width * 0.955, width * 0.83)):
-                line(
-                    [(x, height * 0.52), (x, height * 0.82), (x + (inward - x) * 0.32, height * 0.95)],
-                    (83, 143, 160),
-                    max(4, round(width * 0.018)),
-                )
+            for angle in range(0, 360, 45):
+                ex = cx + radius * 0.76 * math.cos(math.radians(angle))
+                ey = cy + radius * 0.76 * math.sin(math.radians(angle))
+                line([(cx, cy), (ex, ey)], (120, 151, 163), max(1, round(width * 0.004)), None)
+        line(
+            [(width * 0.31, height * 0.64), (width * 0.69, height * 0.64)],
+            (81, 139, 157),
+            max(3, round(width * 0.015)),
+        )
+        line(
+            [(width * 0.30, height * 0.70), (width * 0.70, height * 0.70)],
+            (235, 181, 111),
+            max(3, round(width * 0.018)),
+        )
+    elif look["andador"] == "sim":
+        for x, inward in ((width * 0.045, width * 0.17), (width * 0.955, width * 0.83)):
             line(
-                [(width * 0.045, height * 0.52), (width * 0.17, height * 0.52)],
+                [(x, height * 0.52), (x, height * 0.82), (x + (inward - x) * 0.32, height * 0.95)],
                 (83, 143, 160),
-                max(5, round(width * 0.022)),
+                max(4, round(width * 0.018)),
             )
-            line(
-                [(width * 0.83, height * 0.52), (width * 0.955, height * 0.52)],
-                (83, 143, 160),
-                max(5, round(width * 0.022)),
+        line(
+            [(width * 0.045, height * 0.52), (width * 0.17, height * 0.52)],
+            (83, 143, 160),
+            max(5, round(width * 0.022)),
+        )
+        line(
+            [(width * 0.83, height * 0.52), (width * 0.955, height * 0.52)],
+            (83, 143, 160),
+            max(5, round(width * 0.022)),
+        )
+        line(
+            [(width * 0.045, height * 0.78), (width * 0.955, height * 0.78)],
+            (117, 167, 177),
+            max(3, round(width * 0.012)),
+        )
+
+
+def _painted_device_front(canvas):
+    width = canvas["width"]
+    height = canvas["height"]
+    look = canvas["look"]
+    layer = canvas["layer"]
+    ink = canvas["ink"]
+    q = canvas["q"]
+    padding = canvas["padding"]
+    line = canvas["line"]
+
+    if look["cadeira"] == "sim":
+        line(
+            [(width * 0.30, height * 0.80), (width * 0.70, height * 0.80)],
+            (80, 136, 154),
+            max(3, round(width * 0.014)),
+        )
+        line(
+            [
+                (width * 0.35, height * 0.78),
+                (width * 0.35, height * 0.88),
+                (width * 0.65, height * 0.88),
+                (width * 0.65, height * 0.78),
+            ],
+            (80, 136, 154),
+            max(3, round(width * 0.014)),
+        )
+        line(
+            [(width * 0.34, height * 0.89), (width * 0.47, height * 0.89)],
+            (240, 191, 110),
+            max(3, round(width * 0.012)),
+        )
+        line(
+            [(width * 0.53, height * 0.89), (width * 0.66, height * 0.89)],
+            (240, 191, 110),
+            max(3, round(width * 0.012)),
+        )
+    elif look["andador"] == "sim":
+        for x in (width * 0.045, width * 0.955):
+            pygame.draw.circle(
+                layer,
+                ink,
+                (round((x + padding) * q), round(height * 0.95 * q)),
+                max(7, round(width * 0.038 * q)),
             )
-            line(
-                [(width * 0.045, height * 0.78), (width * 0.955, height * 0.78)],
-                (117, 167, 177),
-                max(3, round(width * 0.012)),
+            pygame.draw.circle(
+                layer,
+                (115, 169, 179),
+                (round((x + padding) * q), round(height * 0.95 * q)),
+                max(5, round(width * 0.027 * q)),
             )
 
-    def device_front():
-        if look["cadeira"] == "sim":
-            line(
-                [(width * 0.30, height * 0.80), (width * 0.70, height * 0.80)],
-                (80, 136, 154),
-                max(3, round(width * 0.014)),
-            )
-            line(
-                [
-                    (width * 0.35, height * 0.78),
-                    (width * 0.35, height * 0.88),
-                    (width * 0.65, height * 0.88),
-                    (width * 0.65, height * 0.78),
-                ],
-                (80, 136, 154),
-                max(3, round(width * 0.014)),
-            )
-            line(
-                [(width * 0.34, height * 0.89), (width * 0.47, height * 0.89)],
-                (240, 191, 110),
-                max(3, round(width * 0.012)),
-            )
-            line(
-                [(width * 0.53, height * 0.89), (width * 0.66, height * 0.89)],
-                (240, 191, 110),
-                max(3, round(width * 0.012)),
-            )
-        elif look["andador"] == "sim":
-            for x in (width * 0.045, width * 0.955):
-                pygame.draw.circle(
-                    layer,
-                    ink,
-                    (round((x + padding) * q), round(height * 0.95 * q)),
-                    max(7, round(width * 0.038 * q)),
-                )
-                pygame.draw.circle(
-                    layer,
-                    (115, 169, 179),
-                    (round((x + padding) * q), round(height * 0.95 * q)),
-                    max(5, round(width * 0.027 * q)),
-                )
 
-    hair_back()
+def _compose_painted_overlays(canvas):
+    width = canvas["width"]
+    height = canvas["height"]
+    padding = canvas["padding"]
+    q = canvas["q"]
+    layer = canvas["layer"]
+    hair_back_art = canvas["hair_back_art"]
+    hair_front_art = canvas["hair_front_art"]
+    mobility_art = canvas["mobility_art"]
+    view = canvas["view"]
+    look = canvas["look"]
+    eye_points = canvas["eye_points"]
+    r = canvas["r"]
+    ink = canvas["ink"]
+    line = canvas["line"]
+    poly = canvas["poly"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
+
+    _painted_hair_back(canvas)
     if hair_back_art is not None:
         layer.blit(hair_back_art, (0, 0))
     if mobility_art is not None:
         layer.blit(mobility_art, (0, 0))
     else:
-        device_back()
+        _painted_device_back(canvas)
     # A single layer combines back details, then caller places base art over it.
     final_size = (width + 2 * padding, height)
     back = pygame.transform.smoothscale(layer, final_size)
     layer.fill((0, 0, 0, 0))
-    front_hair()
+    _painted_front_hair(canvas)
     if hair_front_art is not None:
         layer.blit(hair_front_art, (0, 0))
     if mobility_art is None:
-        device_front()
+        _painted_device_front(canvas)
 
     # Personalized iris overlays sit on top of painted sclera only after a selection.
     if view != "flight" and look["olhos"] != UNSELECTED:
@@ -709,6 +736,61 @@ def _painted_overlays(
     return back, front
 
 
+def _painted_overlays(
+    size,
+    pose,
+    look,
+    skin_key,
+    seated,
+    view,
+    padding=0,
+    hair_back_art=None,
+    hair_front_art=None,
+    mobility_art=None,
+):
+    """Paint hair, selectable eyes, accessories and mobility in a 3x transparent layer."""
+    width, height = size
+    padding = max(0, int(padding))
+    q = 3
+    layer = pygame.Surface(((width + 2 * padding) * q, height * q), pygame.SRCALPHA)
+    ink = (48, 54, 76)
+    style = look["cabelo"] if hair_back_art is None and hair_front_art is None else UNSELECTED
+    hair = find_option(HAIR_COLORS, look["cor_cabelo"]).color
+    if hair is None or look["cor_cabelo"] == UNSELECTED:
+        hair = (105, 76, 58)
+    dark_hair = tuple(round(c * 0.62) for c in hair)
+    light_hair = tuple(min(255, c + 48) for c in hair)
+    if seated:
+        hx, hy, hw, hh = width * 0.055, 0, width * 0.86, height * 0.33
+        eye_points = ((width * 0.333, height * 0.178), (width * 0.647, height * 0.178))
+    else:
+        hx, hy, hw, hh = width * 0.143, 0, width * 0.72, height * 0.253
+        eye_points = ((width * 0.377, height * 0.144), (width * 0.639, height * 0.144))
+
+    def r(x, y, w, h):
+        return pygame.Rect(round((x + padding) * q), round(y * q), max(1, round(w * q)), max(1, round(h * q)))
+
+    def ellipse(box, fill, outline=dark_hair, width_px=2):
+        pygame.draw.ellipse(layer, outline, r(box[0], box[1], box[2], box[3]).inflate(width_px * q, width_px * q))
+        pygame.draw.ellipse(layer, fill, r(*box))
+
+    def line(points, color, width_px=3, outline=ink):
+        pts = [(round((x + padding) * q), round(y * q)) for x, y in points]
+        if outline:
+            pygame.draw.lines(layer, outline, False, pts, max(1, round((width_px + 2) * q)))
+        pygame.draw.lines(layer, color, False, pts, max(1, round(width_px * q)))
+
+    def poly(points, color, outline=dark_hair, width_px=2):
+        pts = [(round((x + padding) * q), round(y * q)) for x, y in points]
+        pygame.draw.polygon(layer, outline, pts) if outline else None
+        pygame.draw.polygon(layer, color, pts)
+        if outline and width_px:
+            pygame.draw.lines(layer, outline, True, pts, width_px * q)
+
+    canvas = locals()
+    return _compose_painted_overlays(canvas)
+
+
 def _action_overlay(image, view, skin, base_size, padding):
     """Distinct paper-plane gestures layered over the painted base pose."""
     if view not in ("segura", "lanca"):
@@ -763,8 +845,16 @@ class PaintedPilot:
         self.tolerance = tolerance
         # Pedir apenas as camadas do piloto: esta pasta também contém cenários
         # grandes que pertencem a outras cenas e devem continuar sob demanda.
-        names = (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility",
-                 "front_standing", "back_standing", "front_seated", "back_seated")
+        names = (
+            ATLAS_KEY,
+            "pilot_hair_front",
+            "pilot_hair_back",
+            "pilot_mobility",
+            "front_standing",
+            "back_standing",
+            "front_seated",
+            "back_seated",
+        )
         self.sprites = dict(assets.folder(BASE_FOLDER, names=names))
         atlas = self.sprites.get(ATLAS_KEY)
         if atlas is not None:
@@ -802,21 +892,27 @@ class PaintedPilot:
                 pygame.Rect(0, mid_y, mid_x, mobility_atlas.get_height() - mid_y),
                 pygame.Rect(mid_x, mid_y, mobility_atlas.get_width() - mid_x, mobility_atlas.get_height() - mid_y),
             )
-            for name, box in zip(
-                ("wheelchair_front", "wheelchair_back", "walker_front", "walker_back"), boxes
-            ):
+            for name, box in zip(("wheelchair_front", "wheelchair_back", "walker_front", "walker_back"), boxes):
                 tile = mobility_atlas.subsurface(box).copy()
                 bounds = tile.get_bounding_rect(min_alpha=15)
                 if bounds.width and bounds.height:
                     self.mobility_sprites[name] = tile.subsurface(bounds).copy()
-        self.palette = {name: _palette_layers(sprite) for name, sprite in self.sprites.items() if name in {
-            "front_standing", "back_standing", "front_seated", "back_seated"
-        }}
-        self.cache = BoundedCache(24)
+        for atlas_name in (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility"):
+            self.sprites.pop(atlas_name, None)
+        try:
+            assets.release_folder(BASE_FOLDER, (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility"))
+        except AttributeError:  # compatibilidade com provedores mínimos usados por ferramentas/testes
+            pass
+        self.palette = {
+            name: _palette_layers(sprite)
+            for name, sprite in self.sprites.items()
+            if name in {"front_standing", "back_standing", "front_seated", "back_seated"}
+        }
+        self.cache = BoundedCache(24, 20 * 1024 * 1024)
         # Each cached pair is rendered at 3x for antialiasing; keep the raster
         # working set small so rapid appearance changes stay memory-bounded.
-        self.hair_cache = BoundedCache(8)
-        self.mobility_cache = BoundedCache(4)
+        self.hair_cache = BoundedCache(8, 12 * 1024 * 1024)
+        self.mobility_cache = BoundedCache(4, 6 * 1024 * 1024)
 
     @property
     def available(self) -> bool:

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import sys
 import time
 from typing import Dict, List
@@ -48,7 +49,27 @@ def pose_check() -> dict:
         result["detector"] = f"bibliotecas ausentes ({exc.name})"
     except Exception as exc:  # modelo corrompido, runtime do MediaPipe etc.
         result["detector"] = f"erro ({exc.__class__.__name__})"
+        # PyInstallerImportError esconde a causa do OSError. Preserve o nome da
+        # biblioteca/erro para o CI, mas não caminhos absolutos do executor.
+        detail = _safe_error_detail(exc)
+        if detail:
+            result["detector_detalhe"] = detail
     return result
+
+
+def _safe_error_detail(exc: Exception) -> str:
+    """Detalhe diagnóstico sem diretórios locais ou traceback no relatório público."""
+    message = str(exc)
+    cause = exc.__cause__
+    if cause is not None:
+        message = f"{message}; causa {cause.__class__.__name__}: {cause}"
+    # Reduz caminhos absolutos Windows/POSIX ao nome final (por ex. libxyz.so).
+    message = re.sub(
+        r"(?i)(?:[a-z]:[\\/]|/)[^'\"\r\n;:]+",
+        lambda match: match.group(0).replace("\\", "/").rsplit("/", 1)[-1],
+        message,
+    )
+    return message[:240]
 
 
 REQUIRED_SPRITES = (

@@ -12,7 +12,7 @@ from typing import Optional
 import pygame
 
 from .. import config as C
-from ..input.pose import SEGMENTS
+from ..input.api import SEGMENTS
 from ..ui import theme as T
 from ..ui.widgets import ring, row
 from .base import Scene
@@ -42,9 +42,7 @@ class CalibrationScene(Scene):
         self.menu.set_buttons(
             [
                 self.button(rects[0], "Reiniciar", self.restart, key="recomecar"),
-                self.button(
-                    rects[1], "Alcances", self.begin_guided, key="extremos", sublabel="Calibração guiada"
-                ),
+                self.button(rects[1], "Alcances", self.begin_guided, key="extremos", sublabel="Calibração guiada"),
                 self.button(rects[2], "Segmento", self.options, key="segmento", sublabel="Trocar"),
                 self.button(rects[3], "Teclado", self.keyboard, key="teclado"),
                 self.button(rects[4], "Continuar", self.finish, key="continuar"),
@@ -89,8 +87,10 @@ class CalibrationScene(Scene):
             self.guided_message = f"Agora mova-se para {labels[self.guided_index]} e confirme com Enter."
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        if self.guided_index >= 0 and event.type == pygame.KEYDOWN and event.key in (
-            pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER
+        if (
+            self.guided_index >= 0
+            and event.type == pygame.KEYDOWN
+            and event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER)
         ):
             self.capture_guided()
             return
@@ -216,9 +216,7 @@ class CalibrationScene(Scene):
         self.text.blit(
             screen, diagnostic, (card.centerx, card.bottom - 46), T.SIZES["small"], T.MUTED, anchor="midbottom"
         )
-        self.text.blit(
-            screen, detail, (card.centerx, card.bottom - 25), T.SIZES["small"], T.MUTED, anchor="midbottom"
-        )
+        self.text.blit(screen, detail, (card.centerx, card.bottom - 25), T.SIZES["small"], T.MUTED, anchor="midbottom")
         if self.guided_message:
             self.text.blit(
                 screen,

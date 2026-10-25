@@ -151,18 +151,36 @@ def _part_icon(key: str, size: int = 36) -> pygame.Surface:
     pygame.draw.circle(icon, T.PAPER, (center, center), center - 1)
     pygame.draw.circle(icon, T.TEAL, (center, center), center - 1, 2)
     if key == "estabilizador":
-        shape = [(4, center - 3), (center - 3, 7), (center + 3, 7), (size - 4, center - 3),
-                 (center + 4, center + 5), (center - 4, center + 5)]
+        shape = [
+            (4, center - 3),
+            (center - 3, 7),
+            (center + 3, 7),
+            (size - 4, center - 3),
+            (center + 4, center + 5),
+            (center - 4, center + 5),
+        ]
         pygame.draw.polygon(icon, T.NAVY, shape)
         pygame.draw.line(icon, T.WHITE, (center, 9), (center, size - 9), 2)
     elif key == "leme":
-        shape = [(center - 4, size - 6), (center - 4, center - 1), (center - 8, 8),
-                 (center + 8, 8), (center + 4, center - 1), (center + 4, size - 6)]
+        shape = [
+            (center - 4, size - 6),
+            (center - 4, center - 1),
+            (center - 8, 8),
+            (center + 8, 8),
+            (center + 4, center - 1),
+            (center + 4, size - 6),
+        ]
         pygame.draw.polygon(icon, T.NAVY, shape)
         pygame.draw.polygon(icon, T.ORANGE, [(center + 4, 11), (size - 6, 7), (center + 4, 19)])
     else:  # quilha: a lâmina vertical no centro do avião
-        shape = [(center, 5), (center + 7, center - 2), (center + 4, size - 6),
-                 (center, size - 11), (center - 4, size - 6), (center - 7, center - 2)]
+        shape = [
+            (center, 5),
+            (center + 7, center - 2),
+            (center + 4, size - 6),
+            (center, size - 11),
+            (center - 4, size - 6),
+            (center - 7, center - 2),
+        ]
         pygame.draw.polygon(icon, T.NAVY, shape)
         pygame.draw.line(icon, T.WHITE, (center, 9), (center, size - 12), 2)
         pygame.draw.line(icon, T.ORANGE, (center - 9, center + 4), (center + 9, center + 4), 2)
@@ -259,26 +277,33 @@ class MapScene(Scene):
         self.build()
 
     def start(self, key: str) -> None:
-        from . import make_scene
-
-        flight = make_scene(self.app, "voo", key)
+        flight = self.app.create_scene("voo", key)
         if not self.app.profile.tutorial_visto:
-            tutorial = make_scene(
-                self.app,
+            tutorial = self.app.create_scene(
                 "tutorial",
                 next_scene=flight,
-                return_to=make_scene(self.app, "mapa"),
+                return_to=self.app.create_scene("mapa"),
             )
             flight = tutorial
         body = self.app.input.body
         if body is not None and body.error is None and not body.calibrated:
-            flight = make_scene(self.app, "calibracao", return_to=flight)
+            flight = self.app.create_scene("calibracao", return_to=flight)
         self.app.save()
         self.app.go(flight)
 
     def draw(self, screen: pygame.Surface) -> None:
         focused = self.menu.focused
         key = focused.key if focused is not None and focused.key in BIOMES else BIOME_ORDER[0]
+        self._draw_geography(screen, key)
+        self.title(screen, "Mapa dos biomas", "Escolha o destino e o ritmo do voo")
+        self.text.blit(screen, "Ritmo", (642, 68), T.SIZES["small"], T.WHITE, True)
+        self.menu.draw(screen, self.text, self.app.options.permanencia)
+        self._draw_destinations(screen)
+        self._draw_future_biomes(screen)
+        self._draw_speed_cues(screen)
+        self.menu.draw_pointer(screen, self.dwell_time, self.app.input.body_pointer() is not None)
+
+    def _draw_geography(self, screen: pygame.Surface, key: str) -> None:
         self.app.backdrop(screen, self.last_dt, key, 5.0)
         T.veil(screen, (10, 18, 40), 110)
         T.panel(screen, MAP_RECT.inflate(20, 20), T.PAPER, T.NAVY, 240, 22, 3)
@@ -306,9 +331,8 @@ class MapScene(Scene):
             self.text.blit(screen, biome.city, (x + 18, y - 14), T.SIZES["label"], T.NAVY_DARK, True)
             for i in range(3):
                 star(screen, (x + 30 + i * 22, y + 26), 10, i < self.app.profile.estrelas.get(k, 0))
-        self.title(screen, "Mapa dos biomas", "Escolha o destino e o ritmo do voo")
-        self.text.blit(screen, "Ritmo", (642, 68), T.SIZES["small"], T.WHITE, True)
-        self.menu.draw(screen, self.text, self.app.options.permanencia)
+
+    def _draw_destinations(self, screen: pygame.Surface) -> None:
         for key_city in BIOME_ORDER:
             biome = BIOMES[key_city]
             button = next(b for b in self.menu.buttons if b.key == key_city)
@@ -385,6 +409,8 @@ class MapScene(Scene):
                         "midleft",
                     )
                     x += 70
+
+    def _draw_future_biomes(self, screen: pygame.Surface) -> None:
         # Os biomas futuros ficam em duas colunas dentro de um painel legível.
         legend = pygame.Rect(635, 530, 440, 94)
         T.panel(screen, legend, T.PAPER, T.NAVY, 242, 14, 2)
@@ -395,10 +421,11 @@ class MapScene(Scene):
             cy = 563 + row * 29
             pygame.draw.circle(screen, locked.color, (cx, cy + 8), 7)
             self.text.blit(screen, locked.name, (cx + 14, cy), T.SIZES["small"], T.INK, True)
+
+    def _draw_speed_cues(self, screen: pygame.Surface) -> None:
         for mode, _, _, color, arrows in MODE_CARDS:
             button = next(b for b in self.menu.buttons if b.key == f"modo_{mode}")
             for k in range(arrows):  # setas de velocidade: 1 no Normal, 3 no Difícil
                 x = button.rect.centerx - arrows * 11 + k * 22
                 y = button.rect.bottom - 18
                 pygame.draw.polygon(screen, color, [(x, y - 10), (x + 14, y), (x, y + 10)])
-        self.menu.draw_pointer(screen, self.app.options.permanencia, self.app.input.body_pointer() is not None)

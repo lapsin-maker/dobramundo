@@ -13,9 +13,9 @@ import pygame
 
 from .. import config as C
 from ..content.items import POWERUP_COLORS, POWERUP_KINDS, WASTE_BY_KEY
-from ..game.entities import Entity
 from ..paths import find_asset_file
 from .cache import BoundedCache
+from .contracts import EntityView
 from .sprites import project
 
 Color = Tuple[int, int, int]
@@ -106,8 +106,22 @@ def _paper_token(key: str, rim: Color) -> pygame.Surface:
         pygame.draw.line(surface, (69, 161, 192), (47, 50), (59, 36), 4)
     elif key == "magnet":
         magnet = [
-            (26, 21), (39, 21), (39, 46), (42, 54), (48, 58), (54, 54), (57, 46), (57, 21),
-            (70, 21), (70, 47), (65, 61), (56, 70), (48, 73), (39, 70), (30, 61), (26, 47),
+            (26, 21),
+            (39, 21),
+            (39, 46),
+            (42, 54),
+            (48, 58),
+            (54, 54),
+            (57, 46),
+            (57, 21),
+            (70, 21),
+            (70, 47),
+            (65, 61),
+            (56, 70),
+            (48, 73),
+            (39, 70),
+            (30, 61),
+            (26, 47),
         ]
         _polygon(surface, magnet, (196, 111, 202), 5)
         pygame.draw.rect(surface, CORAL, (26, 18, 13, 13), border_radius=2)
@@ -291,15 +305,13 @@ class PaperItems:
                     index = (3 if solar else 0) + ("low", "gate", "tower").index(kind)
                     base = obstacle_art[index]
                 self.canonical[("obstacle", kind, solar)] = base
-        self._scaled: BoundedCache = BoundedCache(cache_limit)
-        self._shadows: BoundedCache = BoundedCache(64)
+        self._scaled: BoundedCache = BoundedCache(cache_limit, 12 * 1024 * 1024)
+        self._shadows: BoundedCache = BoundedCache(64, 2 * 1024 * 1024)
         for kind in ("low", "gate", "tower"):
             for solar in (False, True):
                 key = ("obstacle", kind, solar)
                 warning = CORAL if solar else SUN
-                self.canonical[("obstacle-outline", kind, solar)] = _obstacle_outline(
-                    self.canonical[key], warning
-                )
+                self.canonical[("obstacle-outline", kind, solar)] = _obstacle_outline(self.canonical[key], warning)
 
     def _scale(self, key: Hashable, size: Size) -> pygame.Surface:
         size = (max(1, int(size[0])), max(1, int(size[1])))
@@ -326,7 +338,7 @@ class PaperItems:
         self._shadows[size] = result
         return result
 
-    def _draw_token(self, screen: pygame.Surface, entity: Entity, cam: float, high_contrast: bool) -> None:
+    def _draw_token(self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool) -> None:
         if entity.kind == "waste":
             key = ("waste", entity.sprite if entity.sprite in WASTE_BY_KEY else "papel")
             radius = 30.0
@@ -351,7 +363,7 @@ class PaperItems:
         sprite = self._scale(key, (diameter, diameter))
         screen.blit(sprite, (int(sx - diameter / 2), int(sy - diameter / 2)))
 
-    def _draw_obstacle(self, screen: pygame.Surface, entity: Entity, cam: float, high_contrast: bool) -> None:
+    def _draw_obstacle(self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool) -> None:
         spec = entity.spec
         if spec is None:
             return
@@ -384,7 +396,7 @@ class PaperItems:
         sprite = self._scale(key, (width, height))
         screen.blit(sprite, rect)
 
-    def draw(self, screen: pygame.Surface, entity: Entity, cam: float, high_contrast: bool = False) -> None:
+    def draw(self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool = False) -> None:
         """Desenha entidade no centro projetado, sem alterar seu tipo ou hitbox.
 
         Waste e power-ups usam o centro de sua hitbox (raios 30/28 do mundo);

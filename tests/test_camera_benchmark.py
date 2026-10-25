@@ -57,9 +57,11 @@ def test_benchmark_warms_up_then_measures_a_separate_sample_window(monkeypatch):
 
 
 def test_benchmark_reports_insufficient_when_no_results_are_published(monkeypatch):
-    monkeypatch.setattr(benchmark_camera, "PoseCameraSource", lambda model, camera_index=0: SyntheticSource(
-        model, camera_index, publish=False
-    ))
+    monkeypatch.setattr(
+        benchmark_camera,
+        "PoseCameraSource",
+        lambda model, camera_index=0: SyntheticSource(model, camera_index, publish=False),
+    )
     monkeypatch.setattr(benchmark_camera, "WARMUP_TIMEOUT_S", 0.01)
     monkeypatch.setattr(benchmark_camera, "POLL_INTERVAL_S", 0.001)
     report = benchmark_camera.benchmark(0.02, 0, None)

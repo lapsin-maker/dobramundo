@@ -4,11 +4,11 @@ Detalhes de jogabilidade, controles e operação. Para baixar, veja o [README](.
 
 ## O jogo
 
-O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança pilota um avião de papel reciclado sobre cidades brasileiras poluídas e, a cada voo, as transforma em cidades solarpunk integradas à natureza do seu bioma. O nome une a dobradura de papel à transformação do mundo, como na canção *Aquarela*, popularizada por Toquinho.
+O Dobramundo é um jogo de voo com atividade corporal e tema de sustentabilidade. A criança pilota um avião de papel reciclado sobre cidades brasileiras e contribui para transformá-las em cidades solarpunk integradas à natureza do bioma. O nome une a dobradura de papel à transformação do mundo, como na canção *Aquarela*, popularizada por Toquinho. O jogo não tem eficácia terapêutica demonstrada; conforto e adequação precisam de validação com participantes.
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.5.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.6.0.
 
 ### Tema e objetivo
 
@@ -48,11 +48,11 @@ A versão atual tem duas fases, cada uma numa cidade brasileira do seu bioma:
 
 ## Como se joga
 
-Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a criança escolhe a fase e o modo no mapa. No voo, o avião decola da vila, coleta resíduos e power-ups, desvia de obstáculos e acumula transformação. No resultado, estrelas e recursos vão para o perfil, e a criança volta à vila para construir melhorias e peças.
+Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a criança escolhe a fase e o modo no mapa. No voo, o avião decola da vila, coleta resíduos e power-ups, desvia de obstáculos e acumula transformação. No resultado, estrelas e recursos obtidos vão para o perfil, e a criança volta à vila para construir melhorias e peças. Uma sessão pode terminar pelo limite escolhido ou ser encerrada na pausa; o resumo parcial não concede conclusão ou estrelas ainda não conquistadas.
 
 ### Primeira execução
 
-Na primeira execução, o **aviso ao supervisor** e a **calibração corporal**, quando necessários, preparam a interação. Um treino opcional ensina mirar, esperar e sair do alvo. A criança então começa com um **piloto neutro**, escolhe sua aparência e chega à **vila**. Na primeira decolagem pelo mapa, outro treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. Ambos podem ser pulados ou repetidos em Opções. A história fica disponível em Opções, e o personagem pode ser modificado pelo botão Piloto da vila.
+Na primeira execução, o **aviso ao supervisor** e a **calibração corporal**, quando necessários, preparam a interação. Um treino opcional ensina mirar, esperar e sair do alvo. A criança então começa com um **piloto neutro**, escolhe sua aparência e chega à **vila**. Na primeira decolagem pelo mapa, outro treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. Ambos podem ser pulados ou repetidos em Opções. A história fica disponível em Opções, e o personagem pode ser modificado pelo botão Piloto da vila. No desktop, a tela **Pilotos** permite criar e selecionar slots locais independentes; nomes e perfis pessoais não são solicitados.
 
 A abertura é um livro ilustrado de quatro páginas: uma cidade industrial colorida, com fumaça e resíduos; uma criança que encontra um jornal na rua; a dobradura do avião sobre uma mesa de trabalho, com setas e legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo.
 
@@ -116,11 +116,11 @@ A dificuldade é a primeira escolha do mapa, em dois cartões grandes: **Normal*
 
 O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 240 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 30 unidades/s no Difícil (metade no Normal); a transformação acrescenta até mais 30.
 
-Com a criança pegando 4 de cada 10 resíduos, uma fase dura cerca de 3,7 minutos no Normal e 3,8 no Difícil, e tudo da vila e do avião fica comprado em cerca de 11 voos no Normal e 5 no Difícil (simulação em `tools/balance.py`).
+O tempo e o número de voos para completar o conteúdo variam com a coleta, assistência, exploração, pausas e modo. A simulação em `tools/balance.py` é sintética e não prevê o tempo individual. Em **Opções → Preparar**, a sessão pode ser livre ou limitada a 120, 180 ou 240 segundos; ao atingir o limite, o voo termina com resultado parcial. **Exploração** mantém o voo após esgotar vidas; colisões continuam registradas. **Assistência previsível** oferece regras de ajuda estáveis durante o voo. As opções são independentes da dificuldade.
 
 ### Metas curtas
 
-Durante o voo aparece uma meta por vez, de 20 a 60 segundos: coletar resíduos de um tipo, desviar de obstáculos na faixa do avião, passar por baixo de portais ou pegar power-ups. No Normal os alvos são menores (por exemplo, 2 resíduos ou 3 desvios; no Difícil, 6 e 6). Cada meta cumprida rende 0,5% de transformação, 6 recursos e 50 pontos.
+Durante o voo aparece uma meta por vez: coletar resíduos de um tipo, desviar de obstáculos na faixa do avião, passar por baixo de portais ou pegar power-ups. Ela começa após as lições iniciais e usa alvos presentes à frente. No Normal os alvos são menores (até 2 resíduos ou 3 desvios; no Difícil, 6 e 6). Cada meta cumprida rende 0,5% de transformação, 6 recursos e 50 pontos. Após 60 segundos ativos do mundo sem conclusão, a meta dá lugar a outra oferta, sem perder pontos ou recursos; pausas não contam nesse prazo.
 
 ### Vila-base
 
@@ -128,8 +128,8 @@ A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar
 
 | Melhoria | Custo | Descrição |
 |---|---|---|
-| Ponto de troca | 72 papel, 72 plástico | Separa os resíduos e os transforma em recursos |
-| Horta urbana | 96 papel, 72 vidro | Alimento fresco plantado no meio da vila |
+| Ponto de troca | 8 papel, 8 plástico | Separa os resíduos e os transforma em recursos |
+| Horta urbana | 24 papel, 16 vidro | Alimento fresco plantado no meio da vila |
 | Painéis solares | 144 metal, 120 vidro | Microgeração de energia limpa nos telhados |
 | Compostor | 96 plástico, 72 metal | Restos orgânicos viram adubo para a horta |
 | Cisterna | 120 plástico, 96 metal | Guarda a água da chuva para regar e beber |
@@ -139,7 +139,7 @@ A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar
 
 ### Peças do avião
 
-As peças são reaproveitadas de resíduos. Cada uma tem dois níveis e completa a coleção da expedição. Desde a versão 1.5, conforto, resposta, velocidade e tolerância de colisão são comuns a todos, independentemente de compras. Os níveis continuam necessários quando a fase os exige para a terceira estrela.
+As peças são reaproveitadas de resíduos. Cada uma tem dois níveis e completa a coleção da expedição. Conforto, resposta, velocidade e tolerância de colisão são comuns a todos, independentemente de compras. Os níveis continuam necessários quando a fase os exige para a terceira estrela.
 
 | Peça | Nível 1 | Nível 2 |
 |---|---|---|
@@ -192,7 +192,7 @@ Em Opções, a opção **Controle do avião** escolhe o modo:
 - **Recentralizar:** desligado por padrão na sprint 3. Quando ligado, cabeça, mãos e tronco refazem a postura neutra depois de 3 segundos sem o segmento. Uma preferência já salva continua valendo; a calibração explícita permite definir também quatro alcances confortáveis na sessão.
 - **Trocar lados:** inverte esquerda e direita, para câmeras que não espelham a imagem.
 - No console T-TEA, os mesmos segmentos usam os pontos da câmera do console (veja [Console T-TEA (cartucho)](#console-t-tea-cartucho)).
-- **Menus:** um cursor acompanha o segmento. A permanência geral é de 2 s (ajustável de 1 a 3,5 s); Piloto e Hangar usam 3 s (ajustável de 1 a 5 s). Depois de confirmar, saia do alvo para repetir. Sem rastreamento válido a contagem pausa brevemente e depois é cancelada.
+- **Menus:** um cursor acompanha o segmento. A permanência geral é de 2 s (ajustável de 1 a 3,5 s); o editor de aparência usa 3 s por padrão (ajustável de 1 a 5 s). Depois de confirmar, saia do alvo para repetir. Sem rastreamento válido, a contagem pausa brevemente e depois é cancelada.
 - **Sensibilidade:** de 0,5 a 2,0 vezes (padrão 1,0). Valores maiores exigem um movimento menor.
 - **Pausa automática:** se o segmento sai da área de captura por 1 segundo durante o voo, o jogo pausa. Ao voltar, espera a presença estável por 1,2 segundo e faz uma contagem de 3 segundos antes de retomar.
 - Sem webcam, sem as bibliotecas ou sem o modelo de pose, o jogo segue com teclado e mouse. Se a câmera falhar com um segmento selecionado, o motivo aparece em Opções e na calibração.
@@ -320,7 +320,7 @@ O script procura o Python 3, cria o ambiente `.venv`, instala `requirements-webc
 ./build_linux.sh
 ```
 
-O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramundo` (modo de pasta). Ele confere se o relatório do self-test contém `"status": "ok"`. No Debian ou no Ubuntu, instale antes o pacote `python3-venv`.
+O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramundo` (modo de pasta). Ele confere se o relatório do self-test contém `"status": "ok"`. No Debian ou no Ubuntu, instale antes `python3-venv`, `libegl1` e `libgles2`. O detector MediaPipe carrega `libEGL.so.1` e `libGLESv2.so.2`, dependências de sistema que não são embutidas no pacote; o build com `--exigir-camera` verifica essas bibliotecas e falha com instrução se alguma estiver ausente. Quem receber o pacote Linux também precisa dos dois runtimes instalados.
 
 ### Especificação e assets
 

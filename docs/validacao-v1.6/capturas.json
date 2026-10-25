@@ -1,0 +1,22 @@
+{
+  "profile": "synthetic",
+  "flight_capture_note": "after 120 frames, clear transient run.beams and draw one clean final frame",
+  "screens": [
+    "vila",
+    "mapa",
+    "hangar",
+    "piloto",
+    "preparar",
+    "opcoes",
+    "meu-voo-0",
+    "meu-voo-1",
+    "perfis",
+    "perfis-erro",
+    "vila-recuperacao",
+    "amazonia",
+    "amazonia-contraste",
+    "caatinga",
+    "caatinga-contraste"
+  ],
+  "layout_failures": []
+}

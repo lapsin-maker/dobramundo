@@ -1,6 +1,6 @@
 # Ferramentas de desenvolvimento e geração de assets
 
-## Diagnóstico e validação da versão 1.5
+## Diagnóstico, estabilidade e capturas
 
 Execute a partir da raiz do repositório, sem builds/testes concorrentes para comparar tempos:
 
@@ -9,15 +9,39 @@ python tools/benchmark_runtime.py --out build/benchmark --frames 600 --screensho
 python tools/benchmark_runtime.py --out build/benchmark-camera --camera --paced
 python tools/benchmark_camera.py --seconds 8 --output build/camera.json
 python tools/check_routes.py --seeds 1000 --out build/rotas.json
+python tools/soak_runtime.py --out build/soak --cycles 30 --frames 1200
+python tools/capture_release.py --out build/capturas
 ```
 
-`benchmark_runtime` mede abertura, memória residente no Windows, primeiro quadro, aquecimento e custo por quadro em dois biomas com/sem alto contraste. Usa CPU/SDL dummy; `--camera` abre a webcam para medir concorrência de inferência, com comandos de voo sintéticos. A idade do snapshot mais recente após a apresentação é distinta da métrica **captura→quadro consumido** da calibração integrada. Ambas começam no retorno da leitura e excluem exposição/buffering do sensor e latência física do monitor. Componentes estão aninhados e não devem ser somados.
+`benchmark_runtime` mede abertura, memória residente no Windows/Linux, primeiro quadro, aquecimento e custo por quadro em dois biomas com/sem alto contraste. Usa CPU/SDL dummy; `--camera` abre a webcam para medir concorrência de inferência, com comandos de voo sintéticos. A idade do snapshot mais recente após a apresentação é distinta da métrica **captura→quadro consumido** da calibração integrada. Ambas começam no retorno da leitura e excluem exposição/buffering do sensor e latência física do monitor. Componentes estão aninhados e não devem ser somados.
 
 `benchmark_camera` separa até 15 segundos de preparação da janela de amostragem; exige pelo menos cinco resultados publicados e encerramento confirmado. Falta de amostras ou erro retorna código 2. Essas ferramentas salvam métricas; apenas `--screenshots` grava imagens sintéticas do jogo, nunca da webcam ou dos pontos do corpo.
 
 `check_routes` verifica sementes reproduzíveis, diversidade, auditoria completa de uma amostra, continuidade após avanço e tempos de inserção/geração. O contrato geométrico não substitui testes de controle corporal e conforto com a pessoa. Veja [condições e validação](../docs/ENTREGA_1_5.md).
 
 No benchmark, `--paced` cede CPU entre quadros para mirar 60 fps, excluindo esse sono dos tempos de processamento. Sem a opção, a execução é um teste de estresse sem limite de quadros. Registre a modalidade ao comparar resultados.
+
+`soak_runtime` alterna cenas, biomas e contraste durante um percurso sintético
+prolongado. Registra RSS, superfícies retidas, entidades e tempos por ciclo.
+Tempo simulado e tempo de parede ficam separados; invencibilidade serve somente
+ao estresse de renderização. Economia é medida separadamente por `balance.py`.
+
+`capture_release` captura menus, perfis, estados de erro e voos com semente fixa.
+Verifica os limites dos botões, mas a revisão das imagens continua necessária
+para detectar cortes de texto, glifos ausentes e contraste insuficiente.
+
+## Build nativo automatizado
+
+Instale o conjunto desktop com Python 3.12 e execute `python tools/build_desktop.py`.
+Os wrappers `build_windows.bat` e `build_linux.sh` preparam esse ambiente. O comando
+gera `dist/Dobramundo`, testa 1.200 quadros por bioma e exige o detector de pose;
+`--sem-camera` é uma variante explícita para teclado. Usa perfil temporário,
+não apaga a pasta `dist/` inteira e não lê saves reais. O relatório sanitizado
+fica em `build/desktop-selftest/self_test.json`.
+
+A CI testa Python 3.8/3.12 com arquivos de dependências específicos, publica
+cobertura e gera executáveis nativos em Windows/Linux. Segue a estrutura de
+[build/test de Python do GitHub](https://docs.github.com/en/actions/tutorials/build-and-test-code/python).
 
 ## Geração de assets
 
@@ -65,7 +89,7 @@ make_grass_texture.py -----------> assets/ground/grass.png
 make_ground_textures.py ---------> assets/ground/dry_soil.png, agreste.png
                                    (importa make_grass_texture.py)
 measure_obstacles.py ------------> nada gravado: confere as colisões contra os sprites
-balance.py ----------------------> nada gravado: simula voos e mede duração da fase e recursos
+balance.py ----------------------> relatório opcional em JSON: voo, erros, pausas e recursos
 
 build_cartridge.py --------------> build/cartucho/ e dist/dobramundo-<versão>.ttea
                                    (monta o pacote do jogo; valida e gera com o tsdk)
@@ -129,10 +153,32 @@ Os PNG de `assets/dieselpunk_sprites`, `scenario_sprites`, `skyline_sprites` e `
 
 ## Equilíbrio (`balance.py`)
 
-Simula voos com um piloto automático que pega uma fração dos resíduos (`--coleta 0.4` = 4 de cada 10), sem colisões, e mostra por modo a duração da fase, quando cada estágio começa e quantos recursos um voo rende, além de quantos voos bastam para comprar tudo. Rode depois de mexer em `dobramundo/config.py`, `dobramundo/content/progress.py` ou `dobramundo/game/missions.py`:
+Simula comandos de um piloto automático com movimento limitado pela física real, colisões, atraso de reação e erros. `--coleta 0.4` é a probabilidade de **tentar** uma coleta; não garante alcançar o item. O relógio ativo para durante a pausa; o relatório registra separadamente tempo ativo, tempo total, coletas físicas, recursos com bônus, batidas, vidas e motivo do término. Rode depois de mexer em `dobramundo/config.py`, `dobramundo/content/progress.py` ou `dobramundo/game/missions.py`:
 
 ```
-python tools/balance.py --coleta 0.4 --voos 10
+python tools/balance.py --coleta 0.4 --erro 0.15 --pausa 10 --voos 10 --out build/balance.json
+python tools/balance.py --exploracao --assistencia --limite 120 --voos 10 --out build/exploracao.json
 ```
 
 O teste `test_fase_dura_alguns_minutos` (em `tests/test_gameplay.py`) trava a duração da fase entre 2,5 e 6 minutos.
+
+O agente sintético não representa uma criança nem mede conforto motor. Interprete os resultados como regressão de economia e interrupções, junto ao aceite presencial.
+
+## Preparação de imagens
+
+`python tools/prepare_assets.py` produz seis fundos na resolução de uso e sete atlas de aviões em `assets/watercolor_prepared/`. Mantém os originais e registra tamanho, SHA-256, vista, grade e pivô no manifesto. `python tools/audit_assets.py` confere o inventário. O runtime prefere os PNG preparados e conserva os originais como fallback; não há conversão de codec presumida compatível com o console.
+
+## Medições e entrega
+
+Execute benchmarks em processos novos e sem builds ou testes concorrentes. O padrão usa um piloto sintético personalizado; `--empty-pilot` reproduz a carga sem avatar da ferramenta 1.5. Os relatórios separam abertura, primeiros quadros, aquecimento, tempos de quadro e memória. Componentes aninhados não devem ser somados.
+
+```powershell
+python tools/benchmark_runtime.py --out build/benchmark --frames 600
+python tools/benchmark_runtime.py --out build/benchmark-camera --frames 600 --camera --paced
+python tools/soak_runtime.py --out build/soak --cycles 30 --frames 2400
+python tools/capture_release.py --out build/capturas
+```
+
+O benchmark com câmera mede processamento concorrente e a idade do último resultado disponível; não demonstra precisão dos gestos nem latência física de sensor/projetor. O soak alterna biomas, contraste, aparências e menus usando perfis sintéticos. Ele usa invencibilidade apenas para manter a carga de renderização; a economia é medida separadamente por `balance.py`, com colisões.
+
+`build_desktop.py` constrói o pacote nativo, invalida resultados antigos e roda o executável com `--self-test 1200 --exigir-camera` em diretório temporário. A CI gera Windows e Linux, publica cobertura e preserva a permissão de execução do Linux em `.tar.gz`. Linux requer `libegl1 libgles2` (Debian/Ubuntu); a CI verifica as dependências de `libmediapipe.so` com `ldd` antes de empacotar. O diagnóstico manual só de Linux não substitui a matriz completa de testes e builds.

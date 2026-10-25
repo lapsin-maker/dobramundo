@@ -28,9 +28,9 @@ class PaintedGround(GroundRenderer):
         for index, name in enumerate(("negro", "solimoes", "soil", "green")):
             w, h = atlas.get_size()
             col, row = index % 2, index // 2
-            rect = pygame.Rect(col * w // 2, row * h // 2,
-                               (col + 1) * w // 2 - col * w // 2,
-                               (row + 1) * h // 2 - row * h // 2)
+            rect = pygame.Rect(
+                col * w // 2, row * h // 2, (col + 1) * w // 2 - col * w // 2, (row + 1) * h // 2 - row * h // 2
+            )
             small = pygame.transform.smoothscale(atlas.subsurface(rect), (512, 512))
             # Espelhamento evita emendas de posição/cor no módulo da textura.
             tile = display_format(pygame.Surface((1024, 1024)))
@@ -39,10 +39,11 @@ class PaintedGround(GroundRenderer):
             self.textures[name] = tile
         # Faixas de três pixels preservam perspectiva sem custar centenas de
         # transformações extras; objetos/piloto continuam em resolução integral.
-        self.rows = compute_ground_rows()[::self.ROW_HEIGHT]
+        self.rows = compute_ground_rows()[:: self.ROW_HEIGHT]
         self.fog_cache = {}
-        self.source_rows = {name: tuple(tile.subsurface((0, v, 1024, 1)) for v in range(1024))
-                            for name, tile in self.textures.items()}
+        self.source_rows = {
+            name: tuple(tile.subsurface((0, v, 1024, 1)) for v in range(1024)) for name, tile in self.textures.items()
+        }
         self.line_buffers = {}
 
     def warm_tasks(self):
@@ -113,6 +114,7 @@ class PaintedRoute:
             atlas = assets.sprite("watercolor", "terrain_tiles")
         valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
         self.ground = PaintedGround(atlas) if valid else None
+        assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
         self.banks = {}
         self.cache = SpriteCache()
         self.assets = assets
@@ -125,9 +127,9 @@ class PaintedRoute:
                 w, h = atlas.get_size()
                 for index in range(12):
                     col, row = index % 4, index // 4
-                    rect = pygame.Rect(col * w // 4, row * h // 3,
-                                       (col + 1) * w // 4 - col * w // 4,
-                                       (row + 1) * h // 3 - row * h // 3)
+                    rect = pygame.Rect(
+                        col * w // 4, row * h // 3, (col + 1) * w // 4 - col * w // 4, (row + 1) * h // 3 - row * h // 3
+                    )
                     cell = atlas.subsurface(rect)
                     bounds = cell.get_bounding_rect(min_alpha=30)
                     if bounds.w == 0 or bounds.h == 0:
@@ -135,7 +137,12 @@ class PaintedRoute:
                         break  # pacote parcial: o chamador usa o cenário procedural completo
                     sprites.append(display_format(cell.subsurface(bounds).copy(), True))
             self.banks[biome] = tuple(sprites)
+            self.assets.release_folder("watercolor", ("banks_" + biome,))
         return self.banks[biome]
+
+    def release_biome(self, biome: str) -> None:
+        self.banks.pop(biome, None)
+        self.cache = SpriteCache()
 
     def ready(self, biome: str) -> bool:
         return self.ground is not None and len(self.load(biome)) == 12

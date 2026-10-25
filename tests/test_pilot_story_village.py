@@ -73,9 +73,7 @@ def test_story_uses_four_separate_backgrounds_and_draws_reduced_motion(app):
     for start in (0.0, PAGES[0], sum(PAGES[:2]), sum(PAGES[:3])):
         scene.time = start + 0.2
         scene.draw(app.canvas)
-    assert set(scene.story_backgrounds) == {
-        "story_city", "story_newspaper", "story_fold", "story_launch"
-    }
+    assert set(scene.story_backgrounds) == {"story_city", "story_newspaper", "story_fold", "story_launch"}
     assert all(surface is not None for surface in scene.story_backgrounds.values())
     app.options.reduzir_movimento = True
     scene.time = sum(PAGES[:2]) + 0.2

@@ -36,8 +36,8 @@ class PlaneSkin:
             self.patterns[key] = surface if surface.get_size() == size else pygame.transform.smoothscale(surface, size)
         self.palettes = BoundedCache(C.PATTERN_CACHE_LIMIT)  # ~2,7 MB cada
         self.uv_indices = BoundedCache(8)
-        self.cache = BoundedCache(48)  # avião pintado com piloto
-        self.thumbs: Dict[tuple, pygame.Surface] = {}
+        self.cache = BoundedCache(48, 40 * 1024 * 1024)
+        self.thumbs: BoundedCache = BoundedCache(32, 4 * 1024 * 1024)
 
     def base(self, plane: str, view: str) -> Optional[pygame.Surface]:
         watercolor = self.painted_planes.base(plane, view)

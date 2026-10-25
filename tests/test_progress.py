@@ -42,6 +42,19 @@ def test_catalogo_de_melhorias_coerente():
     assert all(len(p.level_costs) == 2 for p in PLANE_PARTS)
 
 
+def test_primeiras_obras_têm_custos_de_entrada_e_compra_nunca_deixa_saldo_negativo():
+    costs = {upgrade.key: upgrade.cost for upgrade in VILLAGE_UPGRADES}
+    assert costs["ponto_troca"] == {"papel": 8, "plastico": 8}
+    assert costs["horta"] == {"papel": 24, "vidro": 16}
+    wallet = {"papel": 8, "plastico": 8, "vidro": 16}
+    for key in ("ponto_troca", "horta"):
+        cost = costs[key]
+        if can_afford(wallet, cost):
+            for resource, amount in cost.items():
+                wallet[resource] -= amount
+        assert all(amount >= 0 for amount in wallet.values())
+
+
 def test_perfil_ida_e_volta(data_dir):
     profile = Profile()
     profile.recursos["metal"] = 7

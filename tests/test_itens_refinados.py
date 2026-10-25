@@ -16,8 +16,16 @@ def _atlas(path, columns: int, rows: int, *, blank_last: bool = False) -> pygame
     """Grade propositalmente não divisível por número inteiro de pixels."""
     width, height = columns * 25 + 1, rows * 25 + 1
     atlas = pygame.Surface((width, height), pygame.SRCALPHA)
-    colors = ((209, 72, 64), (55, 147, 191), (230, 176, 56), (74, 154, 94),
-              (161, 95, 176), (69, 168, 161), (203, 116, 57), (238, 238, 238))
+    colors = (
+        (209, 72, 64),
+        (55, 147, 191),
+        (230, 176, 56),
+        (74, 154, 94),
+        (161, 95, 176),
+        (69, 168, 161),
+        (203, 116, 57),
+        (238, 238, 238),
+    )
     for index in range(columns * rows):
         if blank_last and index == columns * rows - 1:
             continue
@@ -32,8 +40,14 @@ def _atlas(path, columns: int, rows: int, *, blank_last: bool = False) -> pygame
 
 def _obstacle_atlas(path) -> pygame.Surface:
     atlas = pygame.Surface((1536, 1024), pygame.SRCALPHA)
-    crops = ((56, 297, 512, 472), (548, 174, 1078, 270), (1258, 23, 1412, 480),
-             (31, 655, 512, 953), (548, 646, 1145, 742), (1223, 513, 1455, 977))
+    crops = (
+        (56, 297, 512, 472),
+        (548, 174, 1078, 270),
+        (1258, 23, 1412, 480),
+        (31, 655, 512, 953),
+        (548, 646, 1145, 742),
+        (1223, 513, 1455, 977),
+    )
     for index, (x0, y0, x1, y1) in enumerate(crops):
         color = (30 + index * 20, 100 + index * 10, 180, 255)
         pygame.draw.ellipse(atlas, color, (x0 + 3, y0 + 3, x1 - x0 - 6, y1 - y0 - 6))

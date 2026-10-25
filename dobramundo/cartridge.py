@@ -17,7 +17,7 @@ um evento da sessão. ESC encerra o jogo e P pausa, como em todo cartucho.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import pygame
 from ttea.sdk.api import Game, GameContext, feet_centre
@@ -25,6 +25,7 @@ from ttea.sdk.api import Game, GameContext, feet_centre
 from . import config as C
 from .core import GameCore, first_scene
 from .input.console import TrackingSource, body_points
+from .log import log
 from .persistence import Profile, ProfileError
 from .scenes.flight import FlightScene
 from .ui import theme as T
@@ -75,11 +76,17 @@ class ConsoleCore(GameCore):
 
     platform = "ttea"
 
-    def __init__(self, profile: Profile, context: GameContext, source: TrackingSource) -> None:
+    def __init__(
+        self,
+        profile: Profile,
+        context: GameContext,
+        source: TrackingSource,
+        scene_factory: Optional[Callable] = None,
+    ) -> None:
         self.context = context
         self.source = source
         self.session: Optional[int] = None
-        super().__init__(profile, audio=True, save=self.store)
+        super().__init__(profile, audio=True, save=self.store, scene_factory=scene_factory)
         self.input.source_factory = lambda: source
         self.apply_options()
 
@@ -92,7 +99,8 @@ class ConsoleCore(GameCore):
             self.context.storage.write(PROFILE_KEY, profile.to_dict())
             if self.context.records is not None:
                 self.context.records.update_configuration(player_settings(profile))
-        except Exception:  # o armazenamento é do console: o jogo segue mesmo se falhar
+        except Exception:
+            log.exception("falha ao gravar dados do jogador no armazenamento T-TEA")
             return False
         return True
 
@@ -106,17 +114,23 @@ class ConsoleCore(GameCore):
                 self.session = records.start_session({"jogo": "dobramundo"})
             records.record_event(self.session, summary)
         except Exception:
+            log.exception("falha ao registrar resumo de voo no T-TEA")
             self.session = None
 
 
 def load_profile(context: GameContext) -> Profile:
     """Perfil salvo deste jogador; na primeira vez, já com os pés sobre o chão interativo."""
-    data = context.storage.read(PROFILE_KEY)
+    try:
+        data = context.storage.read(PROFILE_KEY)
+    except Exception:
+        log.exception("falha ao ler perfil do jogador no armazenamento T-TEA")
+        data = None
     profile = None
     if isinstance(data, dict):
         try:
             profile = Profile.from_dict(data)
         except ProfileError:
+            log.exception("perfil T-TEA inválido; iniciando perfil local do jogador")
             profile = None
     if profile is None:
         profile = Profile()
@@ -126,7 +140,7 @@ def load_profile(context: GameContext) -> Profile:
         try:
             profile = apply_settings(profile, context.records.configuration(player_settings(profile)))
         except Exception:
-            pass
+            log.exception("falha ao ler opções do jogador no T-TEA")
     return profile
 
 

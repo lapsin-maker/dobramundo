@@ -32,14 +32,15 @@ def test_dois_beneficios_tem_relogios_visuais_independentes(app):
     scene.run.magnet_timer = 7.0
     screen = app.canvas
     scene.draw_hud(screen)
-    first = screen.subsurface((940, 90, 140, 62)).copy()
+    # O painel acomoda cinco vidas; ambos os relógios ficam sob sua borda esquerda.
+    first = screen.subsurface((860, 90, 160, 62)).copy()
     scene.run.shield_timer = 2.0
     scene.draw_hud(screen)
-    second = screen.subsurface((940, 90, 140, 62)).copy()
+    second = screen.subsurface((860, 90, 160, 62)).copy()
     assert pygame.image.tobytes(first, "RGB") != pygame.image.tobytes(second, "RGB")
     # Só o relógio do escudo mudou; o ímã à direita conserva a informação.
-    assert pygame.image.tobytes(first.subsurface((80, 0, 60, 62)), "RGB") == pygame.image.tobytes(
-        second.subsurface((80, 0, 60, 62)), "RGB"
+    assert pygame.image.tobytes(first.subsurface((66, 0, 94, 62)), "RGB") == pygame.image.tobytes(
+        second.subsurface((66, 0, 94, 62)), "RGB"
     )
 
 

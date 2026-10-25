@@ -23,6 +23,8 @@ for file in sorted((ROOT / "assets").rglob("*")):
 datas.append((str(ROOT / "LICENSE"), "."))  # licença CC BY 4.0 junto do executável
 
 # MediaPipe: o hook padrão não leva a biblioteca nativa do MediaPipe Tasks (mediapipe/tasks/c).
+# No Linux, libmediapipe.so usa libEGL.so.1 e libGLESv2.so.2: vêm do sistema
+# (libegl1/libgles2), pois empacotá-las sem o driver/provider da máquina não é portátil.
 binaries, hiddenimports = [], []
 try:
     from PyInstaller.utils.hooks import collect_all

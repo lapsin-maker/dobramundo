@@ -35,8 +35,8 @@ class Toast:
         box = pygame.Rect(0, 0, width, 54)
         box.center = center
         T.panel(screen, box, T.PAPER, T.ORANGE, 250, 14, 3)
-        size = T.SIZES["body"] if text.font(T.SIZES["body"], True).size(self.text)[0] < width - 30 else T.SIZES["small"]
-        text.blit(screen, self.text, box.center, size, T.INK, True, "center")
+        label, size = T.fit_text(text, self.text, width - 30, bold=True)
+        text.blit(screen, label, box.center, size, T.INK, True, "center")
 
 
 class Scene:
@@ -75,20 +75,16 @@ class Scene:
 
     def fly(self, biome_key: str) -> None:
         """Decola: voo direto ou, com controle corporal ainda não calibrado, a calibração antes."""
-        from . import make_scene
-
-        flight = make_scene(self.app, "voo", biome_key)
+        flight = self.app.create_scene("voo", biome_key)
         body = self.app.input.body
         if body is not None and body.error is None and not body.calibrated:
-            flight = make_scene(self.app, "calibracao", return_to=flight)
+            flight = self.app.create_scene("calibracao", return_to=flight)
         self.app.save()
         self.app.go(flight)
 
     def goto(self, name: str, *args, **kwargs) -> None:
         """Troca para a cena registrada com esse nome (ver scenes/__init__.py)."""
-        from . import make_scene
-
-        self.app.go(make_scene(self.app, name, *args, **kwargs))
+        self.app.go(self.app.create_scene(name, *args, **kwargs))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
@@ -113,6 +109,10 @@ class Scene:
     def text(self) -> T.Text:
         return self.app.text
 
+    def font(self, size="body", bold: bool = False, hand: bool = False) -> pygame.font.Font:
+        """Fonte comum por nome da escala visual ou tamanho explícito."""
+        return self.text.font(T.SIZES[size] if isinstance(size, str) else size, bold, hand)
+
     def button(self, rect, label: str, action: Callable[[], None], **kwargs) -> Button:
         return Button(pygame.Rect(rect), label, action, **kwargs)
 
@@ -130,8 +130,8 @@ class Scene:
     def title(self, screen: pygame.Surface, title: str, subtitle: str = "") -> None:
         width = (
             max(
-                self.text.font(T.SIZES["title"], True).size(title)[0],
-                self.text.font(T.SIZES["small"]).size(subtitle)[0],
+                self.font("title", True).size(title)[0],
+                self.font("small").size(subtitle)[0],
             )
             + 70
         )

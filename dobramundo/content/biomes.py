@@ -445,15 +445,6 @@ BIOME_MAP_COLORS: Dict[str, Color] = {
 }
 
 
-def all_obstacle_specs() -> Dict[str, ObstacleTable]:
-    """Tabelas de obstáculos de todas as fases (para validar sprites e colisões)."""
-    tables: Dict[str, ObstacleTable] = {}
-    for biome in BIOMES.values():
-        tables[f"{biome.key}:industrial"] = biome.industrial_obstacles
-        tables[f"{biome.key}:solar"] = biome.solar_obstacles
-    return tables
-
-
 def biome_sprite_names(biome: Biome) -> List[str]:
     """Todos os sprites de cenário que a fase usa."""
     names = set()

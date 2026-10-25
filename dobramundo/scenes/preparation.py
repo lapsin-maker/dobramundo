@@ -6,14 +6,20 @@ import pygame
 
 from .. import config as C
 from ..ui import theme as T
-from . import make_scene
 from .base import Scene
 
 
 class PreparationScene(Scene):
     """Presets persistentes, calibragem e rotas rápidas para a supervisão."""
 
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.page = "main"
+
     def build(self) -> None:
+        if self.page == "meu_voo":
+            self._build_my_flight()
+            return
         o = self.app.options
         body = self.app.input.body
         can_calibrate = body is not None and body.error is None
@@ -28,9 +34,8 @@ class PreparationScene(Scene):
         )
         buttons = []
         for rect, label, detail, action, key in cards:
-            selected = (
-                (key == "calmo" and o.reduzir_movimento and not o.efeitos_fortes)
-                or (key == "visivel" and o.alto_contraste and o.escala_contraste >= 1.3)
+            selected = (key == "calmo" and o.reduzir_movimento and not o.efeitos_fortes) or (
+                key == "visivel" and o.alto_contraste and o.escala_contraste >= 1.3
             )
             buttons.append(
                 self.button(
@@ -55,15 +60,102 @@ class PreparationScene(Scene):
                 ),
                 self.button(
                     (389, 500, 322, 58),
-                    "Seleção",
+                    "Meu voo",
+                    self.open_my_flight,
+                    key="meu_voo",
+                    icon=T.icon_surface("plane", 34, T.NAVY),
+                ),
+                self.button(
+                    (744, 500, 152, 58),
+                    "Mirar",
                     self.practice_selection,
-                    key="selecao",
+                    key="mirar",
                     icon=T.icon_surface("next", 34, T.NAVY),
                 ),
-                self.button((744, 500, 322, 58), "Opções", self.back, key="opcoes"),
+                self.button((929, 500, 137, 58), "Opções", self.back, key="opcoes"),
             ]
         )
         self.menu.set_buttons(buttons)
+
+    def _build_my_flight(self) -> None:
+        o = self.app.options
+        durations = C.SESSION_LIMITS_S
+        duration_index = durations.index(o.limite_voo_s) if o.limite_voo_s in durations else 0
+        duration = durations[duration_index]
+        duration_label = "Sem limite" if not duration else f"{duration // 60} minutos"
+        seeds = (0,) + C.COMMUNITY_CHALLENGE_SEEDS
+        seed_index = seeds.index(o.semente_desafio) if o.semente_desafio in seeds else -1
+        seed = o.semente_desafio if seed_index < 0 else seeds[seed_index]
+        challenge_label = (
+            "Voo aleatório"
+            if seed == 0
+            else f"Desafio comunitário {seed_index} · semente {seed}"
+            if seed_index >= 0
+            else f"Semente personalizada · {seed}"
+        )
+        buttons = [
+            self.button(
+                (34, 160, 332, 230),
+                duration_label,
+                lambda: self.set_option("limite_voo_s", durations[(duration_index + 1) % len(durations)]),
+                sublabel="Mire para escolher",
+                size=T.SIZES["title"],
+                key="duracao_voo",
+                icon=T.icon_surface("clock", 58, T.TEAL),
+            ),
+            self.button(
+                (384, 160, 332, 230),
+                "Explorar" if o.modo_exploracao else "Com vidas",
+                lambda: self.set_option("modo_exploracao", not o.modo_exploracao),
+                sublabel="Sem eliminação · batidas contam" if o.modo_exploracao else "Vidas normais · 3 corações",
+                size=T.SIZES["title"],
+                key="exploracao",
+                selected=o.modo_exploracao,
+                icon=T.icon_surface("village", 58, T.GREEN if o.modo_exploracao else T.NAVY),
+            ),
+            self.button(
+                (734, 160, 332, 230),
+                "Com apoio" if o.assistencia_previsivel else "Sem apoio",
+                lambda: self.set_option("assistencia_previsivel", not o.assistencia_previsivel),
+                sublabel="5 vidas · proteção de 2 s" if o.assistencia_previsivel else "3 vidas · proteção de 1,25 s",
+                size=T.SIZES["body"],
+                key="assistencia",
+                selected=o.assistencia_previsivel,
+                icon=T.icon_surface("shield", 58, T.TEAL if o.assistencia_previsivel else T.NAVY),
+            ),
+            self.button(
+                (34, 418, 700, 132),
+                challenge_label,
+                lambda: self.set_option("semente_desafio", seeds[(seed_index + 1) % len(seeds)]),
+                sublabel="Próximo desafio · a região vem do mapa",
+                size=T.SIZES["title"],
+                key="desafio_comunitario",
+                icon=T.icon_surface("portal", 50, T.ORANGE),
+            ),
+            self.button((750, 418, 316, 132), "Voltar", self.open_main, key="voltar"),
+        ]
+        self.menu.set_buttons(buttons)
+
+    def set_option(self, name: str, value) -> None:
+        if name == "limite_voo_s":
+            self.app.options.limite_voo_s = int(value)
+        elif name == "modo_exploracao":
+            self.app.options.modo_exploracao = bool(value)
+        elif name == "assistencia_previsivel":
+            self.app.options.assistencia_previsivel = bool(value)
+        elif name == "semente_desafio":
+            self.app.options.semente_desafio = int(value)
+        else:
+            raise ValueError(f"opção de voo desconhecida: {name}")
+        self._save_preset("Preferências do voo salvas")
+
+    def open_my_flight(self) -> None:
+        self.page = "meu_voo"
+        self.build()
+
+    def open_main(self) -> None:
+        self.page = "main"
+        self.build()
 
     def back(self) -> None:
         self.goto("opcoes")
@@ -98,21 +190,25 @@ class PreparationScene(Scene):
         if body is None or body.error is not None:
             self.open_options()
             return
-        self.goto("calibracao", return_to=make_scene(self.app, "preparar"), guided=True)
+        self.goto("calibracao", return_to=self.app.create_scene("preparar"), guided=True)
 
     def practice_selection(self) -> None:
         self.goto(
             "dwell_treino",
-            next_scene=make_scene(self.app, "preparar"),
-            return_to=make_scene(self.app, "preparar"),
+            next_scene=self.app.create_scene("preparar"),
+            return_to=self.app.create_scene("preparar"),
         )
 
     def draw(self, screen: pygame.Surface) -> None:
         self.app.backdrop(screen, self.last_dt, None, 20.0)
         T.veil(screen, (10, 18, 40), 150)
-        self.title(screen, "Preparar", "Atalhos para ajustar a experiência")
+        if self.page == "meu_voo":
+            self.title(screen, "Meu voo", "Escolhas previsíveis para esta aventura")
+        else:
+            self.title(screen, "Preparar", "Atalhos para ajustar a experiência")
         self.draw_menu(screen)
-        self._draw_icons(screen)
+        if self.page == "main":
+            self._draw_icons(screen)
         self.toast.draw(screen, self.text, (C.WIDTH // 2, 614), 520)
 
     def _draw_icons(self, screen: pygame.Surface) -> None:

@@ -34,7 +34,5 @@ def test_parts_remain_a_collection_and_expedition_star_requirement():
     assert stars_for(100.0, requirements, {"leme": 1, "quilha": 1}) == 3
     assert all(part.level_costs for part in PLANE_PARTS)
     assert all(
-        "mais rápido" not in part.description and "mais agilidade" not in part.description
-        for part in PLANE_PARTS
+        "mais rápido" not in part.description and "mais agilidade" not in part.description for part in PLANE_PARTS
     )
-

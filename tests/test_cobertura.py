@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 import pytest
-from test_controle import CAL_READINGS, FakeSource, landmarks
+from helpers import CAL_READINGS, FakeSource, landmarks
 
 from dobramundo import config as C
 from dobramundo.audio import Audio

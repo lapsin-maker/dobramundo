@@ -1,0 +1,15 @@
+{
+  "ci": "https://github.com/lapsin-maker/dobramundo/actions/runs/40236396562",
+  "commit": "d47035cd9d1acb75ac01a81bb25bd87a7c1e71d4",
+  "python": [
+    "3.8",
+    "3.12"
+  ],
+  "lines_covered": 9352,
+  "lines_valid": 11845,
+  "branches_covered": 2787,
+  "branches_valid": 4206,
+  "line_rate": 0.7895,
+  "branch_rate": 0.6626,
+  "scope": "dobramundo, branch coverage; not a quality guarantee"
+}

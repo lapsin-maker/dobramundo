@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pygame
 import pytest
+from helpers import CAL_READINGS, FakeSource, calibrated, landmarks
 
 from dobramundo import config as C
 from dobramundo.input.hub import AUTO_PAUSE_S, InputHub
@@ -11,36 +12,6 @@ from dobramundo.input.pose import SEGMENTS, AxisMapper, BodyControl, segment_poi
 from dobramundo.ui.widgets import Button, Menu
 
 # leituras suficientes para calibrar (2 s a 30 leituras por segundo, com folga)
-CAL_READINGS = 70
-
-
-def landmarks(points: dict, visibility: float = 0.9):
-    data = [(0.5, 0.5, 0.0)] * 33
-    for index, (x, y) in points.items():
-        data[index] = (x, y, visibility)
-    return data
-
-
-class FakeSource:
-    """Fonte de câmera falsa: devolve os pontos que o teste definir."""
-
-    def __init__(self) -> None:
-        self.error = None
-        self.seq = 0
-        self.points = None
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def show(self, points) -> None:
-        self.seq += 1
-        self.points = points
-
-    def snapshot(self):
-        return self.seq, self.points, None
 
 
 @pytest.mark.parametrize("key", sorted(SEGMENTS))
@@ -54,13 +25,6 @@ def test_cada_segmento_vira_um_ponto(key):
 def test_tronco_precisa_de_dois_pontos():
     segment = SEGMENTS["tronco_pe"]
     assert segment_point(landmarks({11: (0.5, 0.5)}), segment) is None
-
-
-def calibrated(segment: str = "tronco_pe") -> AxisMapper:
-    mapper = AxisMapper(SEGMENTS[segment])
-    for _ in range(CAL_READINGS):
-        mapper.feed((0.5, 0.5))
-    return mapper
 
 
 def test_calibracao_usa_a_mediana():

@@ -13,10 +13,9 @@ from ..content.items import WASTE_BY_KEY
 from ..engine.sprites import project
 from ..game.entities import Entity
 from ..game.run import FlightRun
-from ..input.hub import FLIGHT_KEYS
+from ..input.api import FLIGHT_KEYS
 from ..ui import theme as T
 from ..ui.widgets import ring
-from . import make_scene
 from .base import Scene
 
 MOVE_DISTANCE = 36.0
@@ -98,7 +97,7 @@ class DwellPracticeScene(Scene):
         self.build()
 
     def finish(self) -> None:
-        target = self.next_scene or self.return_to or make_scene(self.app, "vila")
+        target = self.next_scene or self.return_to or self.app.create_scene("vila")
         self.app.go(target)
 
     def back(self) -> None:
@@ -354,11 +353,11 @@ class TutorialScene(Scene):
     def finish(self) -> None:
         self.app.profile.tutorial_visto = True
         self.app.save()
-        next_scene = self.next_scene or make_scene(self.app, "vila")
+        next_scene = self.next_scene or self.app.create_scene("vila")
         self.app.go(next_scene)
 
     def back(self) -> None:
-        self.app.go(self.return_to or make_scene(self.app, "mapa"))
+        self.app.go(self.return_to or self.app.create_scene("mapa"))
 
     def resume(self) -> None:
         self.paused = False
@@ -392,9 +391,7 @@ class TutorialScene(Scene):
         if self.feedback > 0.0:
             feedback_y = 250 if player_y > 360 else 430
             T.panel(screen, pygame.Rect(390, feedback_y, 320, 72), T.PAPER, T.GREEN, 245, 18, 3)
-            self.text.blit(
-                screen, "Muito bem!", (550, feedback_y + 36), T.SIZES["label"], T.GREEN, True, "center"
-            )
+            self.text.blit(screen, "Muito bem!", (550, feedback_y + 36), T.SIZES["label"], T.GREEN, True, "center")
         if self.paused:
             T.veil(screen, (10, 18, 40), 170)
             T.panel(screen, pygame.Rect(330, 198, 440, 230), T.PAPER, T.NAVY, 250, 24, 4)
@@ -405,8 +402,10 @@ class TutorialScene(Scene):
     def _step_icon(self, kind: str) -> pygame.Surface:
         if kind == "collect":
             sprite = self.app.assets.sprite("waste_sprites", "papel")
-            icon = self.scaled(sprite, (52, 52), ("tutorial", "papel")) if sprite is not None else T.icon_surface(
-                "paper", 52, T.TEAL
+            icon = (
+                self.scaled(sprite, (52, 52), ("tutorial", "papel"))
+                if sprite is not None
+                else T.icon_surface("paper", 52, T.TEAL)
             )
             surface = pygame.Surface((72, 72), pygame.SRCALPHA)
             surface.blit(icon, (0, 10))

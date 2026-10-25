@@ -27,7 +27,7 @@ class PaintedPlanes:
         self._bases: Dict[Tuple[str, str], Optional[pygame.Surface]] = {}
         self._paper_masks: Dict[str, pygame.Surface] = {}
         self._patterns: Dict[str, Optional[pygame.Surface]] = {}
-        self._cache = BoundedCache(96)
+        self._cache = BoundedCache(96, 40 * 1024 * 1024)
 
     @staticmethod
     def _atlas_index(plane: str) -> Optional[int]:
@@ -42,9 +42,13 @@ class PaintedPlanes:
             return None
         group, cell_index = divmod(index, 4)
         names = MENU_ATLASES if view == "menu" else FLIGHT_ATLASES
-        atlas = self.assets.sprite("watercolor", names[group])
+        atlas = self.assets.sprite("watercolor_prepared", names[group])
+        if atlas is None:
+            atlas = self.assets.sprite("watercolor", names[group])
         if atlas is None and view == "menu":
-            atlas = self.assets.sprite("watercolor", FLIGHT_ATLASES[group])
+            atlas = self.assets.sprite("watercolor_prepared", FLIGHT_ATLASES[group])
+            if atlas is None:
+                atlas = self.assets.sprite("watercolor", FLIGHT_ATLASES[group])
         if atlas is None:
             return None
         cell_w, cell_h = atlas.get_width() // 2, atlas.get_height() // 2
@@ -99,8 +103,9 @@ class PaintedPlanes:
             return pygame.transform.smoothscale(pattern, size)
         return pattern
 
-    def painted(self, plane: str, view: str, color_key: str, pattern_key: str,
-                patterns: Assets) -> Optional[pygame.Surface]:
+    def painted(
+        self, plane: str, view: str, color_key: str, pattern_key: str, patterns: Assets
+    ) -> Optional[pygame.Surface]:
         base = self.base(plane, view)
         if base is None:
             return None
@@ -130,8 +135,7 @@ class PaintedPlanes:
         return out
 
     @staticmethod
-    def mount_pilot(plane_surface: pygame.Surface, pilot_renderer, plane: str,
-                    view: str, look: dict) -> pygame.Surface:
+    def mount_pilot(plane_surface: pygame.Surface, pilot_renderer, plane: str, view: str, look: dict) -> pygame.Surface:
         """Encaixe relativo ao avião ilustrado, independente dos anchors legados."""
         pilot_view = "flight" if view == "flight" else "menu"
         pilot_pose = "back_seated" if view == "flight" else "front_seated"

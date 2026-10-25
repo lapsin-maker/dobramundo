@@ -50,13 +50,6 @@ def asset_dir_candidates(name: str) -> List[Path]:
     return candidates
 
 
-def find_asset_dir(name: str) -> Optional[Path]:
-    for path in asset_dir_candidates(name):
-        if path.is_dir():
-            return path
-    return None
-
-
 def find_asset_file(folder: str, filename: str) -> Optional[Path]:
     for path in asset_dir_candidates(folder):
         candidate = path / filename
@@ -132,3 +125,13 @@ def legacy_data_dirs() -> List[Path]:
     if not is_frozen():
         dirs.insert(0, app_dir() / "save")
     return dirs
+
+
+def profiles_dir() -> Path:
+    """Slots adicionais de perfis desktop, sem tocar no perfil do console."""
+    return user_data_dir() / "profiles"
+
+
+def profiles_index_path() -> Path:
+    """Índice local dos slots (IDs aleatórios e slot ativo; sem nomes pessoais)."""
+    return user_data_dir() / "profiles.json"

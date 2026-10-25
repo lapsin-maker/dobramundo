@@ -4,15 +4,32 @@ on:
   push:
     branches: [main, dobramundo]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      linux_diagnostics:
+        description: "Repetir apenas o build Linux para diagnosticar empacotamento (não substitui a CI completa)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testes-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   testes:
+    if: github.event_name != 'workflow_dispatch' || !inputs.linux_diagnostics
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # 3.8: mínimo declarado (código compatível com consoles mais antigos); 3.12: versão do build
-        python-version: ["3.8", "3.12"]
+        include:
+          - python-version: "3.8"
+            requirements: requirements-ci-py38.txt
+          - python-version: "3.12"
+            requirements: requirements-ci-py312.txt
     env:
       SDL_VIDEODRIVER: dummy
       SDL_AUDIODRIVER: dummy
@@ -21,11 +38,86 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: ${{ matrix.requirements }}
       - name: Dependências (o jogo e os testes não precisam da webcam)
-        run: python -m pip install -r requirements.txt pytest ruff
+        run: python -m pip install -r ${{ matrix.requirements }}
       - name: Lint
         run: ruff check .
+      - name: Formatação
+        run: ruff format --check .
       - name: Testes
-        run: python -m pytest -q
+        run: python -m pytest -q -ra --cov=dobramundo --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml
       - name: Self-test
         run: python -m dobramundo --self-test 60
+      - name: Cobertura por comportamento (sem meta artificial de percentual)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-python-${{ matrix.python-version }}
+          path: coverage.xml
+
+  executaveis:
+    needs: testes
+    if: always() && !cancelled() && (needs.testes.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.linux_diagnostics))
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.linux_diagnostics && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements-webcam.txt
+            requirements.txt
+            constraints-build.txt
+      - name: Runtimes gráficos do MediaPipe no Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libegl1 libgles2
+      - name: Dependências fixadas do build
+        run: python -m pip install -r requirements-webcam.txt pyinstaller -c constraints-build.txt
+      - name: Dependências nativas do MediaPipe
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          library="$(python -c 'import mediapipe, pathlib; print(pathlib.Path(mediapipe.__file__).parent / "tasks/c/libmediapipe.so")')"
+          test -f "$library"
+          dependencies="$(ldd "$library")"
+          printf '%s\n' "$dependencies"
+          if grep -q 'not found' <<< "$dependencies"; then
+            echo 'Dependência nativa ausente para libmediapipe.so' >&2
+            exit 1
+          fi
+      - name: Gerar e testar executável com detector
+        run: python tools/build_desktop.py
+      - name: Empacotar Linux preservando permissão de execução
+        if: runner.os == 'Linux'
+        run: tar -czf dist/Dobramundo-Linux.tar.gz -C dist Dobramundo
+      - name: Executável Windows e relatório técnico
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dobramundo-${{ runner.os }}-${{ github.sha }}
+          path: |
+            dist/Dobramundo/
+            build/desktop-selftest/self_test.json
+          retention-days: 14
+      - name: Pacote Linux e relatório técnico
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dobramundo-${{ runner.os }}-${{ github.sha }}
+          path: |
+            dist/Dobramundo-Linux.tar.gz
+            build/desktop-selftest/self_test.json
+          retention-days: 14

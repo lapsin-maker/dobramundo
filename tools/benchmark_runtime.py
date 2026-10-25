@@ -11,7 +11,6 @@ import ctypes
 import json
 import os
 import platform
-import random
 import statistics
 import sys
 import time
@@ -23,6 +22,12 @@ sys.path.insert(0, str(ROOT))
 
 def resident_bytes() -> int:
     if os.name != "nt":
+        try:
+            # Linux: páginas residentes, não o espaço virtual reservado.
+            pages = int(Path("/proc/self/statm").read_text(encoding="ascii").split()[1])
+            return pages * os.sysconf("SC_PAGE_SIZE")
+        except (OSError, ValueError, IndexError, AttributeError):
+            pass
         return 0  # indisponível nesta medição; não significa consumo zero
     from ctypes import wintypes
 
@@ -84,6 +89,7 @@ def main() -> int:
         "--camera", action="store_true", help="abre webcam local para medir CPU concorrente; sem salvar vídeo"
     )
     parser.add_argument("--device", type=int, default=0)
+    parser.add_argument("--empty-pilot", action="store_true", help="reproduz a carga sem avatar do benchmark 1.5")
     args = parser.parse_args()
     if args.frames < 1:
         parser.error("--frames deve ser maior que zero")
@@ -104,7 +110,12 @@ def main() -> int:
 
     memory_before = resident_bytes()
     start = time.perf_counter()
-    app = App(audio=False, profile=Profile(consentimento=True, piloto_montado=True))
+    profile = Profile(consentimento=True, piloto_montado=True)
+    if not args.empty_pilot:
+        profile.piloto.update(
+            pele="pele4", cabelo="crespo", cor_cabelo="preto", roupa="amarela", olhos="castanhos", oculos="redondo"
+        )
+    app = App(audio=False, profile=profile)
     init_ms = (time.perf_counter() - start) * 1000
     memory_after = resident_bytes()
     watercolor = [(path, surf) for path, surf in app.assets._loaded.items() if "watercolor" in path]
@@ -120,6 +131,8 @@ def main() -> int:
         "rss_delta_bytes": memory_after - memory_before,
         "startup_watercolor_count": len(watercolor),
         "startup_watercolor_bytes": sum(s.get_pitch() * s.get_height() for _, s in watercolor),
+        "seed": 7,
+        "pilot": "empty (1.5 comparison)" if args.empty_pilot else "customized synthetic avatar",
         "flights": {},
     }
     camera = None
@@ -150,7 +163,7 @@ def main() -> int:
         for contrast in (False, True):
             setup_started = time.perf_counter()
             scene = FlightScene(app, city)
-            scene.run = FlightRun(BIOMES[city], "normal", {}, rng=random.Random(7), intro=False)
+            scene.run = FlightRun(BIOMES[city], "normal", {}, seed=7, intro=False)
             scene.run.invincible = True
             app.go(scene)
             app.options.alto_contraste = contrast
@@ -189,6 +202,7 @@ def main() -> int:
                 "within_60fps_budget_fraction": round(sum(v <= 1000 / 60 for v in values) / len(values), 4),
                 "components": {k: stats(v) for k, v in samples.items()},
                 "rss_bytes": resident_bytes(),
+                "renderer_caches": app.view.cache_stats(),
             }
             if camera is not None:
                 report["flights"][label]["latest_camera_result_age_at_present"] = stats(camera_age)

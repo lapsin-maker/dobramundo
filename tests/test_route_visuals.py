@@ -41,6 +41,7 @@ def test_route_stage_blend_is_continuous_and_reaches_horizon_first():
 def test_scenery_geometry_is_identical_across_stages_and_loops_by_world_period(display, distance):
     route = WatercolorWorld(Assets()).route
     stages = [route.placements(distance, stage) for stage in range(3)]
+
     def geometry(placements):
         return [(z, x, side) for z, x, _, side in placements]
 
@@ -80,8 +81,7 @@ def test_zoom_keeps_plane_and_world_anchors_inside_frame_at_reachable_edges():
             point = (center[0] + 40, center[1] + 30)
             transformed = screen_point(point, rect)
             assert transformed == pytest.approx(
-                ((point[0] - rect.x) * C.WIDTH / rect.width,
-                 (point[1] - rect.y) * C.HEIGHT / rect.height)
+                ((point[0] - rect.x) * C.WIDTH / rect.width, (point[1] - rect.y) * C.HEIGHT / rect.height)
             )
 
 

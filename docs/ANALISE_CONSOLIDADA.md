@@ -1,59 +1,40 @@
-# Análise consolidada — experiência, desempenho e entrega
+# Análise consolidada — estado de implementação
 
-Base: revisão da main `4a650b2`, análise externa `analise-repositorio-dobramundo.md` fornecida pelo usuário em 25/10/2026 e teste relatado com webcam. A análise externa foi usada como evidência a conferir; suas estimativas não são resultados desta implementação.
+Esta lista atualiza as prioridades após as entregas P0/P1/P2 no código da versão 1.6.0. “Implementado” descreve código e validação técnica, não aceite de participantes. As evidências, condições e limites estão na [entrega 1.6](ENTREGA_1_6.md), no [relatório de desempenho](validacao-v1.6/desempenho.md) e na [simulação econômica](validacao-v1.6/economia/sintese.md).
 
-## P0 autorizados nesta entrega
+A análise e o inventário completos que precederam a sprint estão preservados em [ANALISE_BASE_1_5.md](ANALISE_BASE_1_5.md); esta atualização resume estado e pendências sem apagar proveniência nem o backlog histórico.
 
-| Item | Escopo de implementação e aceite |
-|---|---|
-| Câmera robusta | Encerrar sem bloquear a interface, manter fonte até liberação, reabrir sem duas capturas concorrentes; testar falha/desconexão. |
-| Latência mensurável | Tempos de leitura, inferência, publicação, idade/cadência; relatório local sem imagens nem landmarks. Timestamp de retorno da leitura não equivale ao instante físico do sensor. |
-| Recompensa ao interromper | Resultado parcial, crédito uma única vez, histórico, fechamento normal e tentativa de salvar novamente; sem conceder conclusão/estrela que não foi conquistada. |
-| Orçamento de quadro | Medir componentes e memória; corrigir carregamento do piloto, custo do terreno, composição de horizonte, buffers e aquecimento. Comparar CPU sem câmera e com câmera disponível. |
-| Sequências alcançáveis | Geração e auditoria determinística sob limites explícitos de manobra/reação; preservar variedade. Alcance matemático não prova conforto motor de cada pessoa. |
-| Conforto sem compras | Sensibilidade, zona morta, resposta e tolerância disponíveis independentemente dos recursos. Peças preservam coleções, saves e requisitos de progressão, com textos coerentes. |
+## Checklist
 
-## Achados do anexo incorporados
+| Frente | Estado no código | Validação ainda necessária |
+|---|---|---|
+| Liquidação e encerramento | Resultado completo/parcial idempotente por voo; fechamento normal liquida apenas voo iniciado; retry de save e histórico, cobertos por testes. | Confirmação de comportamento no equipamento de destino. Encerramento forçado do processo não é recuperável. |
+| Câmera e controle | Pausa por leitura inválida/envelhecida, recuperação supervisionada, controles configuráveis e captura/inferência reais medidas localmente. | Reconexão física, latência ponta a ponta e conforto por segmento. |
+| Acessibilidade de sessão | Permanência, contraste, exploração, duração, assistência previsível e treino estão implementados. | Compreensão sem leitura e alcance confortável com crianças e configurações distintas. |
+| Missões e desafios | Metas selecionadas a partir dos alvos disponíveis; seeds efetivas registradas; desafios comunitários repetíveis; economia simulada com erros, pausas e interrupções. | Balanceamento percebido por participantes; a simulação não representa crianças. |
+| Perfis e saves | Slots locais anônimos, save legado preservado, gravação atômica, cópias rotativas, recuperação e bloqueio em falha de leitura. | Testes de interrupção no sistema operacional e recuperação em máquina/disco de destino. |
+| Fábrica de cenas e separação de plataforma | Criação injetável preserva fábrica padrão; armazenamento por jogador do T-TEA continua separado; contratos de integração testados. | Execução no console físico. |
+| Render e desempenho | Loader seletivo, composição aquarelada, camadas separadas, cache com descarte e orçamento cooperativo. Benchmarks e ensaio prolongado publicados junto à entrega. | Picos de quadro ainda observados, sobretudo com webcam; medir no hardware de destino. Nenhum FPS ou latência física é garantido aqui. |
+| Artefatos de release | CI com testes e builds nativos Windows/Linux, detector obrigatório e dependências Linux verificadas. Artefatos e hashes vinculados à entrega. | Instalação e uso nas máquinas de destino, além do console físico. |
 
-Os seis P0 acima foram implementados. A entrega passou por 446 testes, CI em Python 3.8/3.12, auditoria de 4.000 sementes e medição com webcam local. As [notas e métricas da versão 1.5](ENTREGA_1_5.md) registram picos, carregamento inicial, memória acumulada e o aceite presencial ainda necessário.
+## P0 — segurança de fluxo e confiabilidade
 
-| Achado | Conferência / encaminhamento |
-|---|---|
-| Piloto decodifica toda a pasta aquarela | Confirmado: 39 imagens, 245.378.820 bytes de superfícies dessa pasta na abertura. Baseline local: 2.793,9 ms para criar App e incremento de RSS de 377.925.632 bytes. Corrigido com seleção explícita das camadas do piloto. |
-| Chão é o maior custo recorrente | Baseline instrumentado: mediana de 4,697 ms no chão de Manaus normal. Otimizar sem interromper avanço nem congelar faixas entre quadros. |
-| Fundos opacos tratados como RGBA | Confirmado no loader. Detectar opacidade real uma vez e conservar alfa em sprites com transparência, inclusive furos interiores. |
-| Composição da transição | Recalcular apenas região visível acima do terreno quando há percurso pintado; ignorar alfa zero e copiar diretamente alfa cheio. O fallback mantém composição integral. |
-| Alto contraste | A escala rápida da sprint3 já está na main. Reutilizar buffers cinza; não cachear indefinidamente um fundo que está se movendo. |
-| README e release difíceis de encontrar | Reorganizar a entrada do projeto, preservar manual/histórico em documentos próprios e identificar a entrega como 1.5.0. |
-| Lint divergente | Excluir ferramentas legadas do escopo ativo e alinhar comando da CI ao README. A formatação global permanece separada das correções funcionais. |
-| Python do console | SDK instalado confirma `requires-python >=3.14`; código portável continua testado em 3.8/3.12. São contratos distintos, agora descritos explicitamente. |
-| Repositório público | Confirmado com GitHub CLI nesta revisão; nenhum ajuste de visibilidade foi feito. |
+As prioridades foram liquidação de recompensa, fechamento normal, falhas de câmera, medição de latência, caminho seguro e independência do conforto em relação a compras. Campos de peças e requisitos de estrelas foram preservados. A liquidação é idempotente dentro da instância do voo; não equivale a checkpoint após encerramento abrupto ou perda física do disco.
 
-As medições do anexo (inclusive ganhos previstos de 30–50%, 240 MB e imagens de 20–25 MB) permanecem atribuídas à análise externa. Só o relatório desta entrega pode confirmar ganhos obtidos aqui.
+## P1 — experiência e manutenção
 
-## P1 — experiência e engenharia a seguir
+- Implementados: exploração sem eliminação, limites curtos, assistência previsível, sementes para replay, recuperação de perfil e perfis desktop compartilhados com dados anônimos.
+- Implementados: seleção de missões conforme entidades no percurso, registro explícito do resíduo coletado para o balanço e fábrica de cenas injetável.
+- Validação pendente: duração confortável, compreensão da assistência, economia percebida e fluxo sem dependência de leitura.
+- Aceite presencial: webcam, seis controles, projeção no chão a 2–3 m, movimento reduzido, alto contraste, sessões curtas e troca de piloto. Ver [roteiro presencial](VALIDACAO_PRESENCIAL.md).
 
-- Sessões curtas, exploração sem eliminação e assistência opcional com mudanças previsíveis.
-- Coordenar a primeira missão com as lições iniciais e garantir oferta dos objetivos sorteados.
-- Balancear economia por tempo real, erros e interrupções; a simulação invencível não basta.
-- Validar profundidade/vãos/altura e compreensão sem leitura na projeção e nos seis controles.
-- Preparação de assets por tamanho de uso; memória por cena e descarte seletivo medido.
-- Recuperação de último save válido e perfis de desktop compartilhado.
-- Testes longos, latência no equipamento de destino, desconexão física e uso mediado com crianças.
+## P2 — arquitetura e processo
 
-## P2 — manutenção e evolução incorporadas do anexo
+- Implementados no código: APIs explícitas para entrada e cenas, separação progressiva das camadas do mundo, ferramentas de preparação/auditoria de assets e contrato entre render e simulação.
+- Cobertura medida sem meta artificial; lint e formatação globais, CI por versão de Python e builds nativos com self-test. A entrega registra a execução conferida e o manifesto da release identifica as revisões.
+- Revisões de desempenho devem registrar equipamento e condições; testes sintéticos não demonstram ergonomia individual, eficácia terapêutica ou latência física da projeção.
+- Preservar geradores/fallbacks e compatibilidade do cartucho até validação no console real. A distribuição PNG não prova orçamento de memória no hardware T-TEA.
 
-- Refatorar funções longas por camada e seção; manter a cadeia pintado → papel → lógico como fallback documentado. Imports locais nem sempre são ciclos: alguns evitam dependências opcionais no console.
-- Auditar referências antes de remover funções apontadas como mortas. Não apagar renderizadores de reserva.
-- Consolidar fontes, ajuste de texto, constantes e interface pública de entrada; documentar contratos do motor.
-- Organizar testes por comportamento, reduzir helpers duplicados e medir cobertura sem usar percentual como prova de qualidade.
-- Fixar dependências de CI por versão de Python. **Não aplicar cegamente `constraints-build.txt` a Python 3.8:** o conjunto do build 3.12 contém pacotes incompatíveis com o piso antigo.
-- Formatação global em mudança própria, seguida de verificação na CI; build automatizado em Windows/Linux e cache de dependências.
-- Testar suporte real do console antes de converter para WebP/JPEG. Menor tamanho comprimido não significa menor superfície decodificada em RAM.
-- Atlas, pivôs e resolução de uso padronizados; preservar originais e manifestos de procedência. Não reescrever o histórico Git para recuperar espaço.
-- Ajustar descrição, tópicos e prévia social se desejado. Exclusão de branches/releases históricas e configuração de exclusão automática ficam fora desta correção P0.
-- Variações regionais de percurso, usos comunitários e desafios com sementes reproduzíveis.
+## Critério para fechar a entrega
 
-## Critério de conclusão
-
-Código testado, documentação coerente, pacotes identificados e rastreáveis. Testes automatizados, captura instrumentada e benchmark de CPU serão distinguidos do aceite presencial. Não será declarada latência física de movimento, eficácia terapêutica ou 60 fps garantidos em outro equipamento a partir de testes sintéticos.
+Manter as evidências de CI/build e medições vinculadas à versão correspondente em [ENTREGA_1_6.md](ENTREGA_1_6.md). O aceite presencial continua distinto; não converter capturas estáticas ou simulações em resultado de usuário.

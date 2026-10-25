@@ -18,7 +18,6 @@ from .painted_pilot import PaintedPilot
 from .paper_pilot import draw_pilot
 
 FOLDER = "pilot_layers"
-INK = (29, 36, 51)
 MIN_PILOT_SHARE = 0.32  # leitura do piloto acima da escala do avião durante o voo
 EXPRESSIONS = {"curious", "focused", "happy", "recover"}
 
@@ -50,9 +49,9 @@ def _expression_layer(size: Tuple[int, int], look: dict, pose: str, expression: 
     skin = (*skin_rgb, 190)
 
     def line(points, color, thickness):
-        pygame.draw.lines(layer, color, False,
-                          [(round(x * q), round(y * q)) for x, y in points],
-                          max(1, round(thickness * q)))
+        pygame.draw.lines(
+            layer, color, False, [(round(x * q), round(y * q)) for x, y in points], max(1, round(thickness * q))
+        )
 
     def arc(rect, start, stop, color, thickness):
         scaled = pygame.Rect(*(round(v * q) for v in rect))
@@ -64,62 +63,77 @@ def _expression_layer(size: Tuple[int, int], look: dict, pose: str, expression: 
     if expression == "focused":
         for side, (cx, _) in enumerate(centers):
             direction = 1 if side == 0 else -1
-            line([(cx - brow_dx, brow_y - height * 0.006),
-                  (cx + brow_dx, brow_y + height * 0.008 * direction)], ink, max(2, height * 0.006))
+            line(
+                [(cx - brow_dx, brow_y - height * 0.006), (cx + brow_dx, brow_y + height * 0.008 * direction)],
+                ink,
+                max(2, height * 0.006),
+            )
     elif expression == "curious":
         for cx, _ in centers:
-            arc((cx - brow_dx, brow_y - height * 0.018, 2 * brow_dx, height * 0.035), 0.25, 2.9, ink,
-                max(2, height * 0.006))
+            arc(
+                (cx - brow_dx, brow_y - height * 0.018, 2 * brow_dx, height * 0.035),
+                0.25,
+                2.9,
+                ink,
+                max(2, height * 0.006),
+            )
     elif expression == "recover":
         for side, (cx, _) in enumerate(centers):
             direction = -1 if side == 0 else 1
-            line([(cx - brow_dx, brow_y + height * 0.006 * direction),
-                  (cx + brow_dx, brow_y - height * 0.014)], ink, max(2, height * 0.006))
+            line(
+                [(cx - brow_dx, brow_y + height * 0.006 * direction), (cx + brow_dx, brow_y - height * 0.014)],
+                ink,
+                max(2, height * 0.006),
+            )
 
     # Blend a small skin wash over the base smile before drawing the new mouth.
     wash = pygame.Surface((width * q, height * q), pygame.SRCALPHA)
-    pygame.draw.ellipse(wash, skin, pygame.Rect(
-        (mouth_x - round(body_width * 0.065)) * q,
-        (mouth_y - round(height * 0.018)) * q,
-        max(2, round(body_width * 0.13) * q),
-        max(2, round(height * 0.058) * q),
-    ))
+    pygame.draw.ellipse(
+        wash,
+        skin,
+        pygame.Rect(
+            (mouth_x - round(body_width * 0.065)) * q,
+            (mouth_y - round(height * 0.018)) * q,
+            max(2, round(body_width * 0.13) * q),
+            max(2, round(height * 0.058) * q),
+        ),
+    )
     layer.blit(wash, (0, 0))
     if expression == "curious":
-        pygame.draw.ellipse(layer, ink, pygame.Rect(
-            (mouth_x - round(height * 0.012)) * q,
-            (mouth_y - round(height * 0.014)) * q,
-            max(3, round(height * 0.024) * q), max(3, round(height * 0.034) * q),
-        ), max(1, round(height * 0.004) * q))
+        pygame.draw.ellipse(
+            layer,
+            ink,
+            pygame.Rect(
+                (mouth_x - round(height * 0.012)) * q,
+                (mouth_y - round(height * 0.014)) * q,
+                max(3, round(height * 0.024) * q),
+                max(3, round(height * 0.034) * q),
+            ),
+            max(1, round(height * 0.004) * q),
+        )
     elif expression == "focused":
-        line([(mouth_x - body_width * 0.045, mouth_y), (mouth_x + body_width * 0.045, mouth_y)], ink,
-             max(2, height * 0.006))
+        line(
+            [(mouth_x - body_width * 0.045, mouth_y), (mouth_x + body_width * 0.045, mouth_y)],
+            ink,
+            max(2, height * 0.006),
+        )
     elif expression == "recover":
-        arc((mouth_x - body_width * 0.045, mouth_y - height * 0.002,
-             body_width * 0.09, height * 0.026), 3.3, 6.1, ink, max(2, height * 0.006))
+        arc(
+            (mouth_x - body_width * 0.045, mouth_y - height * 0.002, body_width * 0.09, height * 0.026),
+            3.3,
+            6.1,
+            ink,
+            max(2, height * 0.006),
+        )
     else:  # happy: a broad, visibly upturned smile
-        arc((mouth_x - body_width * 0.058, mouth_y - height * 0.026,
-             body_width * 0.116, height * 0.056), 3.45, 5.95, (153, 68, 75, 240), max(2, height * 0.008))
+        arc(
+            (mouth_x - body_width * 0.058, mouth_y - height * 0.026, body_width * 0.116, height * 0.056),
+            3.45,
+            5.95,
+            (153, 68, 75, 240),
+            max(2, height * 0.008),
+        )
     return pygame.transform.smoothscale(layer, size)
-
-
-def tinted(layer: pygame.Surface, color) -> pygame.Surface:
-    out = layer.copy()
-    out.fill((*color, 255), special_flags=pygame.BLEND_RGBA_MULT)
-    return out
-
-
-def ink_outline(surface: pygame.Surface, color=INK, thickness: int = 2) -> pygame.Surface:
-    """Traço de tinta em volta do piloto (mesma linguagem dos sprites "papel e aquarela")."""
-    mask = pygame.mask.from_surface(surface, 40)
-    line = mask.to_surface(setcolor=(*color, 255), unsetcolor=(0, 0, 0, 0))
-    out = pygame.Surface((surface.get_width() + 2 * thickness, surface.get_height() + 2 * thickness), pygame.SRCALPHA)
-    for dx in range(-thickness, thickness + 1):
-        for dy in range(-thickness, thickness + 1):
-            if dx * dx + dy * dy <= thickness * thickness + 1:
-                out.blit(line, (thickness + dx, thickness + dy))
-    out.blit(surface, (thickness, thickness))
-    return out
 
 
 class PilotRenderer:
@@ -130,11 +144,9 @@ class PilotRenderer:
         self.cache = BoundedCache(32)  # piloto montado por vista e aparência
         self.expression_cache = BoundedCache(16)
 
-    def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
-        return self.assets.folder(FOLDER).get(f"{view}__{name}")
-
-    def compose(self, view: str, look: dict, pose: Optional[str] = None,
-                expression: Optional[str] = None) -> Optional[pygame.Surface]:
+    def compose(
+        self, view: str, look: dict, pose: Optional[str] = None, expression: Optional[str] = None
+    ) -> Optional[pygame.Surface]:
         """Piloto 2D de papel, independente das antigas camadas low-poly."""
         look = normalize_pilot(look)
         key = (view, pose, tuple(sorted(look.items())))

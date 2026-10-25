@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 import pytest
-from test_controle import CAL_READINGS, FakeSource, landmarks
+from helpers import CAL_READINGS, FakeSource, landmarks
 
 from dobramundo import config as C
 from dobramundo.content.progress import VILLAGE_BY_KEY
@@ -166,7 +166,7 @@ def test_pausa_automatica_e_retomada(app):
     app.input.source_factory = lambda: source
     app.profile.controle = "mao_direita"
     app.apply_options()
-    from test_controle import landmarks
+    from helpers import landmarks
 
     for _ in range(CAL_READINGS):
         source.show(landmarks({16: (0.5, 0.5)}))

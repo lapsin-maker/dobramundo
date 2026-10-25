@@ -10,6 +10,9 @@ __pycache__/
 .pytest_cache/
 .pytest-*
 .ruff_cache/
+.coverage*
+coverage.xml
+htmlcov/
 
 # Dados locais do jogo (perfil, relatórios)
 save/

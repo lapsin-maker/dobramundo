@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pygame
 import pytest
-from test_controle import FakeSource, landmarks
+from helpers import FakeSource, landmarks
 
 from dobramundo import __version__
 from dobramundo import config as C
@@ -312,6 +312,7 @@ def cartucho(monkeypatch, tmp_path):
     spec = importlib.util.spec_from_file_location("build_cartridge", ROOT / "tools" / "build_cartridge.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    monkeypatch.setattr(module, "STAGE_ROOT", tmp_path)
     monkeypatch.setattr(module, "STAGE", tmp_path / "cartucho")
     return module
 

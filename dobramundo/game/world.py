@@ -21,6 +21,7 @@ from ..content.biomes import Biome
 from ..content.items import OBSTACLE_KINDS, POWERUP_KINDS, WASTE_KEYS, ObstacleSpec
 from ..content.progress import plane_stats
 from ..util import clamp, smoothstep
+from .challenges import ChallengeTheme, challenge_theme_for
 from .entities import Entity
 
 GOLDEN = 0.6180339887498949  # ordem espalhada em que os trechos viram verdes
@@ -40,9 +41,7 @@ ROUTE_CONTROL_FACTOR = 0.75
 ROUTE_X_STEP = 10.0
 ROUTE_Y_STEP = 11.0
 ROUTE_Z_HALF = 16.0 + 27.0
-ROUTE_POSITION_RESPONSE = (
-    1.0 - math.exp(-C.POSITION_RESPONSE * C.MAX_DT)
-) / C.MAX_DT
+ROUTE_POSITION_RESPONSE = (1.0 - math.exp(-C.POSITION_RESPONSE * C.MAX_DT)) / C.MAX_DT
 
 
 def _route_grid() -> Tuple[List[float], List[float]]:
@@ -60,9 +59,9 @@ _ROUTE_Y_COUNT = len(_ROUTE_YS)
 # alturas em intervalos de x; multiplicá-las pela máscara y forma o retângulo.
 _ROUTE_X_MASKS = tuple(
     tuple(
-        (((1 << (_ROUTE_Y_COUNT * (end - start))) - 1) // ((1 << _ROUTE_Y_COUNT) - 1))
-        << (_ROUTE_Y_COUNT * start)
-        if end > start else 0
+        (((1 << (_ROUTE_Y_COUNT * (end - start))) - 1) // ((1 << _ROUTE_Y_COUNT) - 1)) << (_ROUTE_Y_COUNT * start)
+        if end > start
+        else 0
         for end in range(len(_ROUTE_XS) + 1)
     )
     for start in range(len(_ROUTE_XS) + 1)
@@ -90,9 +89,7 @@ def _axis_reach_limit(
         distance = target_distance - min(target_distance, speed / position_response) * math.exp(
             -position_response * (elapsed - saturation_time)
         )
-    velocity_distance = speed * (
-        elapsed - (1.0 - math.exp(-velocity_response * elapsed)) / velocity_response
-    )
+    velocity_distance = speed * (elapsed - (1.0 - math.exp(-velocity_response * elapsed)) / velocity_response)
     return min(distance, velocity_distance)
 
 
@@ -109,9 +106,11 @@ def _axis_reachable(
     if abs(end - start) < 1e-9:
         return True
     direction = 1.0 if end > start else -1.0
-    return abs(end - start) <= _axis_reach_limit(
-        start, direction, elapsed, speed, minimum, maximum, position_response, velocity_response
-    ) + 1e-9
+    return (
+        abs(end - start)
+        <= _axis_reach_limit(start, direction, elapsed, speed, minimum, maximum, position_response, velocity_response)
+        + 1e-9
+    )
 
 
 def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tuple[float, float]]]:
@@ -128,20 +127,19 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
     half_w = C.PLANE_WIDTH * 0.42 * stats.hitbox
     half_h = C.PLANE_HEIGHT * 0.5 * stats.hitbox
     threats = [
-        entity for entity in entities
-        if entity.spec is not None and not entity.collected and not entity.hit and not entity.dodged
+        entity
+        for entity in entities
+        if entity.spec is not None
+        and not entity.collected
+        and not entity.hit
+        and not entity.dodged
         and entity.z - C.PLAYER_Z >= -ROUTE_Z_HALF
     ]
     if not threats:
         return []
 
     intervals = sorted(
-        [
-            (entity.z - C.PLAYER_Z - ROUTE_Z_HALF,
-             entity.z - C.PLAYER_Z + ROUTE_Z_HALF,
-             entity)
-            for entity in threats
-        ],
+        [(entity.z - C.PLAYER_Z - ROUTE_Z_HALF, entity.z - C.PLAYER_Z + ROUTE_Z_HALF, entity) for entity in threats],
         key=lambda item: (item[0], item[1]),
     )
     groups: List[Tuple[float, float, List[Entity]]] = []
@@ -185,14 +183,28 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
         if index == 0:
             available = max(0.0, start / worst_case_speed - movement_margin)
             reachable = {
-                (xi, yi) for xi, x in enumerate(_ROUTE_XS) for yi, y in enumerate(_ROUTE_YS)
+                (xi, yi)
+                for xi, x in enumerate(_ROUTE_XS)
+                for yi, y in enumerate(_ROUTE_YS)
                 if _axis_reachable(
-                    0.0, x, available, move_x, -C.MAX_PLAYER_X, C.MAX_PLAYER_X,
-                    position_response, velocity_response,
+                    0.0,
+                    x,
+                    available,
+                    move_x,
+                    -C.MAX_PLAYER_X,
+                    C.MAX_PLAYER_X,
+                    position_response,
+                    velocity_response,
                 )
                 and _axis_reachable(
-                    C.START_ALTITUDE, y, available, move_y, C.MIN_ALTITUDE, C.MAX_ALTITUDE,
-                    position_response, velocity_response,
+                    C.START_ALTITUDE,
+                    y,
+                    available,
+                    move_y,
+                    C.MIN_ALTITUDE,
+                    C.MAX_ALTITUDE,
+                    position_response,
+                    velocity_response,
                 )
             }
             current = {cell: None for cell in safe & reachable}
@@ -213,12 +225,24 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
                             cell not in current
                             and cell in safe
                             and _axis_reachable(
-                                _ROUTE_XS[px], _ROUTE_XS[xi], available, move_x,
-                                -C.MAX_PLAYER_X, C.MAX_PLAYER_X, position_response, velocity_response,
+                                _ROUTE_XS[px],
+                                _ROUTE_XS[xi],
+                                available,
+                                move_x,
+                                -C.MAX_PLAYER_X,
+                                C.MAX_PLAYER_X,
+                                position_response,
+                                velocity_response,
                             )
                             and _axis_reachable(
-                                _ROUTE_YS[py], _ROUTE_YS[yi], available, move_y,
-                                C.MIN_ALTITUDE, C.MAX_ALTITUDE, position_response, velocity_response,
+                                _ROUTE_YS[py],
+                                _ROUTE_YS[yi],
+                                available,
+                                move_y,
+                                C.MIN_ALTITUDE,
+                                C.MAX_ALTITUDE,
+                                position_response,
+                                velocity_response,
                             )
                         ):
                             current.setdefault(cell, (px, py))
@@ -349,8 +373,11 @@ class RoutePlanner:
             return False  # preserva a ordem planejada; não reancora num estado inventado
         if last is not None and start <= last.end:
             group = self._extend(
-                last.start, max(last.end, end), last.members + [entity],
-                last.before_frontier, last.before_end,
+                last.start,
+                max(last.end, end),
+                last.members + [entity],
+                last.before_frontier,
+                last.before_end,
             )
         else:
             group = self._extend(start, end, [entity], self.frontier, self.end)
@@ -372,10 +399,12 @@ class World:
         rng: Optional[random.Random] = None,
         intro: bool = False,
         restoration: Optional[float] = None,
+        challenge_seed: Optional[int] = None,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.intro = intro  # abertura didática: uma coisa por vez antes do sorteio
+        self.challenge_theme: Optional[ChallengeTheme] = challenge_theme_for(biome.key, challenge_seed)
         self.rng = rng or random.Random()
         self.route_planner = RoutePlanner(mode)
         self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
@@ -650,13 +679,22 @@ class World:
             if self.waste_allowed():
                 self.entities.append(Entity(z + 45.0, lane2, "waste", y2, self.next_waste()))
         if rng.random() < 0.35 + self.difficulty * 0.30:
-            roll = rng.random()
-            kind = "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
+            kind = self.choose_obstacle_kind(rng.random())
             solar = self.spawn_is_solar(z)
             self.add_reachable_obstacle(z, rng.choice(available), kind, solar)
         if rng.random() < 0.13:
             kind = rng.choice(POWERUP_KINDS)
             self.entities.append(Entity(z + 30.0, rng.choice(lanes), kind, rng.choice(C.TRASH_HEIGHTS)))
+
+    def choose_obstacle_kind(self, roll: float) -> str:
+        """Desafios regionais inclinam a sequência sem remover variedades nem planner."""
+        if self.challenge_theme is None:
+            return "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
+        preferred = self.challenge_theme.preferred_obstacle
+        alternatives = [kind for kind in OBSTACLE_KINDS if kind != preferred]
+        if roll < 0.55:
+            return preferred
+        return alternatives[0] if roll < 0.55 + 0.225 else alternatives[1]
 
     # -------------------------------------------------------------- avanço
     def advance(self, dt: float, dz: float) -> None:

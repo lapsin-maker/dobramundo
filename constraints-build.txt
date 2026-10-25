@@ -1,6 +1,7 @@
 # Versões exatas usadas para gerar o executável (pip freeze do .venv de build).
-# Os scripts de build instalam com "-c constraints-build.txt": o .exe sai igual em
-# qualquer máquina. Para atualizar: instale as novas versões, teste e rode pip freeze.
+# Os scripts instalam com "-c constraints-build.txt" para fixar as dependências.
+# Sistema, toolchain e timestamps ainda podem produzir binários diferentes.
+# Para atualizar: instale as novas versões, teste e rode pip freeze.
 absl-py==2.5.1
 altgraph==0.17.5
 certifi==2026.10.23

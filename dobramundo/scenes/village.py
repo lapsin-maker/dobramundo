@@ -453,6 +453,24 @@ class VillageScene(Scene):
                 self.button((922, 12, 130, 48), "Sobre", lambda: self.goto("sobre"), key="sobre"),
             ]
         )
+        if self.app.platform == "desktop":
+            self.menu.buttons.append(
+                self.button(
+                    (730, 80, 322, 56),
+                    "Trocar de piloto",
+                    lambda: self.goto("perfis"),
+                    icon=destination_icon("piloto"),
+                    key="perfis",
+                )
+            )
+        if self.app.storage_notice and not self.app.save_failed:
+            self.menu.buttons.append(
+                self.button((895, 438, 157, 60), "Entendi", self.dismiss_storage_notice, key="aviso_dados")
+            )
+
+    def dismiss_storage_notice(self) -> None:
+        self.app.dismiss_storage_notice()
+        self.build()
 
     def back(self) -> None:
         """ESC abre (ou fecha) a pergunta de saída, em vez de trocar de tela."""
@@ -476,7 +494,7 @@ class VillageScene(Scene):
             painted = any(backgrounds.get(name) is not None for name in ("village_start_v2", "village_start"))
             plane_size = (225, 150) if painted else (250, 170)
             img = self.scaled(plane, plane_size, key)
-            bob = math.sin(self.time * 2.2) * 6
+            bob = 0.0 if app.options.reduzir_movimento else math.sin(self.time * 2.2) * 6
             paper.shadow(screen, (SQUARE[0], SQUARE[1] + 3), int(img.get_width() * 0.88) - int(bob * 3), 34, 60)
             screen.blit(img, img.get_rect(center=(SQUARE[0], int((340 if painted else 330) + bob))))
         progress = village_progress(profile)
@@ -497,6 +515,12 @@ class VillageScene(Scene):
         pygame.draw.rect(screen, T.PAPER, bar, border_radius=8)
         pygame.draw.rect(screen, T.TEAL, (bar.left, bar.top, int(bar.width * progress), bar.height), border_radius=8)
         self.resource_bar(screen, right=710, top=16)
+        if app.storage_notice and not app.save_failed:
+            notice = pygame.Rect(16, 430, 860, 76)
+            T.panel(screen, notice, T.PAPER, T.ORANGE, 248, 12, 3)
+            self.text.paragraph(
+                screen, app.storage_notice, notice.inflate(-28, -16), T.SIZES["body"], T.INK, spacing=1.1
+            )
         if app.save_failed:
             warn = pygame.Rect(16, 466, C.WIDTH - 32, 38)
             T.panel(screen, warn, T.PAPER, T.RED, 240, 12, 3)
@@ -518,7 +542,7 @@ class VillageScene(Scene):
             )
             self.text.blit(
                 screen,
-                "O progresso já está salvo.",
+                "Há progresso ainda não salvo." if app.save_failed else "O progresso já está salvo.",
                 (card.centerx, card.top + 88),
                 T.SIZES["body"],
                 T.MUTED,
