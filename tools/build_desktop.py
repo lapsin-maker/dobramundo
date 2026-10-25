@@ -7,6 +7,7 @@ O executável é gerado em dist/Dobramundo; Python 3.12 no sistema de destino.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import json
 import os
 import shutil
@@ -18,6 +19,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def require_linux_egl_runtime(require_camera: bool) -> None:
+    """Confere a dependência de sistema usada pelo libmediapipe.so no Linux."""
+    if not require_camera or not sys.platform.startswith("linux"):
+        return
+    try:
+        ctypes.CDLL("libEGL.so.1")
+    except OSError as exc:
+        raise RuntimeError(
+            "O detector MediaPipe no Linux requer libEGL.so.1; instale o pacote de sistema libegl1 "
+            "(Debian/Ubuntu) antes do build e da execução."
+        ) from exc
+
+
 def build(onefile: bool = False, require_camera: bool = True) -> Path:
     reports = ROOT / "build" / "desktop-selftest"
     reports.mkdir(parents=True, exist_ok=True)
@@ -25,6 +39,7 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
     (reports / "self_test.json").write_text(
         json.dumps({"status": "building", "run_id": run_id}) + "\n", encoding="utf-8"
     )
+    require_linux_egl_runtime(require_camera)
     env = dict(os.environ, DOBRA_ONEFILE="1" if onefile else "0")
     subprocess.run(
         [

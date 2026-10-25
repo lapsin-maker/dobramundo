@@ -79,6 +79,11 @@ jobs:
             requirements-webcam.txt
             requirements.txt
             constraints-build.txt
+      - name: Runtime EGL do MediaPipe no Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libegl1
       - name: Dependências fixadas do build
         run: python -m pip install -r requirements-webcam.txt pyinstaller -c constraints-build.txt
       - name: Gerar e testar executável com detector
