@@ -116,3 +116,15 @@ def test_perfil_corrompido_ganha_copia_de_seguranca(data_dir):
     profile_path().write_text("{quebrado", encoding="utf-8")
     load_profile()
     assert (data_dir / "dobramundo_perfil.corrompido.json").is_file()
+
+
+def test_perfil_invalido_tambem_ganha_copia(data_dir):
+    profile_path().write_text(json.dumps({"recursos": "muitos", "estrelas": {"amazonia": "x"}}), encoding="utf-8")
+    load_profile()
+    assert (data_dir / "dobramundo_perfil.corrompido.json").is_file()
+
+
+def test_booleanos_em_texto_no_perfil(data_dir):
+    profile_path().write_text(json.dumps({"opcoes": {"silencio": "false", "alto_contraste": "sim"}}), encoding="utf-8")
+    loaded = load_profile()
+    assert loaded.opcoes.silencio is False and loaded.opcoes.alto_contraste is True

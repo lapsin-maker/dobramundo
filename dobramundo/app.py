@@ -45,6 +45,7 @@ class App:
         self.audio = Audio(audio)
         self.input = InputHub()
         self.running = True
+        self.save_failed = False
         self.smooth_dt = 1.0 / C.FPS
         self.frame = 0
         self.scene = None
@@ -70,16 +71,19 @@ class App:
         return self.profile.opcoes
 
     def save(self) -> None:
-        save_profile(self.profile)
+        """Grava o perfil; se a pasta não aceitar, a vila avisa (o jogo segue)."""
+        self.save_failed = not save_profile(self.profile)
 
     def apply_options(self) -> None:
         self.audio.apply(self.options)
         self.view.high_contrast = self.options.alto_contraste
         stats = plane_stats(self.profile.pecas)
         if self.profile.controle != self.input.segment_key:
-            self.input.set_segment(self.profile.controle, self.options.sensibilidade, stats.dead_zone)
+            self.input.set_segment(
+                self.profile.controle, self.options.sensibilidade, stats.dead_zone, self.options.inverter_vertical
+            )
         else:
-            self.input.configure(self.options.sensibilidade, stats.dead_zone)
+            self.input.configure(self.options.sensibilidade, stats.dead_zone, self.options.inverter_vertical)
 
     def plane_look(self) -> PlaneLook:
         p = self.profile
@@ -186,6 +190,6 @@ class App:
             self.shutdown()
 
     def shutdown(self) -> None:
-        self.input.stop_body()
+        self.input.stop_camera()
         self.audio.stop()
         self.save()

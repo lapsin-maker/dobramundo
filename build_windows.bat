@@ -64,7 +64,7 @@ if errorlevel 1 goto :fail_venv
 :venv_ok
 
 echo [2/5] Instalando dependencias (jogo, webcam e PyInstaller)...
-"%VENV_PY%" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7"
+"%VENV_PY%" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" -c constraints-build.txt
 if errorlevel 1 goto :fail_pip
 
 echo [3/5] Limpando build e dist...
@@ -87,7 +87,7 @@ if errorlevel 1 goto :fail_copy
 
 if exist "%REPORT%" del /q "%REPORT%"
 set "SDL_VIDEODRIVER=dummy"
-"%EXE%" --self-test 90
+"%EXE%" --self-test 90 --exigir-camera
 set "TEST_RC=%ERRORLEVEL%"
 set "SDL_VIDEODRIVER="
 if not "%TEST_RC%"=="0" goto :fail_selftest

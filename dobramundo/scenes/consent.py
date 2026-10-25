@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pygame
 
 from .. import config as C
@@ -31,6 +33,7 @@ class ConsentScene(Scene):
 
     def accept(self) -> None:
         self.app.profile.consentimento = True
+        self.app.profile.consentimento_em = datetime.now().isoformat(timespec="minutes")
         self.app.save()
         self.app.go(self.next_scene)
 
@@ -38,7 +41,7 @@ class ConsentScene(Scene):
         self.app.running = False
 
     def draw(self, screen: pygame.Surface) -> None:
-        self.app.backdrop(screen, 1 / 60, None, 5.0)
+        self.app.backdrop(screen, self.last_dt, None, 5.0)
         T.veil(screen, (10, 18, 40), 170)
         card = pygame.Rect(90, 30, C.WIDTH - 180, 500)
         T.panel(screen, card, T.PAPER, T.NAVY, 250, 24, 4)

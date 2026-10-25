@@ -16,6 +16,7 @@ from ..content.items import POWERUP_KINDS, WASTE_KEYS
 from ..content.planes import POWERUP_MANEUVERS, START_MANEUVER, ManeuverRow
 from ..content.progress import RESOURCES_PER_WASTE, plane_stats, stars_for
 from .entities import Beam, Entity, FloatingText, entity_hitbox
+from .missions import BONUS_POINTS, BONUS_RESOURCES, BONUS_RESTORATION, MissionTracker
 from .player import Player
 from .world import World
 
@@ -36,6 +37,7 @@ class FlightRun:
         self.mode = mode
         self.parts = dict(parts or {})
         self.world = World(biome, mode, rng)
+        self.missions = MissionTracker(mode, random.Random(self.world.rng.random()))
         self.player = Player(plane_stats(self.parts), maneuvers)
         self.lives = C.MAX_LIVES
         self.score = 0
@@ -62,10 +64,12 @@ class FlightRun:
     # --------------------------------------------------------------- regras
     @property
     def restoration(self) -> float:
+        """Transformação da cidade, de 0 a 100%."""
         return self.world.restoration
 
     @property
     def speed(self) -> float:
+        """Velocidade da pista: base + transformação + rampa de dificuldade (metade no Normal)."""
         factor = C.NORMAL_SPEED_FACTOR if self.mode == "normal" else 1.0
         return (
             C.BASE_SPEED
@@ -74,13 +78,16 @@ class FlightRun:
         ) * factor
 
     def emit(self, name: str, data: object = None) -> None:
+        """Publica um acontecimento do voo para a cena (som, avisos, efeitos)."""
         self.events.append((name, data))
 
     def take_events(self) -> List[Event]:
+        """Entrega e esvazia os acontecimentos desde a última chamada."""
         events, self.events = self.events, []
         return events
 
     def add_restoration(self, amount: float) -> None:
+        """Transforma a cidade e publica mudança de estágio, estrelas e fase completa."""
         self.world.add_restoration(amount)
         stage = self.world.stage
         if stage > self.stage:
@@ -105,7 +112,7 @@ class FlightRun:
         if normal:
             gain = C.NORMAL_RESTORATION_PER_TRASH
         else:
-            gain = C.RESTORATION_PER_TRASH + (C.RESTORATION_COMBO_BONUS if self.combo >= 4 else 0.0)
+            gain = C.RESTORATION_PER_TRASH + (C.RESTORATION_COMBO_BONUS if self.combo >= C.COMBO_BONUS_FROM else 0.0)
         self.streak += 1
         self.combo_timer = C.COMBO_WINDOW_S
         if not normal and self.streak % C.COMBO_STEP == 0:  # Normal: pontos fixos, sem combo
@@ -113,6 +120,7 @@ class FlightRun:
         self.beams.append(Beam(entity.x, entity.z))
         self.floating.append(FloatingText(f"+{value}", entity.x, entity.y + 35.0))
         self.emit("collect", entity.sprite)
+        self.mission_event("coletar", entity.sprite)
         self.add_restoration(gain)
 
     def collect_powerup(self, entity: Entity) -> None:
@@ -135,6 +143,7 @@ class FlightRun:
         self.floating.append(FloatingText(label, entity.x, entity.y + 48.0, (178, 255, 210)))
         self.player.start_maneuver(POWERUP_MANEUVERS.get(entity.kind))
         self.emit("powerup", entity.kind)
+        self.mission_event("powerup")
         if bonus:
             self.add_restoration(bonus)
 
@@ -176,6 +185,8 @@ class FlightRun:
         self.player.update(dt, ix, iy)
         self.world.advance(dt, self.speed * dt)
         self.check_collisions()
+        self.count_passes()
+        self.missions.update(dt)
         self.world.prune()
         for beam in self.beams:
             beam.z -= self.speed * dt
@@ -190,6 +201,30 @@ class FlightRun:
             if self.complete_timer >= COMPLETE_GLIDE_S:
                 self.finished = True
 
+    def mission_event(self, kind: str, waste: Optional[str] = None) -> None:
+        """Conta para a meta atual; cumprida, dá a recompensa e avisa a cena."""
+        mission = self.missions.record(kind, waste)
+        if mission is None:
+            return
+        bonus_type = mission.waste or WASTE_KEYS[self.missions.completed % len(WASTE_KEYS)]
+        self.resources[bonus_type] = self.resources.get(bonus_type, 0) + BONUS_RESOURCES
+        self.score += BONUS_POINTS
+        self.emit("mission", mission)
+        self.add_restoration(BONUS_RESTORATION)
+
+    def count_passes(self) -> None:
+        """Obstáculos que passaram pelo avião sem acertá-lo: desvios e portais atravessados."""
+        player = self.player
+        for entity in self.world.entities:
+            if entity.spec is None or entity.passed or entity.z > C.PLAYER_Z - 30.0:
+                continue
+            entity.passed = True
+            if entity.hit or abs(entity.x - player.x) > C.LANE_WIDTH * 0.75:
+                continue  # bateu, ou o obstáculo estava longe da faixa do avião
+            self.mission_event("desviar")
+            if entity.kind == "gate":
+                self.mission_event("portal")
+
     def check_collisions(self) -> None:
         player = self.player
         box = player.hitbox()
@@ -201,9 +236,9 @@ class FlightRun:
             if entity.kind == "waste":
                 reaches = (
                     magnet
-                    and abs(entity.z - C.PLAYER_Z) <= 45.0
-                    and abs(player.x - entity.x) < C.LANE_WIDTH * 1.1
-                    and abs(player.y - entity.y) < 110.0
+                    and abs(entity.z - C.PLAYER_Z) <= C.MAGNET_REACH_Z
+                    and abs(player.x - entity.x) < C.LANE_WIDTH * C.MAGNET_REACH_LANES
+                    and abs(player.y - entity.y) < C.MAGNET_REACH_Y
                 )
                 if overlaps or reaches:
                     self.collect_waste(entity)
@@ -211,6 +246,7 @@ class FlightRun:
                 if overlaps:
                     self.collect_powerup(entity)
             elif overlaps:
+                entity.hit = True
                 self.take_hit()
                 if self.game_over:
                     break

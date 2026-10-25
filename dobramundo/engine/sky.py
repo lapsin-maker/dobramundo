@@ -17,6 +17,7 @@ from .. import config as C
 from ..content.biomes import Biome
 from ..util import Color, clamp, lerp_color, rgb
 from .assets import Assets
+from .cache import BoundedCache
 
 # Silhuetas industriais do horizonte (assets/skyline_sprites): fileira de trás e da frente.
 SKYLINE_BACK = [
@@ -71,8 +72,8 @@ class SkyRenderer:
         self.panorama = self.prepare_panorama(atmosphere.get("sky_panorama"))
         self.clouds = self.prepare_clouds(atmosphere.get("smog_cloud"))
         self.skyline_sprites = assets.folder("skyline_sprites")
-        self.gradients: Dict[tuple, pygame.Surface] = {}
-        self.decor_cache: Dict[tuple, pygame.Surface] = {}
+        self.gradients = BoundedCache(24)
+        self.decor_cache = BoundedCache(64)
         self.biome: Optional[Biome] = None
         self.pollution = 1.0
         self.fog_color: Color = (92, 54, 26)
@@ -89,7 +90,7 @@ class SkyRenderer:
         self.biome = biome
         self.skyline_cache = {}
         self.skyline_state = {}
-        self.decor_cache = {}
+        self.decor_cache = BoundedCache(64)
         count = max(1, len(biome.sky_decor))
         self.decor_x = [i * C.DECOR_CYCLE / count + 120 * i for i in range(len(biome.sky_decor))]
 
@@ -149,8 +150,6 @@ class SkyRenderer:
         key = (tuple(c // 4 for c in top), tuple(c // 4 for c in horizon))
         surface = self.gradients.get(key)
         if surface is None:
-            if len(self.gradients) > 24:
-                self.gradients.clear()
             column = pygame.Surface((1, C.HORIZON_Y))
             for y in range(C.HORIZON_Y):
                 column.set_at((0, y), lerp_color(top, horizon, y / max(1, C.HORIZON_Y - 1)))
@@ -368,8 +367,6 @@ class SkyRenderer:
         key = (name, height, alpha // 32, int(haze * 10), fog if haze else None)
         cached = self.decor_cache.get(key)
         if cached is None:
-            if len(self.decor_cache) > 64:
-                self.decor_cache.clear()
             w = max(2, int(sprite.get_width() * height / sprite.get_height()))
             cached = pygame.transform.smoothscale(sprite, (w, height))
             if haze:

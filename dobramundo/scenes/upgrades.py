@@ -17,12 +17,8 @@ class UpgradesScene(Scene):
     def __init__(self, app, tab: str = "vila") -> None:
         super().__init__(app)
         self.tab = tab
-        self.message = ""
-        self.message_time = 0.0
 
     def build(self) -> None:
-        from .village import VillageScene
-
         app = self.app
         profile = app.profile
         buttons = [
@@ -36,9 +32,7 @@ class UpgradesScene(Scene):
                 selected=self.tab == "aviao",
                 key="tab_aviao",
             ),
-            self.button(
-                (C.WIDTH - 224, 570, 200, 64), texts.UI["voltar"], lambda: app.go(VillageScene(app)), key="voltar"
-            ),
+            self.button((C.WIDTH - 224, 570, 200, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"),
         ]
         if self.tab == "vila":
             cells = grid(pygame.Rect(24, 154, C.WIDTH - 48, 400), len(VILLAGE_UPGRADES), 4, 12)
@@ -82,7 +76,7 @@ class UpgradesScene(Scene):
         self.build()
 
     def say(self, text: str) -> None:
-        self.message, self.message_time = text, 3.0
+        self.toast.show(text)
 
     def pay(self, cost: dict) -> bool:
         wallet = self.app.profile.recursos
@@ -112,15 +106,6 @@ class UpgradesScene(Scene):
         self.app.apply_options()  # a quilha muda a zona morta do controle corporal
         self.say(f"{part.name} nível {level + 1} instalado!")
         self.build()
-
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
-
-    def update(self, dt: float) -> None:
-        super().update(dt)
-        self.message_time = max(0.0, self.message_time - dt)
 
     def draw(self, screen: pygame.Surface) -> None:
         focused = self.menu.focused
@@ -172,8 +157,4 @@ class UpgradesScene(Scene):
                     self.draw_cost(screen, part.level_costs[level], (button.rect.left + 18, button.rect.bottom - 96))
             info = f"Resposta x{stats.response:.2f}   Agilidade x{stats.max_speed:.2f}   Colisão x{stats.hitbox:.2f}"
             self.text.blit(screen, info, (40, 588), T.SIZES["body"], T.WHITE, True)
-        if self.message_time > 0:
-            box = pygame.Rect(0, 0, 640, 54)
-            box.center = (C.WIDTH // 2 - 100, 600)
-            T.panel(screen, box, T.PAPER, T.ORANGE, 250, 14, 3)
-            self.text.blit(screen, self.message, box.center, T.SIZES["body"], T.INK, True, "center")
+        self.toast.draw(screen, self.text, (C.WIDTH // 2 - 100, 600))

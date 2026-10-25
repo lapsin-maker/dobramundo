@@ -19,6 +19,8 @@ import time
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from ..log import log
+
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
 Landmark = Tuple[float, float, float]  # x, y, visibilidade
 MIN_VISIBILITY = 0.5
@@ -111,18 +113,24 @@ class AxisMapper:
     Não usa câmera nem MediaPipe: recebe os pontos já detectados (testável sem webcam).
     """
 
-    CALIBRATION_SAMPLES = 40  # leituras com o ponto visível (cerca de 2 s)
+    CALIBRATION_SECONDS = 2.0  # tempo parado e visível para definir o repouso
+    MIN_SAMPLES = 15  # e pelo menos estas leituras (câmeras lentas levam mais tempo)
+    DEFAULT_READING_S = 0.05  # intervalo suposto quando a leitura não informa o tempo
     SMOOTHING = 0.35  # 0..1: quanto maior, mais rápido responde
     LOST_DECAY = 0.85  # sem o ponto, os eixos voltam ao centro aos poucos
 
-    def __init__(self, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
+    def __init__(
+        self, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+    ) -> None:
         self.segment = segment
         self.sensitivity = sensitivity
         self.dead_scale = dead_scale
+        self.invert_y = invert_y  # câmera vista de cima ou de cabeça para baixo: subir vira descer
         self.reset()
 
     def reset(self) -> None:
         self.samples: List[Point] = []
+        self.sampled_time = 0.0
         self.base: Optional[Point] = None
         self.ax = 0.0
         self.ay = 0.0
@@ -133,13 +141,17 @@ class AxisMapper:
 
     @property
     def progress(self) -> float:
-        return 1.0 if self.calibrated else min(1.0, len(self.samples) / self.CALIBRATION_SAMPLES)
+        if self.calibrated:
+            return 1.0
+        return min(len(self.samples) / self.MIN_SAMPLES, self.sampled_time / self.CALIBRATION_SECONDS, 1.0)
 
-    def feed(self, point: Optional[Point]) -> None:
+    def feed(self, point: Optional[Point], elapsed: Optional[float] = None) -> None:
+        """Uma leitura da câmera; elapsed = segundos desde a leitura anterior."""
         if not self.calibrated:
             if point is not None:
                 self.samples.append(point)
-                if len(self.samples) >= self.CALIBRATION_SAMPLES:
+                self.sampled_time += self.DEFAULT_READING_S if elapsed is None else elapsed
+                if self.progress >= 1.0:
                     # mediana: uma leitura ruim durante a calibração não desloca o repouso
                     self.base = (median([p[0] for p in self.samples]), median([p[1] for p in self.samples]))
             return
@@ -151,6 +163,8 @@ class AxisMapper:
         dead = seg.dead * self.dead_scale
         target_x = shape(point[0] - self.base[0], dead, max(dead * 2, seg.range_x / self.sensitivity))
         target_y = shape(self.base[1] - point[1], dead, max(dead * 2, seg.range_y / self.sensitivity))
+        if self.invert_y:
+            target_y = -target_y
         self.ax += (target_x - self.ax) * self.SMOOTHING
         self.ay += (target_y - self.ay) * self.SMOOTHING
 
@@ -192,7 +206,12 @@ class PoseCameraSource:
         self._landmarks: Optional[List[Landmark]] = None
         self._preview: Optional[bytes] = None
         if model_path is None or not Path(model_path).is_file():
-            self.error = "modelo de pose não encontrado"
+            self.fail("modelo de pose não encontrado")
+
+    def fail(self, message: str) -> None:
+        """Registra a falha da câmera (aparece nas opções e na calibração, e no log)."""
+        self.error = message
+        log.warning("câmera: %s", message)
 
     @property
     def running(self) -> bool:
@@ -205,10 +224,14 @@ class PoseCameraSource:
         self._thread = threading.Thread(target=self._run, name="webcam-pose", daemon=True)
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 1.5) -> None:
+        """Pede para a thread parar; a referência só é solta quando ela termina de fato."""
         self._stop.set()
-        if self._thread is not None and self._thread is not threading.current_thread():
-            self._thread.join(timeout=3.0)
+        thread = self._thread
+        if thread is not None and thread is not threading.current_thread():
+            thread.join(timeout=timeout)
+            if thread.is_alive():
+                return  # ainda liberando a câmera: running segue True e impede outra captura
         self._thread = None
 
     def snapshot(self) -> Tuple[int, Optional[List[Landmark]], Optional[bytes]]:
@@ -228,16 +251,16 @@ class PoseCameraSource:
 
             landmarker = create_landmarker(self.model_path)
         except ImportError:
-            self.error = "instale mediapipe e opencv para usar a câmera"
+            self.fail("instale mediapipe e opencv para usar a câmera")
             return
         except Exception as exc:  # modelo corrompido, runtime etc.
-            self.error = f"modelo de pose não carregou ({exc.__class__.__name__})"
+            self.fail(f"modelo de pose não carregou ({exc.__class__.__name__})")
             return
         capture = cv2.VideoCapture(self.camera_index)
         if not capture.isOpened():
             capture.release()
             landmarker.close()
-            self.error = "não foi possível abrir a webcam"
+            self.fail("não foi possível abrir a webcam")
             return
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_SIZE[0])
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_SIZE[1])
@@ -246,7 +269,7 @@ class PoseCameraSource:
             while not self._stop.is_set():
                 ok, frame = capture.read()
                 if not ok:
-                    self.error = "a webcam não envia imagem"
+                    self.fail("a webcam não envia imagem")
                     break
                 frame = cv2.flip(frame, 1)  # espelho: direita do jogador = direita da tela
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -259,7 +282,7 @@ class PoseCameraSource:
                 preview = cv2.resize(rgb, PREVIEW_SIZE, interpolation=cv2.INTER_AREA).tobytes()
                 self._publish(points, preview)  # só a miniatura fica na memória; nada é gravado
         except Exception as exc:
-            self.error = f"erro na câmera ({exc.__class__.__name__})"
+            self.fail(f"erro na câmera ({exc.__class__.__name__})")
         finally:
             capture.release()
             landmarker.close()
@@ -268,20 +291,23 @@ class PoseCameraSource:
 class BodyControl:
     """Liga a fonte da câmera ao mapeador do segmento escolhido.
 
-    ``source`` precisa ter start(), stop(), snapshot() -> (seq, pontos, miniatura) e
-    ``error`` (os testes usam uma fonte falsa com essa forma).
+    ``source`` precisa ter snapshot() -> (seq, pontos, miniatura) e ``error``; quem a
+    liga e desliga é o InputHub (os testes usam uma fonte falsa com essa forma).
     """
 
-    def __init__(self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
+    def __init__(
+        self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+    ) -> None:
         self.source = source
         self.segment = segment
-        self.mapper = AxisMapper(segment, sensitivity, dead_scale)
+        self.mapper = AxisMapper(segment, sensitivity, dead_scale, invert_y)
         self.preview: Optional[bytes] = None
         self.visible = False
         self.missing_time = 0.0  # segundos sem ver o segmento (pausa automática)
         self.seen_time = 0.0  # segundos seguidos vendo o segmento (retomada)
         self.landmarks: Optional[List[Landmark]] = None
         self._seq = -1
+        self._since_reading = 0.0
         self._frames = 0
 
     @property
@@ -300,16 +326,11 @@ class BodyControl:
     def progress(self) -> float:
         return self.mapper.progress
 
-    def start(self) -> None:
-        self.source.start()
-
-    def stop(self) -> None:
-        self.source.stop()
-
     def recalibrate(self) -> None:
         self.mapper.reset()
 
     def poll(self, dt: float) -> None:
+        self._since_reading += dt
         """Consome a leitura nova da câmera, se houver (chamado a cada quadro)."""
         seq, landmarks, preview = self.source.snapshot()
         if seq != 0 and seq != self._seq:
@@ -319,7 +340,8 @@ class BodyControl:
             self.preview = preview
             point = segment_point(landmarks, self.segment)
             self.visible = point is not None
-            self.mapper.feed(point)
+            self.mapper.feed(point, self._since_reading)
+            self._since_reading = 0.0
         if self.receiving:
             if self.visible:
                 self.seen_time += dt

@@ -20,8 +20,6 @@ class AboutScene(Scene):
         self.page = 0
 
     def build(self) -> None:
-        from .village import VillageScene
-
         buttons = [
             self.button(
                 (24 + i * 196, 86, 184, 54),
@@ -49,11 +47,7 @@ class AboutScene(Scene):
                     key="prox",
                 )
             )
-        buttons.append(
-            self.button(
-                (24, 570, 300, 64), texts.UI["voltar"], lambda: self.app.go(VillageScene(self.app)), key="voltar"
-            )
-        )
+        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         self.menu.set_buttons(buttons)
 
     def set_tab(self, tab: str) -> None:
@@ -64,13 +58,8 @@ class AboutScene(Scene):
         self.page = max(0, min(len(texts.ABOUT_SECTIONS) - 1, self.page + step))
         self.build()
 
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
-
     def draw(self, screen: pygame.Surface) -> None:
-        self.app.backdrop(screen, 1 / 60, "caatinga", 90.0)
+        self.app.backdrop(screen, self.last_dt, "caatinga", 90.0)
         T.veil(screen, (10, 18, 40), 140)
         self.title(screen, texts.UI["sobre"], texts.TAGLINE)
         logo = self.app.assets.sprite("ui", "logo")

@@ -4,7 +4,8 @@ Toda fase tem três estágios de paisagem (GDD, seção 4), que se sucedem aos
 33,3% e 66,7% de transformação:
     0  cidade industrial (dieselpunk)      - peças do kit industrial + toques regionais
     1  despertar ecológico                 - flora do bioma e construções restauradas
-    2  cidade solarpunk                    - arquitetura art nouveau, energia limpa, flora
+    2  cidade solarpunk                    - arquitetura art nouveau (EF_EdificioArtNouveau, Teatro
+                                            Amazonas), energia limpa, flora
 
 As listas de cenário são (nome do sprite, altura no mundo) e seguem ordem fixa,
 sem sorteio. Sprites com prefixo AM_/CA_ ficam em assets/biome_sprites, EF_ em
@@ -225,6 +226,7 @@ AMAZONIA = Biome(
         ("EF_HubMobilidade", 210.0),
         ("AM_PalafitaSolar", 200.0),
         ("EF_EscolaTaipa", 175.0),
+        ("EF_EdificioArtNouveau", 430.0),
         ("AM_Samauma", 420.0),
     ],
     solar_margin=[
@@ -240,6 +242,7 @@ AMAZONIA = Biome(
         ("AM_Buriti", 200.0),
         ("EF_Bicicletario", 73.0),
         ("AM_Heliconia", 80.0),
+        ("EF_ArvoreArtNouveau", 200.0),
     ],
     landmark=("AM_TeatroAmazonas", 440.0),
     solar_skyline=[
@@ -356,6 +359,7 @@ CAATINGA = Biome(
         ("EF_MercadoBambu", 190.0),
         ("CA_Mandacaru", 270.0),
         ("EF_EscolaTaipa", 175.0),
+        ("EF_EdificioArtNouveau", 430.0),
         ("CA_Mangueira", 250.0),
     ],
     solar_margin=[
@@ -371,6 +375,7 @@ CAATINGA = Biome(
         ("CA_Videira", 90.0),
         ("CA_Umbuzeiro", 170.0),
         ("EF_BancoJardim", 45.0),
+        ("EF_ArvoreArtNouveau", 200.0),
     ],
     landmark=("CA_Carranca", 320.0),
     solar_skyline=[

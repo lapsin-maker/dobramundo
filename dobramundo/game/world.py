@@ -31,6 +31,13 @@ class World:
         self.biome = biome
         self.mode = mode
         self.rng = rng or random.Random()
+        self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
+        self.visual = C.START_RESTORATION  # transformação desenhada (alcança a real aos poucos)
+        self.segments: List[float] = []
+        self.segment_base = 0
+        self.entities: List[Entity] = []
+        self.green_since: Dict[int, float] = {}
+        self.solar_since: Dict[int, float] = {}
         self.reset()
 
     # ------------------------------------------------------------ início
@@ -48,7 +55,7 @@ class World:
             f"{s}:{k}": 0 for s in ("industrial", "solar") for k in OBSTACLE_KINDS
         }
         self.green_since: Dict[int, float] = {}
-        self.final_since: Dict[int, float] = {}
+        self.solar_since: Dict[int, float] = {}
         self.set_restoration(restoration)
         z = 520.0
         while z <= C.TRACK_LENGTH:
@@ -60,13 +67,13 @@ class World:
         self.restoration = clamp(float(value), 0.0, 100.0)
         self.visual = self.restoration
         self.green_since = {}
-        self.final_since = {}
+        self.solar_since = {}
         for i in range(len(self.segments)):
             seg = self.segment_base + i
             if self.green_rank(seg) < self.green_share():
                 self.green_since[seg] = -1e12
-            if self.final_rank(seg) < self.final_share():
-                self.final_since[seg] = -1e12
+            if self.solar_rank(seg) < self.solar_share():
+                self.solar_since[seg] = -1e12
 
     # ------------------------------------------------------- transformação
     def add_restoration(self, amount: float) -> None:
@@ -99,7 +106,7 @@ class World:
         return (seg * GOLDEN) % 1.0
 
     @staticmethod
-    def final_rank(seg: int) -> float:
+    def solar_rank(seg: int) -> float:
         return (seg * PLASTIC + 0.31) % 1.0
 
     def green_share(self) -> float:
@@ -107,10 +114,10 @@ class World:
             return 0.0
         return smoothstep((self.visual - C.GRASS_START_RESTORATION) / C.GREEN_SWEEP_RESTORATION)
 
-    def final_share(self) -> float:
-        if self.visual < C.FINAL_START_RESTORATION:
+    def solar_share(self) -> float:
+        if self.visual < C.SOLAR_START_RESTORATION:
             return 0.0
-        return smoothstep((self.visual - C.FINAL_START_RESTORATION) / C.FINAL_SWEEP_RESTORATION)
+        return smoothstep((self.visual - C.SOLAR_START_RESTORATION) / C.SOLAR_SWEEP_RESTORATION)
 
     def _sweep(self, since: Dict[int, float], rank, share: float) -> None:
         for seg in [s for s in since if s < self.segment_base]:
@@ -129,12 +136,12 @@ class World:
             return 0.0
         return smoothstep((self.distance - since) / C.GREEN_GROW_DISTANCE)
 
-    def segment_final(self, seg: int) -> float:
+    def segment_solar(self, seg: int) -> float:
         """0 = estágio anterior, 1 = peça solarpunk crescida."""
-        since = self.final_since.get(seg)
+        since = self.solar_since.get(seg)
         if since is None:
             return 0.0
-        return smoothstep((self.distance - since) / C.FINAL_GROW_DISTANCE)
+        return smoothstep((self.distance - since) / C.SOLAR_GROW_DISTANCE)
 
     def segment_index(self, z: float) -> Optional[int]:
         if not self.segments:
@@ -146,16 +153,16 @@ class World:
         i = self.segment_index(z)
         return None if i is None else self.segment_base + i
 
-    def final_at(self, z: float) -> bool:
+    def solar_at(self, z: float) -> bool:
         seg = self.segment_at(z)
-        return seg is not None and self.segment_final(seg) > 0.0
+        return seg is not None and self.segment_solar(seg) > 0.0
 
-    def spawn_is_final(self, z: float) -> bool:
+    def spawn_is_solar(self, z: float) -> bool:
         """Objeto novo em z: usa os obstáculos solarpunk se o trecho dele chega no estágio 3."""
         seg = self.segment_at(z)
         if seg is None:
             seg = self.segment_base + len(self.segments)
-        return seg in self.final_since or self.final_rank(seg) < self.final_share()
+        return seg in self.solar_since or self.solar_rank(seg) < self.solar_share()
 
     def stage_flags(self):
         """Por trecho: (chão verde, estágio solarpunk), calculados uma vez por quadro."""
@@ -164,12 +171,12 @@ class World:
             if self.green_since
             else None
         )
-        final = (
-            [self.segment_final(self.segment_base + i) > 0.0 for i in range(len(self.segments))]
-            if self.final_since
+        solar = (
+            [self.segment_solar(self.segment_base + i) > 0.0 for i in range(len(self.segments))]
+            if self.solar_since
             else None
         )
-        return green, final
+        return green, solar
 
     # -------------------------------------------------------------- spawn
     @property
@@ -213,7 +220,7 @@ class World:
         if rng.random() < 0.35 + self.difficulty * 0.30:
             roll = rng.random()
             kind = "low" if roll < 0.45 else ("gate" if roll < 0.75 else "tower")
-            solar = self.spawn_is_final(z)
+            solar = self.spawn_is_solar(z)
             spec = self.next_obstacle(kind, solar)
             self.entities.append(Entity(z, rng.choice(available), kind, 0.0, spec.sprite, spec, solar))
         if rng.random() < 0.13:
@@ -227,14 +234,14 @@ class World:
         self.distance += dz
         self.ease_visual(dt)
         self._sweep(self.green_since, self.green_rank, self.green_share())
-        self._sweep(self.final_since, self.final_rank, self.final_share())
+        self._sweep(self.solar_since, self.solar_rank, self.solar_share())
         segments = self.segments
         for i in range(len(segments)):
             segments[i] -= dz
         while segments and segments[0] < -40.0:
             segments.pop(0)
             self.segment_base += 1
-            self.final_since.pop(self.segment_base - 1, None)
+            self.solar_since.pop(self.segment_base - 1, None)
             new_z = (segments[-1] if segments else C.SEGMENT_LENGTH) + C.SEGMENT_LENGTH
             segments.append(new_z)
             self.spawn_pattern(new_z + 20.0)

@@ -11,6 +11,7 @@ from ..content import texts
 from ..input.pose import SEGMENTS
 from ..persistence import CONTROL_SEGMENTS, SURFACES
 from ..ui import theme as T
+from . import make_scene
 from .base import Scene
 
 SEGMENT_LABELS = {"teclado": "Teclado e mouse", **{k: s.label for k, s in SEGMENTS.items()}}
@@ -21,14 +22,14 @@ SURFACE_HINT = {
     "mesa": "uma das mãos",
     "chao": "pés, em pé sobre a projeção",
 }
-ROW_H = 56
-GAP = 10
+ROW_H = 52
+GAP = 8
+# Superfície -> segmento sugerido (aplicado quando a câmera já está em uso).
+SURFACE_SEGMENT = {"chao": "pes", "mesa": "mao_direita", "parede": "tronco_pe"}
 
 
 class OptionsScene(Scene):
     def build(self) -> None:
-        from .village import VillageScene
-
         o = self.app.options
         profile = self.app.profile
         left, right = 24, 566
@@ -154,11 +155,11 @@ class OptionsScene(Scene):
         toggle(right, y, "contraste", texts.UI["alto_contraste"], o.alto_contraste, lambda: self.flip("alto_contraste"))
         y += ROW_H + GAP
         toggle(right, y, "tela", "Tela cheia (F11)", o.tela_cheia, self.fullscreen)
-        buttons.append(
-            self.button(
-                (24, 570, 300, 64), texts.UI["voltar"], lambda: self.app.go(VillageScene(self.app)), key="voltar"
-            )
+        y += ROW_H + GAP
+        toggle(
+            right, y, "inverter", "Inverter subir e descer", o.inverter_vertical, lambda: self.flip("inverter_vertical")
         )
+        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         buttons.append(self.button((340, 570, 300, 64), "Ver a abertura", self.intro, key="abertura"))
         self.menu.set_buttons(buttons)
 
@@ -173,7 +174,14 @@ class OptionsScene(Scene):
         self.changed()
 
     def set_surface(self, index: int) -> None:
-        self.app.options.superficie = SURFACES[index % len(SURFACES)]
+        """Troca a superfície; com a câmera em uso, já aplica o segmento sugerido para ela."""
+        surface = SURFACES[index % len(SURFACES)]
+        self.app.options.superficie = surface
+        suggested = SURFACE_SEGMENT.get(surface)
+        profile = self.app.profile
+        if suggested and profile.controle != "teclado" and profile.controle != suggested:
+            profile.controle = suggested
+            self.toast.show(f"Segmento ajustado para {SEGMENT_LABELS[suggested]} ({SURFACE_LABELS[surface]})")
         self.changed()
 
     def adjust(self, name: str, step: float, low: float, high: float) -> None:
@@ -194,27 +202,19 @@ class OptionsScene(Scene):
         self.changed()
 
     def calibrate(self) -> None:
-        from .calibration import CalibrationScene
-
-        self.app.go(CalibrationScene(self.app, return_to=OptionsScene(self.app)))
+        self.goto("calibracao", return_to=make_scene(self.app, "opcoes"))
 
     def intro(self) -> None:
-        from .intro import IntroScene
-
-        self.app.go(IntroScene(self.app))
-
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
+        self.goto("abertura")
 
     def draw(self, screen: pygame.Surface) -> None:
-        self.app.backdrop(screen, 1 / 60, None, 50.0)
+        self.app.backdrop(screen, self.last_dt, None, 50.0)
         T.veil(screen, (10, 18, 40), 140)
         self.title(screen, texts.UI["opcoes"], "Ajustes para o supervisor e para a criança")
         self.text.blit(screen, "Controle e superfície", (24, 92), T.SIZES["label"], T.WHITE, True)
         self.text.blit(screen, "Som e visão", (566, 92), T.SIZES["label"], T.WHITE, True)
         self.draw_menu(screen)
+        self.toast.draw(screen, self.text, (C.WIDTH // 2 + 160, 604), 560)
         body = self.app.input.body
         if body is not None and body.error:
             self.text.blit(

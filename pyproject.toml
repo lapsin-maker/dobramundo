@@ -1,11 +1,21 @@
 [project]
 name = "dobramundo"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Exergame sério de voo: um avião de papel reciclado, pilotado com o corpo, transforma cidades brasileiras em cidades solarpunk."
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [{ name = "Liga de Psiquiatria e Neurociências – CENSUPEG" }]
 dependencies = ["pygame>=2.5,<3"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "dobramundo.__version__" }  # a versão fica só em dobramundo/__init__.py
+
+[tool.setuptools.packages.find]
+include = ["dobramundo*"]
 
 [project.optional-dependencies]
 webcam = ["mediapipe>=0.10.9", "opencv-python-headless>=4.8"]

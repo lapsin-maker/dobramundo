@@ -7,14 +7,17 @@ descarte gradual, que evita engasgos.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import pygame
 
 from .. import config as C
-from ..util import Color, clamp
+from ..util import Color, clamp, haze_at
+from .cache import BoundedCache
 
 Size = Tuple[int, int]
+MIP_CACHE_LIMIT = 600  # ~120 sprites de cenário x 2 lados + aparências do avião
+OUTLINE_CACHE_LIMIT = 200
 
 
 def project(x: float, y: float, z: float, cam: float) -> Tuple[float, float, float]:
@@ -25,8 +28,7 @@ def project(x: float, y: float, z: float, cam: float) -> Tuple[float, float, flo
 
 
 def fog_level(z: float) -> int:
-    amount = clamp((z - C.FOG_START) / (C.FOG_END - C.FOG_START), 0.0, 1.0)
-    return int(amount * C.FOG_LEVELS + 0.5)
+    return int(haze_at(z) * C.FOG_LEVELS + 0.5)
 
 
 def outline_surface(sprite: pygame.Surface, color: Color, thickness: int) -> pygame.Surface:
@@ -56,20 +58,13 @@ def outline_surface(sprite: pygame.Surface, color: Color, thickness: int) -> pyg
 
 class SpriteCache:
     def __init__(self) -> None:
-        self.scaled: Dict[tuple, pygame.Surface] = {}
-        self.mips: Dict[tuple, List[pygame.Surface]] = {}
-        self.outlines: Dict[tuple, pygame.Surface] = {}
+        self.scaled = BoundedCache(C.SPRITE_CACHE_LIMIT)  # reescalas, neblina e miniaturas
+        self.mips = BoundedCache(MIP_CACHE_LIMIT)  # versões pré-reduzidas por sprite
+        self.outlines = BoundedCache(OUTLINE_CACHE_LIMIT)  # alto contraste, em resolução cheia
         self.fog_color: Color = (92, 54, 26)
 
-    def clear(self) -> None:
-        self.scaled.clear()
-        self.mips.clear()
-
     def put(self, key: tuple, value: pygame.Surface) -> None:
-        cache = self.scaled
-        while len(cache) >= C.SPRITE_CACHE_LIMIT:
-            cache.pop(next(iter(cache)))
-        cache[key] = value
+        self.scaled[key] = value
 
     def mip_levels(self, sprite: pygame.Surface, key: tuple, flip: bool) -> List[pygame.Surface]:
         levels = self.mips.get((key, flip))

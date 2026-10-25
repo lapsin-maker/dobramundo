@@ -1,0 +1,31 @@
+name: Testes
+
+on:
+  push:
+    branches: [main, dobramundo]
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.8: mínimo declarado (código compatível com consoles mais antigos); 3.12: versão do build
+        python-version: ["3.8", "3.12"]
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Dependências (o jogo e os testes não precisam da webcam)
+        run: python -m pip install -r requirements.txt pytest ruff
+      - name: Lint
+        run: ruff check dobramundo tests
+      - name: Testes
+        run: python -m pytest -q
+      - name: Self-test
+        run: python -m dobramundo --self-test 60

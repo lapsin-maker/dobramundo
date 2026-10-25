@@ -35,7 +35,7 @@ fi
 PY=".venv/bin/python"
 
 echo "[2/5] Instalando dependencias (jogo, webcam e PyInstaller)..."
-"$PY" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" \
+"$PY" -m pip install -r requirements-webcam.txt "pyinstaller>=6,<7" -c constraints-build.txt \
     || die "falha ao instalar as dependencias. Verifique a conexao com a internet."
 
 echo "[3/5] Limpando build/ e dist/..."
@@ -54,7 +54,7 @@ DATA_DIR="${DOBRAMUNDO_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/Dobramundo
 REPORT="$DATA_DIR/self_test.json"
 rm -f "$REPORT"
 
-if ! SDL_VIDEODRIVER=dummy "$EXE" --self-test 90; then
+if ! SDL_VIDEODRIVER=dummy "$EXE" --self-test 90 --exigir-camera; then
     die "o self-test falhou (codigo de saida diferente de 0)."
 fi
 [ -f "$REPORT" ] || die "o self-test nao gerou o relatorio em $REPORT."

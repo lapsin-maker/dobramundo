@@ -20,8 +20,6 @@ ROW_STEP = 58
 
 class PilotScene(Scene):
     def build(self) -> None:
-        from .village import VillageScene
-
         app = self.app
         look = app.profile.piloto
         buttons = []
@@ -42,9 +40,7 @@ class PilotScene(Scene):
                 )
             )
             buttons.append(self.button((1008, y, 64, 50), ">", (lambda f=field: self.cycle(f, 1)), key=f"{field}_next"))
-        buttons.append(
-            self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: app.go(VillageScene(app)), key="voltar")
-        )
+        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         self.menu.set_buttons(buttons)
 
     def cycle(self, field: str, step: int) -> None:
@@ -55,15 +51,10 @@ class PilotScene(Scene):
         self.app.save()
         self.build()
 
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
-
     def draw(self, screen: pygame.Surface) -> None:
         app = self.app
         profile = app.profile
-        app.backdrop(screen, 1 / 60, None, 40.0)
+        app.backdrop(screen, self.last_dt, None, 40.0)
         T.veil(screen, (10, 18, 40), 120)
         self.title(screen, texts.UI["piloto"], "Monte o piloto do seu jeito")
         card = pygame.Rect(24, 86, 516, 470)

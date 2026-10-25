@@ -30,16 +30,12 @@ class HangarScene(Scene):
     def __init__(self, app, tab: str = "modelo") -> None:
         super().__init__(app)
         self.tab = tab
-        self.message = ""
-        self.message_time = 0.0
 
     @property
     def plane(self) -> str:
         return self.app.profile.aviao
 
     def build(self) -> None:
-        from .village import VillageScene
-
         app = self.app
         profile = app.profile
         buttons = [
@@ -85,9 +81,7 @@ class HangarScene(Scene):
                         rect, "", (lambda k=key: self.choose_pattern(k)), selected=key == current, key=f"padrao_{key}"
                     )
                 )
-        buttons.append(
-            self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: app.go(VillageScene(app)), key="voltar")
-        )
+        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         self.menu.set_buttons(buttons)
 
     def set_tab(self, tab: str) -> None:
@@ -95,7 +89,7 @@ class HangarScene(Scene):
         self.build()
 
     def say(self, text: str) -> None:
-        self.message, self.message_time = text, 3.0
+        self.toast.show(text)
 
     def choose_plane(self, key: str) -> None:
         self.app.profile.aviao = key
@@ -125,20 +119,11 @@ class HangarScene(Scene):
         self.app.save()
         self.build()
 
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
-
-    def update(self, dt: float) -> None:
-        super().update(dt)
-        self.message_time = max(0.0, self.message_time - dt)
-
     # ------------------------------------------------------------ desenho
     def draw(self, screen: pygame.Surface) -> None:
         app = self.app
         profile = app.profile
-        app.backdrop(screen, 1 / 60, None, 40.0)
+        app.backdrop(screen, self.last_dt, None, 40.0)
         T.veil(screen, (10, 18, 40), 120)
         self.title(screen, texts.UI["hangar"], "Escolha a dobradura e a pintura do seu avião de papel")
         wallet = f"Pontos para padrões: {points_text(profile.pontos)}"
@@ -206,8 +191,4 @@ class HangarScene(Scene):
                 True,
                 "midtop",
             )
-        if self.message_time > 0:
-            box = pygame.Rect(0, 0, 640, 54)
-            box.center = (C.WIDTH // 2 + 120, 600)
-            T.panel(screen, box, T.PAPER, T.ORANGE, 250, 14, 3)
-            self.text.blit(screen, self.message, box.center, T.SIZES["body"], T.INK, True, "center")
+        self.toast.draw(screen, self.text, (C.WIDTH // 2 + 120, 600))

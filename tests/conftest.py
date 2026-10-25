@@ -82,4 +82,4 @@ def app(monkeypatch):
     profile.consentimento = True
     instance = App(audio=False, profile=profile)
     yield instance
-    instance.input.stop_body()
+    instance.input.stop_camera()

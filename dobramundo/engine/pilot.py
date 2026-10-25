@@ -13,12 +13,13 @@ anchors.json: por vista e avião, a caixa [x0, y0, x1, y1] (em pixels do sprite
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import pygame
 
 from ..content.pilot import ACCESSORIES, GLASSES, HAIR_COLORS, SHIRT_COLORS, SKIN_TONES, find_option, normalize_pilot
 from .assets import Assets
+from .cache import BoundedCache
 
 FOLDER = "pilot_layers"
 MIN_PILOT_SHARE = 0.27  # altura mínima do piloto em relação ao sprite do avião
@@ -34,11 +35,7 @@ class PilotRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         self.anchors = assets.json(FOLDER, "anchors.json") or {}
-        self.cache: Dict[tuple, pygame.Surface] = {}
-
-    @property
-    def available(self) -> bool:
-        return bool(self.assets.folder(FOLDER)) and bool(self.anchors)
+        self.cache = BoundedCache(32)  # piloto montado por vista e aparência
 
     def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
         return self.assets.folder(FOLDER).get(f"{view}__{name}")
@@ -76,8 +73,6 @@ class PilotRenderer:
             if surface is None:
                 continue
             canvas.blit(tinted(surface, color) if color is not None else surface, (0, 0))
-        if len(self.cache) > 32:
-            self.cache.pop(next(iter(self.cache)))
         self.cache[key] = canvas
         return canvas
 

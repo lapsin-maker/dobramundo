@@ -19,6 +19,8 @@ class Entity:
     spec: Optional[ObstacleSpec] = None  # obstáculos: medidas de colisão
     solar: bool = False  # obstáculo do estágio solarpunk (alerta no chão)
     collected: bool = False
+    hit: bool = False  # obstáculo que acertou o avião (não conta como desviado)
+    passed: bool = False  # já passou pelo avião (contado nas metas)
 
     @property
     def x(self) -> float:

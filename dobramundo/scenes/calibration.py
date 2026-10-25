@@ -50,9 +50,7 @@ class CalibrationScene(Scene):
         self.done_time = 0.0
 
     def options(self) -> None:
-        from .options import OptionsScene
-
-        self.app.go(OptionsScene(self.app))
+        self.goto("opcoes")
 
     def keyboard(self) -> None:
         self.app.profile.controle = "teclado"
@@ -64,9 +62,7 @@ class CalibrationScene(Scene):
         if self.return_to is not None:
             self.app.go(self.return_to)
         else:
-            from .village import VillageScene
-
-            self.app.go(VillageScene(self.app))
+            self.goto("vila")
 
     def back(self) -> None:
         self.finish()
@@ -84,7 +80,7 @@ class CalibrationScene(Scene):
                 self.finish()
 
     def draw(self, screen: pygame.Surface) -> None:
-        self.app.backdrop(screen, 1 / 60, None, 20.0)
+        self.app.backdrop(screen, self.last_dt, None, 20.0)
         T.veil(screen, (10, 18, 40), 160)
         body = self.app.input.body
         segment = SEGMENTS.get(self.app.profile.controle)

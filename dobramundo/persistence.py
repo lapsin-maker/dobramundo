@@ -26,6 +26,7 @@ from .content.planes import (
     PLANE_PATTERN_KEYS,
 )
 from .content.progress import MAX_PART_LEVEL, PART_KEYS, VILLAGE_KEYS
+from .log import log
 from .paths import legacy_data_dirs, user_data_dir
 
 PROFILE_FILENAME = "dobramundo_perfil.json"
@@ -50,12 +51,14 @@ class Options:
     tela_cheia: bool = False
     permanencia: float = 1.2  # segundos parado sobre um botão para selecioná-lo
     sensibilidade: float = 1.0  # alcance do movimento corporal (maior = movimento menor basta)
+    inverter_vertical: bool = False  # câmera vista de cima (chão, mesa): subir e descer trocados
 
 
 @dataclass
 class Profile:
     versao: int = SCHEMA_VERSION
     consentimento: bool = False  # supervisor leu o aviso de uso e privacidade
+    consentimento_em: str = ""  # data e hora (ISO) da confirmação do supervisor
     abertura_vista: bool = False
     modo: str = "normal"
     controle: str = "teclado"
@@ -123,36 +126,47 @@ class Profile:
 
     @classmethod
     def from_dict(cls, data: dict) -> Profile:
+        """Lê campo a campo, aceitando só o tipo esperado. ProfileError se não der para validar."""
         profile = cls()
         if not isinstance(data, dict):
-            return profile
+            raise ProfileError("o perfil não é um objeto JSON")
         for name in profile.__dataclass_fields__:
-            if name == "opcoes" or name not in data:
-                continue
-            default = getattr(profile, name)
-            value = data[name]
-            if isinstance(default, bool):
-                setattr(profile, name, bool(value))
-            elif isinstance(default, int):
-                try:
-                    setattr(profile, name, int(value))
-                except (TypeError, ValueError):
-                    pass
-            elif isinstance(default, type(value)):
-                setattr(profile, name, value)
+            if name != "opcoes" and name in data:
+                _assign(profile, name, data[name])
         options = data.get("opcoes")
         if isinstance(options, dict):
             for name in profile.opcoes.__dataclass_fields__:
                 if name in options:
-                    default = getattr(profile.opcoes, name)
-                    try:
-                        setattr(profile.opcoes, name, type(default)(options[name]))
-                    except (TypeError, ValueError):
-                        pass
+                    _assign(profile.opcoes, name, options[name])
         try:
             return profile.normalize()
-        except (TypeError, ValueError, AttributeError, IndexError):
-            return cls()
+        except (TypeError, ValueError, AttributeError, IndexError) as exc:
+            raise ProfileError(f"perfil inválido ({exc.__class__.__name__})") from exc
+
+
+class ProfileError(ValueError):
+    """Perfil salvo que não pôde ser lido ou validado."""
+
+
+def _as_bool(value: object) -> bool:
+    """Booleanos também vindos de texto ("false", "0", "não") quando o JSON foi editado à mão."""
+    if isinstance(value, str):
+        return value.strip().lower() not in ("", "0", "false", "falso", "nao", "não", "no", "off")
+    return bool(value)
+
+
+def _assign(target: object, name: str, value: object) -> None:
+    """Grava value em target.name convertendo para o tipo do valor padrão (ignora o que não serve)."""
+    default = getattr(target, name)
+    try:
+        if isinstance(default, bool):
+            setattr(target, name, _as_bool(value))
+        elif isinstance(default, (int, float)) and not isinstance(value, bool):
+            setattr(target, name, type(default)(value))
+        elif isinstance(default, type(value)):
+            setattr(target, name, value)
+    except (TypeError, ValueError):
+        pass
 
 
 def profile_path() -> Path:
@@ -202,12 +216,17 @@ def load_profile() -> Profile:
     path = profile_path()
     data = _read_json(path)
     if data is not None:
-        return Profile.from_dict(data)
-    if path.is_file():  # arquivo ilegível: guarda uma cópia antes de recomeçar o perfil
         try:
-            path.replace(path.with_name(path.stem + ".corrompido.json"))
+            return Profile.from_dict(data)
+        except ProfileError as exc:
+            log.warning("perfil descartado: %s", exc)
+    if path.is_file():  # ilegível ou inválido: guarda uma cópia antes de recomeçar o perfil
+        backup = path.with_name(path.stem + ".corrompido.json")
+        try:
+            path.replace(backup)
+            log.warning("perfil ilegível guardado em %s", backup)
         except OSError:
-            pass
+            log.error("não foi possível guardar a cópia do perfil ilegível %s", path)
     profile = Profile()
     import_legacy(profile)
     return profile
@@ -221,5 +240,6 @@ def save_profile(profile: Profile) -> bool:
         temp.write_text(json.dumps(profile.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
         temp.replace(path)
         return True
-    except OSError:
+    except OSError as exc:
+        log.error("não foi possível gravar o perfil em %s (%s)", path, exc)
         return False

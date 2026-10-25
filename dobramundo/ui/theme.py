@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 
 import pygame
 
+from ..engine.cache import BoundedCache
 from ..util import Color, rgb
 
 # Paleta tirada da logo: azul-marinho do letreiro, turquesa, amarelo e laranja da aquarela.
@@ -32,7 +33,8 @@ class Text:
 
     def __init__(self) -> None:
         self.fonts: Dict[Tuple[int, bool], pygame.font.Font] = {}
-        self.cache: Dict[tuple, pygame.Surface] = {}
+        self.cache = BoundedCache(600)  # superfícies de texto prontas
+        self.wrapped = BoundedCache(200)  # quebras de linha por (texto, largura, tamanho)
 
     def font(self, size: int, bold: bool = False) -> pygame.font.Font:
         key = (size, bold)
@@ -46,14 +48,19 @@ class Text:
         key = (text, size, color, bold)
         surf = self.cache.get(key)
         if surf is None:
-            if len(self.cache) > 600:
-                for old in list(self.cache)[:200]:
-                    del self.cache[old]
             surf = self.font(size, bold).render(text, True, color)
             self.cache[key] = surf
         return surf
 
     def wrap(self, text: str, width: int, size: int = SIZES["body"], bold: bool = False) -> List[str]:
+        """Linhas que cabem em width (em cache: as telas redesenham o mesmo texto a cada quadro)."""
+        key = (text, width, size, bold)
+        lines = self.wrapped.get(key)
+        if lines is None:
+            lines = self.wrapped.put(key, self._wrap(text, width, size, bold))
+        return lines
+
+    def _wrap(self, text: str, width: int, size: int, bold: bool) -> List[str]:
         font = self.font(size, bold)
         lines: List[str] = []
         for paragraph in text.split("\n"):

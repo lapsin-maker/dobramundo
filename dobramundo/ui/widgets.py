@@ -86,11 +86,11 @@ class Button:
         elif self.label:
             if self.icon is None and self.swatch is None:
                 if self.sublabel:
-                    text.blit(screen, self.label, (rect.centerx, rect.centery - 12), self.size, color, True, "center")
+                    text.blit(screen, self.label, (rect.centerx, rect.centery - 10), self.size, color, True, "center")
                     text.blit(
                         screen,
                         self.sublabel,
-                        (rect.centerx, rect.centery + 16),
+                        (rect.centerx, rect.centery + 13),
                         T.SIZES["small"],
                         T.MUTED,
                         anchor="center",
@@ -100,9 +100,9 @@ class Button:
             else:
                 left = content_left if self.swatch is None else rect.left + rect.height + 2
                 if self.sublabel:
-                    text.blit(screen, self.label, (left, rect.centery - 12), self.size, color, True, "midleft")
+                    text.blit(screen, self.label, (left, rect.centery - 10), self.size, color, True, "midleft")
                     text.blit(
-                        screen, self.sublabel, (left, rect.centery + 14), T.SIZES["small"], T.MUTED, anchor="midleft"
+                        screen, self.sublabel, (left, rect.centery + 12), T.SIZES["small"], T.MUTED, anchor="midleft"
                     )
                 else:
                     text.blit(screen, self.label, (left, rect.centery), self.size, color, True, "midleft")
@@ -273,3 +273,23 @@ def grid(
 
 def row(rect: pygame.Rect, count: int, gap: int = 14) -> List[pygame.Rect]:
     return grid(rect, count, count, gap)
+
+
+def star(
+    screen: pygame.Surface,
+    center: Tuple[int, int],
+    radius: int,
+    filled: bool,
+    color: Color = T.SUN,
+    outline: Color = T.NAVY_DARK,
+) -> None:
+    """Estrela de cinco pontas (cheia ou só o contorno)."""
+    cx, cy = center
+    points = []
+    for i in range(10):
+        r = radius if i % 2 == 0 else radius * 0.45
+        angle = -math.pi / 2 + i * math.pi / 5
+        points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+    if filled:
+        pygame.draw.polygon(screen, color, points)
+    pygame.draw.polygon(screen, outline, points, 3)

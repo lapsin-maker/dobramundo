@@ -8,12 +8,15 @@ arquitetura solarpunk.
 from __future__ import annotations
 
 import math
+from typing import Dict, Tuple
 
 import pygame
 
 from .. import config as C
 from ..content import texts
+from ..content.biomes import BIOMES
 from ..content.progress import VILLAGE_UPGRADES
+from ..persistence import MODE_LABELS
 from ..ui import theme as T
 from ..ui.widgets import row
 from ..util import lerp_color, rgb
@@ -36,6 +39,20 @@ SOLAR_BACK = [
 ]
 SKY_POLLUTED = (rgb("3b2a22"), rgb("8a5a36"))
 SKY_CLEAN = (rgb("4fb3f0"), rgb("fff2b0"))
+
+
+_puffs: Dict[Tuple[int, int], pygame.Surface] = {}
+
+
+def smoke_puff(radius: int, alpha: int) -> pygame.Surface:
+    """Bolha de fumaça translúcida (em cache por raio e opacidade: ~100 variações no total)."""
+    key = (radius, alpha)
+    surf = _puffs.get(key)
+    if surf is None:
+        surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surf, (70, 60, 55, alpha), (radius, radius), radius)
+        _puffs[key] = surf
+    return surf
 
 
 def village_progress(profile) -> float:
@@ -67,9 +84,7 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
     if progress < 0.5:  # fumaça das chaminés
         for i in range(5):
             r = 26 + i * 9 + int(4 * math.sin(scene.time * 1.5 + i))
-            surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            pygame.draw.circle(surf, (70, 60, 55, 120 - i * 18), (r, r), r)
-            screen.blit(surf, (260 - r + i * 22, 110 - i * 34 - r))
+            screen.blit(smoke_puff(r, 120 - i * 18), (260 - r + i * 22, 110 - i * 34 - r))
     owned = set(app.profile.vila)
     for upgrade in sorted(VILLAGE_UPGRADES, key=lambda u: u.slot[1]):
         x, base_y, height = upgrade.slot
@@ -88,40 +103,49 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
 
 
 class VillageScene(Scene):
-    def build(self) -> None:
-        from .about import AboutScene
-        from .hangar import HangarScene
-        from .map import MapScene
-        from .options import OptionsScene
-        from .pilot import PilotScene
-        from .upgrades import UpgradesScene
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.confirm_exit = False  # ESC na vila pergunta se é para sair do jogo
 
-        app = self.app
+    def build(self) -> None:
+        if self.confirm_exit:
+            rects = row(pygame.Rect(C.WIDTH // 2 - 330, 340, 660, 80), 2)
+            self.menu.set_buttons(
+                [
+                    self.button(rects[0], "Continuar jogando", self.back, color=T.GREEN, key="continuar"),
+                    self.button(rects[1], "Sair do jogo", self.quit, color=T.RED, key="sair"),
+                ],
+                keep_focus=False,
+            )
+            return
+
         rects = row(pygame.Rect(16, 560, C.WIDTH - 32, 76), 6, 10)
         self.menu.set_buttons(
             [
                 self.button(
                     rects[0],
                     texts.UI["decolar"],
-                    lambda: app.go(MapScene(app)),
+                    lambda: self.goto("mapa"),
                     color=T.ORANGE,
                     sublabel="Mapa dos biomas",
                     key="decolar",
                 ),
-                self.button(
-                    rects[1], texts.UI["melhorias"], lambda: app.go(UpgradesScene(app)), sublabel="Vila e avião"
-                ),
-                self.button(rects[2], texts.UI["hangar"], lambda: app.go(HangarScene(app)), sublabel="Avião e pintura"),
-                self.button(rects[3], texts.UI["piloto"], lambda: app.go(PilotScene(app)), sublabel="Personalizar"),
-                self.button(rects[4], texts.UI["opcoes"], lambda: app.go(OptionsScene(app)), sublabel="Controle e som"),
-                self.button(rects[5], texts.UI["sobre"], lambda: app.go(AboutScene(app)), sublabel="ODS e créditos"),
+                self.button(rects[1], texts.UI["melhorias"], lambda: self.goto("melhorias"), sublabel="Vila e avião"),
+                self.button(rects[2], texts.UI["hangar"], lambda: self.goto("hangar"), sublabel="Avião e pintura"),
+                self.button(rects[3], texts.UI["piloto"], lambda: self.goto("piloto"), sublabel="Personalizar"),
+                self.button(rects[4], texts.UI["opcoes"], lambda: self.goto("opcoes"), sublabel="Controle e som"),
+                self.button(rects[5], texts.UI["sobre"], lambda: self.goto("sobre"), sublabel="ODS e créditos"),
             ]
         )
 
     def back(self) -> None:
-        from .options import OptionsScene
+        """ESC abre (ou fecha) a pergunta de saída, em vez de trocar de tela."""
+        self.confirm_exit = not self.confirm_exit
+        self.build()
 
-        self.app.go(OptionsScene(self.app))
+    def quit(self) -> None:
+        self.app.save()
+        self.app.running = False
 
     def draw(self, screen: pygame.Surface) -> None:
         draw_village(self, screen)
@@ -153,7 +177,8 @@ class VillageScene(Scene):
         self.title(
             screen,
             "Vila-base",
-            f"Vila {int(progress * 100)}% sustentável   •   {app.profile.total_stars()} de 6 estrelas",
+            f"Vila {int(progress * 100)}% sustentável   •   {app.profile.total_stars()} de "
+            f"{3 * len(BIOMES)} estrelas   •   Modo {MODE_LABELS[app.profile.modo]}",
         )
         self.resource_bar(screen)
         logo = app.assets.sprite("ui", "logo")
@@ -163,4 +188,31 @@ class VillageScene(Scene):
         tip_rect = pygame.Rect(16, 512, C.WIDTH - 32, 38)
         T.panel(screen, tip_rect, T.PAPER, T.TEAL, 230, 12, 2)
         self.text.blit(screen, tip, tip_rect.center, T.SIZES["body"], T.INK, anchor="center")
+        if app.save_failed:
+            warn = pygame.Rect(16, 466, C.WIDTH - 32, 38)
+            T.panel(screen, warn, T.PAPER, T.RED, 240, 12, 3)
+            self.text.blit(
+                screen,
+                "Não foi possível salvar o progresso nesta pasta (veja dobramundo.log).",
+                warn.center,
+                T.SIZES["body"],
+                T.RED,
+                True,
+                "center",
+            )
+        if self.confirm_exit:
+            T.veil(screen, (10, 18, 40), 170)
+            card = pygame.Rect(C.WIDTH // 2 - 360, 200, 720, 250)
+            T.panel(screen, card, T.PAPER, T.NAVY, 250, 22, 4)
+            self.text.blit(
+                screen, "Sair do Dobramundo?", (card.centerx, card.top + 36), T.SIZES["title"], T.NAVY, True, "midtop"
+            )
+            self.text.blit(
+                screen,
+                "O progresso já está salvo.",
+                (card.centerx, card.top + 88),
+                T.SIZES["body"],
+                T.MUTED,
+                anchor="midtop",
+            )
         self.draw_menu(screen)

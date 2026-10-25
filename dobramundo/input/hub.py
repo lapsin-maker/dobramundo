@@ -39,29 +39,42 @@ class InputHub:
         self.mouse_pos: Optional[Tuple[int, int]] = None
         self.mouse_moved = 0.0  # segundos desde o último movimento do mouse
         self.body: Optional[BodyControl] = None
+        self.source = None  # fonte da câmera, compartilhada entre segmentos
         self.segment_key = "teclado"
         self.source_factory = lambda: PoseCameraSource(find_pose_model())
 
     # --------------------------------------------------------- corpo
-    def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
-        """Troca o segmento de controle (cada troca calibra de novo)."""
+    def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False) -> None:
+        """Troca o segmento de controle (cada troca calibra de novo).
+
+        A câmera é uma só e continua aberta entre trocas de segmento: só o mapeamento
+        muda. Abrir e fechar a webcam a cada troca travava o quadro e, se a thread
+        anterior demorasse a terminar, abria uma segunda captura do mesmo dispositivo.
+        """
         if key == self.segment_key and self.body is not None:
             return
-        self.stop_body()
         self.segment_key = key
-        if key in SEGMENTS:
-            self.body = BodyControl(self.source_factory(), SEGMENTS[key], sensitivity, dead_scale)
-            self.body.start()
+        self.body = None
+        if key not in SEGMENTS:
+            self.stop_camera()
+            return
+        if self.source is None:
+            self.source = self.source_factory()
+            self.source.start()
+        self.body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y)
 
-    def configure(self, sensitivity: float, dead_scale: float) -> None:
+    def configure(self, sensitivity: float, dead_scale: float, invert_y: bool = False) -> None:
         if self.body is not None:
             self.body.mapper.sensitivity = sensitivity
             self.body.mapper.dead_scale = dead_scale
+            self.body.mapper.invert_y = invert_y
 
-    def stop_body(self) -> None:
-        if self.body is not None:
-            self.body.stop()
-            self.body = None
+    def stop_camera(self) -> None:
+        """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""
+        self.body = None
+        if self.source is not None:
+            self.source.stop()
+            self.source = None
 
     @property
     def uses_body(self) -> bool:

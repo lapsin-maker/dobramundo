@@ -13,6 +13,12 @@ from typing import Dict, Mapping, NamedTuple, Tuple
 from ..config import ERA_SPAN
 
 Cost = Dict[str, int]  # tipo de resíduo -> quantidade
+COST_SCALE = 5  # custos-base x 5: tudo comprado em ~10 voos no Normal e ~6 no Difícil (tools/balance.py)
+
+
+def scaled(cost: Cost) -> Cost:
+    return {key: amount * COST_SCALE for key, amount in cost.items()}
+
 
 # Recursos por resíduo coletado. No Normal cada coleta é 4x mais rara e rende 4x mais.
 RESOURCES_PER_WASTE = {"normal": 4, "dificil": 1}
@@ -32,7 +38,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "ponto_troca",
         "Ponto de troca",
         "Separa os resíduos e os transforma em recursos.",
-        {"papel": 6, "plastico": 6},
+        scaled({"papel": 6, "plastico": 6}),
         "VL_PontoTroca",
         (150, 470, 120),
     ),
@@ -40,7 +46,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "horta",
         "Horta urbana",
         "Alimento fresco plantado no meio da vila.",
-        {"papel": 8, "vidro": 6},
+        scaled({"papel": 8, "vidro": 6}),
         "VL_Horta",
         (330, 520, 70),
     ),
@@ -48,7 +54,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "paineis",
         "Painéis solares",
         "Microgeração de energia limpa nos telhados.",
-        {"metal": 12, "vidro": 10},
+        scaled({"metal": 12, "vidro": 10}),
         "VL_PaineisSolares",
         (560, 455, 110),
     ),
@@ -56,7 +62,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "compostor",
         "Compostor",
         "Restos orgânicos viram adubo para a horta.",
-        {"plastico": 8, "metal": 6},
+        scaled({"plastico": 8, "metal": 6}),
         "EF_Compostor",
         (440, 500, 80),
     ),
@@ -64,7 +70,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "cisterna",
         "Cisterna",
         "Guarda a água da chuva para regar e beber.",
-        {"plastico": 10, "metal": 8},
+        scaled({"plastico": 10, "metal": 8}),
         "CA_CisternaPlacas",
         (760, 480, 105),
     ),
@@ -72,7 +78,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "bicicletario",
         "Bicicletário",
         "Bicicletas no lugar dos carros a diesel.",
-        {"metal": 10, "plastico": 6},
+        scaled({"metal": 10, "plastico": 6}),
         "EF_Bicicletario",
         (660, 535, 60),
     ),
@@ -80,7 +86,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "telhado_verde",
         "Telhado verde",
         "Plantas no telhado refrescam as casas.",
-        {"papel": 12, "vidro": 8},
+        scaled({"papel": 12, "vidro": 8}),
         "VL_TelhadoVerde",
         (250, 430, 170),
     ),
@@ -88,7 +94,7 @@ VILLAGE_UPGRADES: Tuple[VillageUpgrade, ...] = (
         "turbina",
         "Turbina eólica",
         "O vento também gera energia para a vila.",
-        {"metal": 16, "vidro": 10, "papel": 6},
+        scaled({"metal": 16, "vidro": 10, "papel": 6}),
         "EF_TorreEolica",
         (930, 470, 260),
     ),
@@ -109,19 +115,19 @@ PLANE_PARTS: Tuple[PlanePart, ...] = (
         "estabilizador",
         "Estabilizador",
         "Asa de papelão: o avião balança menos e a colisão fica mais justa.",
-        ({"papel": 10, "plastico": 6}, {"papel": 18, "plastico": 12, "metal": 6}),
+        (scaled({"papel": 10, "plastico": 6}), scaled({"papel": 18, "plastico": 12, "metal": 6})),
     ),
     PlanePart(
         "leme",
         "Leme reaproveitado",
         "Tampa de garrafa no leme: o avião responde mais rápido.",
-        ({"plastico": 10, "metal": 6}, {"plastico": 16, "metal": 12, "vidro": 6}),
+        (scaled({"plastico": 10, "metal": 6}), scaled({"plastico": 16, "metal": 12, "vidro": 6})),
     ),
     PlanePart(
         "quilha",
         "Quilha de lata",
         "Lata dobrada na quilha: mais agilidade e controle mais fino.",
-        ({"metal": 10, "vidro": 6}, {"metal": 16, "vidro": 12, "papel": 6}),
+        (scaled({"metal": 10, "vidro": 6}), scaled({"metal": 16, "vidro": 12, "papel": 6})),
     ),
 )
 PART_KEYS = tuple(p.key for p in PLANE_PARTS)

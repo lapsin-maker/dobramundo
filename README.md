@@ -10,7 +10,7 @@ O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.0.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.1.0.
 
 ### Tema e objetivo
 
@@ -51,7 +51,7 @@ Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a cria
 
 ### Resíduos e recursos
 
-Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil.
+Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Um halo pulsante marca tudo o que se pode pegar, e chevrons âmbar no chão marcam o que colide, em todos os estágios.
 
 ### Obstáculos
 
@@ -83,33 +83,39 @@ Ao chegar a 100%, o avião segue planando por 3 segundos para a criança ver a c
 
 ### Modos de jogo
 
-Os modos são escolhidos no mapa.
+A dificuldade é a primeira escolha do mapa, em dois cartões grandes: **Normal** (mais calmo) e **Difícil** (mais rápido, com combo). O modo atual também aparece na vila e no painel do voo.
 
 | | Normal | Difícil |
 |---|---|---|
-| Velocidade | Metade da velocidade-base | Velocidade plena |
+| Velocidade | Metade da velocidade-base (170 unidades/s) | Velocidade plena (340 unidades/s) |
 | Resíduos | 1 a cada 4 sorteados | Todos |
 | Pontos por resíduo | 65, fixos | 15 vezes o combo |
-| Transformação por coleta | 11,2 pontos percentuais | 1,4, mais 0,15 com combo de 4 ou mais |
+| Transformação por coleta | 2,24 pontos percentuais | 0,35, mais 0,04 com combo de 4 ou mais |
 | Recursos por coleta | 4 | 1 |
 | Combo | Não há | Sobe a cada 4 coletas seguidas, até 8 vezes |
 
-O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 180 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 50 unidades de mundo por segundo no Difícil (no Normal, a metade, pois o fator de velocidade do modo também se aplica a esse ganho).
+O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 240 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 30 unidades/s no Difícil (metade no Normal); a transformação acrescenta até mais 30.
+
+Com a criança pegando 4 de cada 10 resíduos, uma fase dura cerca de 4 minutos no Normal e 3,8 no Difícil, e tudo da vila e do avião fica comprado em cerca de 8 voos no Normal e 6 no Difícil (simulação em `tools/balance.py`).
+
+### Metas curtas
+
+Durante o voo aparece uma meta por vez, de 20 a 60 segundos: coletar resíduos de um tipo, desviar de obstáculos na faixa do avião, passar por baixo de portais ou pegar power-ups. No Normal os alvos são menores (por exemplo, 2 resíduos ou 3 desvios; no Difícil, 6 e 6). Cada meta cumprida rende 0,5% de transformação, 6 recursos e 50 pontos.
 
 ### Vila-base
 
-A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar na cena. Conforme a vila avança, o céu clareia e os prédios de fundo dão lugar à arquitetura solarpunk. O percentual "sustentável" da tela é a proporção de melhorias construídas.
+A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar na cena. Conforme a vila avança, o céu clareia e os prédios de fundo dão lugar à arquitetura solarpunk. O percentual "sustentável" da tela é a proporção de melhorias construídas. ESC na vila pergunta se é para sair do jogo.
 
 | Melhoria | Custo | Descrição |
 |---|---|---|
-| Ponto de troca | 6 papel, 6 plástico | Separa os resíduos e os transforma em recursos |
-| Horta urbana | 8 papel, 6 vidro | Alimento fresco plantado no meio da vila |
-| Painéis solares | 12 metal, 10 vidro | Microgeração de energia limpa nos telhados |
-| Compostor | 8 plástico, 6 metal | Restos orgânicos viram adubo para a horta |
-| Cisterna | 10 plástico, 8 metal | Guarda a água da chuva para regar e beber |
-| Bicicletário | 10 metal, 6 plástico | Bicicletas no lugar dos carros a diesel |
-| Telhado verde | 12 papel, 8 vidro | Plantas no telhado refrescam as casas |
-| Turbina eólica | 16 metal, 10 vidro, 6 papel | O vento também gera energia para a vila |
+| Ponto de troca | 30 papel, 30 plástico | Separa os resíduos e os transforma em recursos |
+| Horta urbana | 40 papel, 30 vidro | Alimento fresco plantado no meio da vila |
+| Painéis solares | 60 metal, 50 vidro | Microgeração de energia limpa nos telhados |
+| Compostor | 40 plástico, 30 metal | Restos orgânicos viram adubo para a horta |
+| Cisterna | 50 plástico, 40 metal | Guarda a água da chuva para regar e beber |
+| Bicicletário | 50 metal, 30 plástico | Bicicletas no lugar dos carros a diesel |
+| Telhado verde | 60 papel, 40 vidro | Plantas no telhado refrescam as casas |
+| Turbina eólica | 80 metal, 50 vidro, 30 papel | O vento também gera energia para a vila |
 
 ### Peças do avião
 
@@ -117,9 +123,9 @@ As peças são reaproveitadas de resíduos. Cada uma tem dois níveis e altera o
 
 | Peça | Nível 1 | Nível 2 | Efeito por nível |
 |---|---|---|---|
-| Estabilizador (asa de papelão) | 10 papel, 6 plástico | 18 papel, 12 plástico, 6 metal | Caixa de colisão 7% menor e inclinação nas curvas 20% menor |
-| Leme reaproveitado (tampa de garrafa) | 10 plástico, 6 metal | 16 plástico, 12 metal, 6 vidro | Resposta do avião 18% mais rápida |
-| Quilha de lata | 10 metal, 6 vidro | 16 metal, 12 vidro, 6 papel | Velocidade máxima 8% maior e zona morta do controle corporal 25% menor |
+| Estabilizador | 50 papel, 30 plástico | 90 papel, 60 plástico, 30 metal | Caixa de colisão 7% menor e inclinação nas curvas 20% menor |
+| Leme reaproveitado | 50 plástico, 30 metal | 80 plástico, 60 metal, 30 vidro | Resposta do avião 18% mais rápida |
+| Quilha de lata | 50 metal, 30 vidro | 80 metal, 60 vidro, 30 papel | Velocidade máxima 8% maior e zona morta do controle corporal 25% menor |
 
 ### Hangar
 
@@ -168,7 +174,7 @@ O mouse também seleciona botões por permanência quando não há controle corp
 
 ### Superfícies de exibição
 
-Em Opções, a superfície pode ser monitor, parede, mesa ou chão (T-TEA). Cada uma traz uma sugestão de segmento: qualquer segmento, tronco ou cabeça, uma das mãos, ou pés sobre a projeção. A escolha é apenas uma sugestão exibida na tela de opções. Não altera a imagem nem o controle.
+Em Opções, a superfície pode ser monitor, parede, mesa ou chão (T-TEA). Cada uma traz uma sugestão de segmento: qualquer segmento, tronco ou cabeça, uma das mãos, ou pés sobre a projeção. Se a câmera já estiver em uso, escolher a superfície aplica o segmento sugerido (chão: pés; mesa: mão direita; parede: tronco em pé), com um aviso. Para câmeras vistas de cima, a opção **Inverter subir e descer** troca o sentido vertical.
 
 As opções **Espelhar** e **Girar 180°** atingem a imagem inteira. Espelhar serve à projeção por trás de uma parede. Girar serve ao projetor no teto ou à imagem no chão ou na mesa. O mouse é convertido de volta para as coordenadas do jogo.
 
@@ -208,6 +214,7 @@ python run_dobramundo.py
 |---|---|---|
 | `dobramundo_perfil.json`, com progresso, personalização e opções | `%APPDATA%\Dobramundo` (Windows) ou `~/.local/share/Dobramundo` (Linux) | Pasta `save/` na raiz do projeto, se for gravável |
 | `dobramundo_erro.log`, com o rastreamento de uma falha | Mesma pasta | Mesma pasta |
+| `dobramundo.log`, com avisos (imagem, som ou câmera que falhou, perfil que não gravou) | Mesma pasta | Mesma pasta |
 | `self_test.json`, com o relatório do `--self-test` | Mesma pasta | Mesma pasta |
 
 Se a pasta escolhida não for gravável, o jogo usa a próxima opção da lista (a pasta do sistema e, por fim, a pasta temporária). No macOS, a pasta do sistema é `~/Library/Application Support/Dobramundo`. A variável de ambiente `DOBRAMUNDO_DATA_DIR` substitui a pasta de dados. O perfil é gravado de forma atômica, com arquivo temporário e troca.
@@ -224,7 +231,7 @@ Se não houver perfil salvo, o jogo importa da pasta de dados do protótipo (`Ec
 build_windows.bat [onefile] [nopause]
 ```
 
-O script procura o Python 3, cria o ambiente `.venv`, instala `requirements-webcam.txt` e `pyinstaller>=6,<7`, limpa as pastas `build` e `dist` e roda `PyInstaller --noconfirm --clean Dobramundo.spec`. Depois copia o README para a pasta de saída e executa `Dobramundo.exe --self-test 90` sem abrir janela (`SDL_VIDEODRIVER=dummy`). A geração falha se o self-test retornar código diferente de zero ou não gravar o relatório.
+O script procura o Python 3, cria o ambiente `.venv`, instala `requirements-webcam.txt` e `pyinstaller>=6,<7` com as versões exatas de `constraints-build.txt`, limpa as pastas `build` e `dist` e roda `PyInstaller --noconfirm --clean Dobramundo.spec`. Depois copia o README para a pasta de saída e executa `Dobramundo.exe --self-test 90 --exigir-camera` sem abrir janela (`SDL_VIDEODRIVER=dummy`). A geração falha se o self-test retornar código diferente de zero ou não gravar o relatório: faltam sprites, um voo não chegou ao estágio 3 ou, com `--exigir-camera`, o detector de pose não carregou dentro do executável.
 
 - `onefile` gera um único arquivo, `dist\Dobramundo.exe`. Sem essa opção, o padrão é `dist\Dobramundo\`.
 - `nopause` não espera tecla ao final, útil em automações.
@@ -256,8 +263,9 @@ dobramundo/                          pacote do jogo
     paths.py                         pastas de assets e de dados (código-fonte e executável)
     persistence.py                   perfil versionado em JSON e importação do protótipo
     audio.py                         trilhas por estágio, efeitos e volumes
-    selftest.py                      teste de fumaça (--self-test)
-    util.py                          funções numéricas e de cor
+    selftest.py                      teste de fumaça (--self-test) e critérios de aprovação
+    log.py                           avisos em dobramundo.log
+    util.py                          funções numéricas, de cor e de neblina
     content/                         dados do jogo, sem pygame
         biomes.py                    fases, estágios, cenários e obstáculos
         planes.py                    aviões, pinturas, padrões e curvas de manobra
@@ -267,6 +275,7 @@ dobramundo/                          pacote do jogo
         texts.py                     textos, créditos e referências
     game/                            regras do voo, sem pygame
         run.py                       um voo: vidas, pontos, combo, estrelas e eventos
+        missions.py                  metas curtas dentro do voo
         world.py                     pista, trechos e transformação
         player.py                    física do avião e manobras
         entities.py                  objetos e caixas de colisão
@@ -274,6 +283,7 @@ dobramundo/                          pacote do jogo
         world_view.py                ordem de pintura de uma fase
         sky.py, ground.py            céu em paralaxe e chão texturizado
         sprites.py                   projeção, neblina e caches de sprite
+        cache.py                     BoundedCache (descarte gradual) usado por todos os caches
         plane_skin.py, pilot.py      aparência do avião e piloto em camadas
         assets.py                    carregamento preguiçoso dos PNG
     input/                           entradas
@@ -281,6 +291,7 @@ dobramundo/                          pacote do jogo
         pose.py                      MediaPipe Pose, segmentos e calibração
     ui/                              tema, botões e seleção por permanência
     scenes/                          telas: abertura, aviso, calibração, vila, mapa, voo etc.
+        __init__.py                  registro das cenas: scene.goto("vila")
 assets/                              sprites, sons, texturas, modelo de pose e curvas
 tools/                               geração de assets (ver tools/README.md)
 tests/                               suíte pytest
@@ -291,6 +302,8 @@ Dobramundo.spec                      receita do PyInstaller
 build_windows.bat, build_linux.sh    geração do executável
 Jogar_Dobramundo.bat                 atalho para jogar pelo código no Windows
 pyproject.toml                       metadados, dependências opcionais e configuração do ruff e do pytest
+constraints-build.txt                versões exatas usadas para gerar o executável
+.github/workflows/testes.yml         CI: lint, testes e self-test em Python 3.8 e 3.12
 ```
 
 ### Testes
@@ -316,7 +329,11 @@ A configuração está em `pyproject.toml`: 120 colunas, alvo Python 3.8 e as re
 python -m dobramundo --self-test 240
 ```
 
-O número após `--self-test` é a quantidade de quadros por voo, com padrão de 240. O teste percorre todas as telas e voa as duas fases com invencibilidade, forçando as três etapas de transformação. Grava `self_test.json` na pasta de dados, com os sprites carregados, os tempos de quadro (média e percentil 95) e o resultado de cada voo. O perfil real não é alterado.
+O número após `--self-test` é a quantidade de quadros por voo, com padrão de 240. O teste percorre todas as telas e voa as duas fases com invencibilidade, forçando as três etapas de transformação. Grava `self_test.json` na pasta de dados, com os sprites carregados, os tempos de quadro (média e percentil 95) e o resultado de cada voo. O perfil real não é alterado. O relatório traz `status` (`ok` ou `falhou`) e a lista `falhas`; o código de saída é 1 quando há falha. Com `--exigir-camera`, o teste também carrega o detector de pose do MediaPipe (sem abrir a webcam) e reprova se ele não funcionar.
+
+### Integração contínua
+
+`.github/workflows/testes.yml` roda lint, testes e self-test a cada push e pull request, em Python 3.8 (mínimo declarado) e 3.12 (versão do build).
 
 ### Regenerar os assets
 
@@ -340,7 +357,8 @@ O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-pyt
 - **Equipe:** Liga de Psiquiatria e Neurociências – CENSUPEG
 - **Membros:** João Pedro Turnes (capitão), Isabella Cordeiro Sonza, Gerciane Larice da Silva Barros e Luiz Felipe Santana Tomio
 - **Captura:** Adaptada do T-TEA 2.0 (LARVA/UDESC)
-- **Modelos 3D:** Feitos pela equipe em Blender e modelos low-poly gerados por código (tools/lowpoly)
+- **Modelos 3D:** kits 3D da equipe, aviões do estúdio 3D do protótipo e modelos low-poly gerados por código (`tools/lowpoly`)
+- **Referências de design:** Star Fox 64, Subway Surfers, It Takes Two e Super Mario World
 - **Programação:** IA generativa (Gemini e Claude) apoiou a programação
 - **Tecnologia:** Python, pygame, OpenCV e MediaPipe Pose
 - **Música e efeitos:** Sintetizados pelo projeto

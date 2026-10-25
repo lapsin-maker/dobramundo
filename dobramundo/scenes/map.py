@@ -13,10 +13,9 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..content.biomes import BIOME_MAP_COLORS, BIOME_ORDER, BIOMES, LOCKED_BIOMES
-from ..persistence import MODE_LABELS
 from ..ui import theme as T
+from ..ui.widgets import star
 from .base import Scene
-from .flight import draw_star, flight_or_calibration
 
 LonLat = Tuple[float, float]
 BRAZIL: List[LonLat] = [
@@ -167,22 +166,41 @@ def brazil_map() -> pygame.Surface:
     return regions
 
 
+MODE_CARDS = (
+    ("normal", "Normal", "Mais calmo", T.GREEN, 1),
+    ("dificil", "Difícil", "Mais rápido + combo", T.ORANGE, 3),
+)
+MODE_TOP = 122  # cartões de dificuldade no alto da coluna: a primeira escolha
+CITY_TOP = 246
+
+
 class MapScene(Scene):
     def build(self) -> None:
-        from .village import VillageScene
-
         app = self.app
         profile = app.profile
         buttons = []
-        y = 96
-        for key in BIOME_ORDER:
+        for i, (mode, label, sub, color, _) in enumerate(MODE_CARDS):
+            buttons.append(
+                self.button(
+                    (640 + i * 215, MODE_TOP, 205, 108),
+                    label,
+                    (lambda m=mode: self.set_mode(m)),
+                    sublabel=sub if profile.modo != mode else "Escolhido",
+                    selected=profile.modo == mode,
+                    color=color,
+                    size=T.SIZES["title"],
+                    key=f"modo_{mode}",
+                    align="top",
+                )
+            )
+        for i, key in enumerate(BIOME_ORDER):
             biome = BIOMES[key]
             unlocked = profile.unlocked(key)
             stars = profile.estrelas.get(key, 0)
             sub = f"{biome.name}   •   {stars}/3 estrelas" if unlocked else "Ganhe 1 estrela na fase anterior"
             buttons.append(
                 self.button(
-                    (640, y, 420, 92),
+                    (640, CITY_TOP + i * 98, 420, 88),
                     biome.city,
                     (lambda k=key: self.start(k)),
                     sublabel=sub,
@@ -191,38 +209,21 @@ class MapScene(Scene):
                     color=BIOME_MAP_COLORS[key],
                 )
             )
-            y += 108
-        buttons.append(
-            self.button(
-                (640, 330, 420, 64),
-                f"Modo: {MODE_LABELS[profile.modo]}",
-                self.toggle_mode,
-                sublabel="Normal: mais calmo   •   Difícil: combo",
-                key="modo",
-            )
-        )
-        buttons.append(self.button((640, 560, 420, 70), texts.UI["voltar"], lambda: app.go(VillageScene(app))))
+        buttons.append(self.button((640, 560, 420, 70), texts.UI["voltar"], lambda: self.goto("vila")))
         self.menu.set_buttons(buttons)
 
-    def toggle_mode(self) -> None:
-        profile = self.app.profile
-        profile.modo = "dificil" if profile.modo == "normal" else "normal"
+    def set_mode(self, mode: str) -> None:
+        self.app.profile.modo = mode
         self.app.save()
         self.build()
 
     def start(self, key: str) -> None:
-        self.app.save()
-        self.app.go(flight_or_calibration(self.app, key))
-
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
+        self.fly(key)
 
     def draw(self, screen: pygame.Surface) -> None:
         focused = self.menu.focused
         key = focused.key if focused is not None and focused.key in BIOMES else BIOME_ORDER[0]
-        self.app.backdrop(screen, 1 / 60, key, 5.0)
+        self.app.backdrop(screen, self.last_dt, key, 5.0)
         T.veil(screen, (10, 18, 40), 110)
         T.panel(screen, MAP_RECT.inflate(20, 20), T.PAPER, T.NAVY, 240, 22, 3)
         screen.blit(brazil_map(), (0, 0))
@@ -235,21 +236,28 @@ class MapScene(Scene):
             pygame.draw.circle(screen, T.ORANGE if active else T.NAVY, (x, y), radius)
             self.text.blit(screen, biome.city, (x + 18, y - 14), T.SIZES["label"], T.NAVY_DARK, True)
             for i in range(3):
-                draw_star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
+                star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
         self.title(screen, "Mapa dos biomas", "Escolha a cidade do próximo voo")
-        legend_y = 410
-        T.panel(screen, pygame.Rect(640, legend_y, 420, 136), T.PAPER, T.NAVY, 235, 16, 2)
-        self.text.blit(screen, "Em breve:", (656, legend_y + 10), T.SIZES["body"], T.MUTED, True)
+        self.text.blit(screen, "Como você quer voar?", (642, 82), T.SIZES["label"], T.WHITE, True)
+        legend_y = 446
+        T.panel(screen, pygame.Rect(640, legend_y, 420, 104), T.PAPER, T.NAVY, 235, 16, 2)
+        self.text.blit(screen, "Em breve:", (656, legend_y + 8), T.SIZES["body"], T.MUTED, True)
         for i, locked in enumerate(LOCKED_BIOMES):
             cx = 666 + (i % 2) * 200
-            cy = legend_y + 52 + (i // 2) * 38
+            cy = legend_y + 46 + (i // 2) * 34
             pygame.draw.circle(screen, locked.color, (cx, cy), 10)
             self.text.blit(screen, locked.name, (cx + 18, cy - 12), T.SIZES["body"], T.INK)
         self.draw_menu(screen)
+        for mode, _, _, color, arrows in MODE_CARDS:
+            button = next(b for b in self.menu.buttons if b.key == f"modo_{mode}")
+            for k in range(arrows):  # setas de velocidade: 1 no Normal, 3 no Difícil
+                x = button.rect.centerx - arrows * 11 + k * 22
+                y = button.rect.bottom - 26
+                pygame.draw.polygon(screen, color, [(x, y - 10), (x + 14, y), (x, y + 10)])
         for button in self.menu.buttons:
             if button.key in BIOMES and button.enabled:
                 for i in range(3):
-                    draw_star(
+                    star(
                         screen,
                         (button.rect.right - 80 + i * 26, button.rect.top + 22),
                         10,

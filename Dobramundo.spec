@@ -30,8 +30,8 @@ try:
     datas += mp_datas
     binaries += mp_binaries
     hiddenimports += mp_hidden
-except Exception:  # sem mediapipe instalado: o executável sai só com teclado e mouse
-    pass
+except Exception as exc:  # sem mediapipe: o executável sai só com teclado e mouse (o self-test reprova)
+    print(f"AVISO: MediaPipe não encontrado ({exc}); o executável não terá controle corporal.")
 
 icon = str(ROOT / "assets" / "icon.ico") if (ROOT / "assets" / "icon.ico").is_file() else None
 
@@ -48,6 +48,8 @@ a = Analysis(
     excludes=["tkinter", "pytest", "soundfile"],
     noarchive=False,
 )
+# O jogo só captura a webcam; a DLL do FFmpeg do OpenCV (~29 MB) serve para arquivos de vídeo.
+a.binaries = [b for b in a.binaries if "opencv_videoio_ffmpeg" not in b[0]]
 pyz = PYZ(a.pure)
 
 if ONEFILE:
