@@ -4,6 +4,8 @@ Gera, a partir da arte original:
     assets/ui/logo.png    logo com fundo transparente (o branco vira alfa)
     assets/ui/icone.png   ícone quadrado (aviãozinho de papel da logo) para a janela
     assets/icon.ico       ícone do executável do Windows (16 a 256 px)
+    docs/logo.jpg         logo sobre fundo branco para o README (no tema escuro do
+                          GitHub, a transparência deixa o azul escuro sumir no fundo)
 
 O branco do papel é removido "desmisturando" cada pixel do branco: para uma
 aquarela sobre papel, cor = alfa * tinta + (1 - alfa) * branco.
@@ -90,6 +92,15 @@ def square(image: Image.Image, size: int) -> Image.Image:
     return canvas
 
 
+def readme_logo(logo: Image.Image, path: Path, pad: float = 0.06) -> None:
+    """Logo sobre papel branco, com margem, em JPEG (fica igual nos temas claro e escuro)."""
+    margin = int(logo.width * pad)
+    page = Image.new("RGB", (logo.width + 2 * margin, logo.height + 2 * margin), (255, 255, 255))
+    page.paste(logo, (margin, margin), logo)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    page.save(path, quality=92, optimize=True, progressive=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("source", type=Path)
@@ -110,6 +121,7 @@ def main() -> None:
     logo = logo.resize((LOGO_WIDTH, int(logo.height * ratio)), Image.LANCZOS)
     (args.out / "ui").mkdir(parents=True, exist_ok=True)
     logo.save(args.out / "ui" / "logo.png", optimize=True)
+    readme_logo(logo, args.out.parent / "docs" / "logo.jpg")
     plane = trim(clean.crop(box), 4)
     icon = square(plane, 256)
     backdrop = Image.new("RGBA", (256, 256), (0, 0, 0, 0))

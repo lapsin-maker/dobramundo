@@ -16,8 +16,6 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence, Tuple
 
-import numpy as np
-
 from ..engine.orientation import unrotate_point
 from .pose import MIN_VISIBILITY, Landmark, Point
 
@@ -39,6 +37,24 @@ def is_convex(points: Sequence[Point]) -> bool:
     return same_side and area / 2 >= 0.01
 
 
+def solve(rows: List[List[float]], values: List[float]) -> List[float]:
+    """Sistema linear quadrado por eliminação de Gauss com pivô parcial (sem numpy)."""
+    m = [row[:] + [value] for row, value in zip(rows, values)]
+    n = len(m)
+    for col in range(n):
+        pivot = max(range(col, n), key=lambda r: abs(m[r][col]))
+        if abs(m[pivot][col]) < 1e-12:
+            raise ValueError("os pontos não definem uma perspectiva estável")
+        m[col], m[pivot] = m[pivot], m[col]
+        head = m[col][col]
+        m[col] = [v / head for v in m[col]]
+        for r in range(n):
+            if r != col and m[r][col]:
+                factor = m[r][col]
+                m[r] = [a - factor * b for a, b in zip(m[r], m[col])]
+    return [row[-1] for row in m]
+
+
 def homography(source: Sequence[Point], target: Sequence[Point]) -> Matrix:
     """Matriz 3x3 que leva os 4 pontos de ``source`` aos 4 de ``target``."""
     rows, values = [], []
@@ -46,7 +62,7 @@ def homography(source: Sequence[Point], target: Sequence[Point]) -> Matrix:
         rows.append([x, y, 1.0, 0.0, 0.0, 0.0, -u * x, -u * y])
         rows.append([0.0, 0.0, 0.0, x, y, 1.0, -v * x, -v * y])
         values += [u, v]
-    h = np.linalg.solve(np.array(rows), np.array(values))
+    h = solve(rows, values)
     return ((h[0], h[1], h[2]), (h[3], h[4], h[5]), (h[6], h[7], 1.0))
 
 
@@ -86,7 +102,7 @@ class FloorMap:
         """A calibração salva, ou None se não houver ou não servir."""
         try:
             return cls(camera_points) if len(camera_points) == 4 else None
-        except (ValueError, np.linalg.LinAlgError):
+        except ValueError:
             return None
 
     def to_image(self, x: float, y: float) -> Optional[Point]:

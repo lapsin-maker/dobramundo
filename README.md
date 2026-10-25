@@ -1,6 +1,6 @@
 # Dobramundo
 
-![Logo do Dobramundo](assets/ui/logo.png)
+![Logo do Dobramundo](docs/logo.jpg)
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
