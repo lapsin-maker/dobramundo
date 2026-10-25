@@ -105,14 +105,10 @@ class Assets:
         folder_keys = [key for key in self._folders if key == name or key.startswith(name + "|")]
         candidate_paths = set()
         for key in folder_keys:
-            candidate_paths.update(
-                path for stem, path in self._folders[key] if wanted is None or stem in wanted
-            )
+            candidate_paths.update(path for stem, path in self._folders[key] if wanted is None or stem in wanted)
             del self._folders[key]
         removed = 0
-        still_indexed = {
-            path for paths in self._folders.values() for _, path in paths
-        }
+        still_indexed = {path for paths in self._folders.values() for _, path in paths}
         for path in candidate_paths - still_indexed:
             if path in self._loaded:
                 del self._loaded[path]

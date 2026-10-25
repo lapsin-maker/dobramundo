@@ -301,9 +301,5 @@ class InputHub:
             return True
         body = self.body
         return (
-            body is not None
-            and body.error is None
-            and body.calibrated
-            and body.visible
-            and body.seen_time >= RESUME_S
+            body is not None and body.error is None and body.calibrated and body.visible and body.seen_time >= RESUME_S
         )

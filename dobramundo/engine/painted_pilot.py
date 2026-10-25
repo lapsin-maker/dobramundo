@@ -33,8 +33,18 @@ POSES = {
 DEFAULT_SKIN_KEY = (252, 193, 128)
 DEFAULT_SHIRT_KEY = (162, 200, 225)
 HAIR_ORDER = (
-    "curto", "cacheado", "crespo", "longo", "trancas", "coque",
-    "franja", "chiquinhas", "puffs", "moicano", "hijab", "raspado",
+    "curto",
+    "cacheado",
+    "crespo",
+    "longo",
+    "trancas",
+    "coque",
+    "franja",
+    "chiquinhas",
+    "puffs",
+    "moicano",
+    "hijab",
+    "raspado",
 )
 HAIR_FIT = {
     # target head-width multiplier, crown offset as a fraction of body height
@@ -311,15 +321,15 @@ def _mobility_layer(sprites, pose: str, look: Mapping[str, str], size, padding: 
 
 
 def _painted_hair_back(canvas):
-    width = canvas['width']
-    style = canvas['style']
-    ellipse = canvas['ellipse']
-    hx = canvas['hx']
-    hw = canvas['hw']
-    hy = canvas['hy']
-    hh = canvas['hh']
-    hair = canvas['hair']
-    ink = canvas['ink']
+    width = canvas["width"]
+    style = canvas["style"]
+    ellipse = canvas["ellipse"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
+    hair = canvas["hair"]
+    ink = canvas["ink"]
 
     if style == UNSELECTED or style == "raspado":
         return
@@ -342,21 +352,22 @@ def _painted_hair_back(canvas):
         for x in (hx - hw * 0.09, hx + hw * 0.91):
             ellipse((x - hw * 0.12, hy + hh * 0.04, hw * 0.24, hh * 0.28), hair, ink, max(2, round(width * 0.008)))
 
+
 def _painted_front_hair(canvas):
-    width = canvas['width']
-    style = canvas['style']
-    ellipse = canvas['ellipse']
-    line = canvas['line']
-    poly = canvas['poly']
-    hx = canvas['hx']
-    hw = canvas['hw']
-    hy = canvas['hy']
-    hh = canvas['hh']
-    hair = canvas['hair']
-    ink = canvas['ink']
-    light_hair = canvas['light_hair']
-    layer = canvas['layer']
-    r = canvas['r']
+    width = canvas["width"]
+    style = canvas["style"]
+    ellipse = canvas["ellipse"]
+    line = canvas["line"]
+    poly = canvas["poly"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
+    hair = canvas["hair"]
+    ink = canvas["ink"]
+    light_hair = canvas["light_hair"]
+    layer = canvas["layer"]
+    r = canvas["r"]
 
     if style == UNSELECTED or style == "raspado":
         return
@@ -460,15 +471,16 @@ def _painted_front_hair(canvas):
                 None,
             )
 
+
 def _painted_device_back(canvas):
-    width = canvas['width']
-    height = canvas['height']
-    look = canvas['look']
-    layer = canvas['layer']
-    ink = canvas['ink']
-    q = canvas['q']
-    padding = canvas['padding']
-    line = canvas['line']
+    width = canvas["width"]
+    height = canvas["height"]
+    look = canvas["look"]
+    layer = canvas["layer"]
+    ink = canvas["ink"]
+    q = canvas["q"]
+    padding = canvas["padding"]
+    line = canvas["line"]
 
     if look["cadeira"] == "sim":
         radius = width * 0.20
@@ -525,15 +537,16 @@ def _painted_device_back(canvas):
             max(3, round(width * 0.012)),
         )
 
+
 def _painted_device_front(canvas):
-    width = canvas['width']
-    height = canvas['height']
-    look = canvas['look']
-    layer = canvas['layer']
-    ink = canvas['ink']
-    q = canvas['q']
-    padding = canvas['padding']
-    line = canvas['line']
+    width = canvas["width"]
+    height = canvas["height"]
+    look = canvas["look"]
+    layer = canvas["layer"]
+    ink = canvas["ink"]
+    q = canvas["q"]
+    padding = canvas["padding"]
+    line = canvas["line"]
 
     if look["cadeira"] == "sim":
         line(
@@ -576,26 +589,27 @@ def _painted_device_front(canvas):
                 max(5, round(width * 0.027 * q)),
             )
 
+
 def _compose_painted_overlays(canvas):
-    width = canvas['width']
-    height = canvas['height']
-    padding = canvas['padding']
-    q = canvas['q']
-    layer = canvas['layer']
-    hair_back_art = canvas['hair_back_art']
-    hair_front_art = canvas['hair_front_art']
-    mobility_art = canvas['mobility_art']
-    view = canvas['view']
-    look = canvas['look']
-    eye_points = canvas['eye_points']
-    r = canvas['r']
-    ink = canvas['ink']
-    line = canvas['line']
-    poly = canvas['poly']
-    hx = canvas['hx']
-    hw = canvas['hw']
-    hy = canvas['hy']
-    hh = canvas['hh']
+    width = canvas["width"]
+    height = canvas["height"]
+    padding = canvas["padding"]
+    q = canvas["q"]
+    layer = canvas["layer"]
+    hair_back_art = canvas["hair_back_art"]
+    hair_front_art = canvas["hair_front_art"]
+    mobility_art = canvas["mobility_art"]
+    view = canvas["view"]
+    look = canvas["look"]
+    eye_points = canvas["eye_points"]
+    r = canvas["r"]
+    ink = canvas["ink"]
+    line = canvas["line"]
+    poly = canvas["poly"]
+    hx = canvas["hx"]
+    hw = canvas["hw"]
+    hy = canvas["hy"]
+    hh = canvas["hh"]
 
     _painted_hair_back(canvas)
     if hair_back_art is not None:
@@ -831,8 +845,16 @@ class PaintedPilot:
         self.tolerance = tolerance
         # Pedir apenas as camadas do piloto: esta pasta também contém cenários
         # grandes que pertencem a outras cenas e devem continuar sob demanda.
-        names = (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility",
-                 "front_standing", "back_standing", "front_seated", "back_seated")
+        names = (
+            ATLAS_KEY,
+            "pilot_hair_front",
+            "pilot_hair_back",
+            "pilot_mobility",
+            "front_standing",
+            "back_standing",
+            "front_seated",
+            "back_seated",
+        )
         self.sprites = dict(assets.folder(BASE_FOLDER, names=names))
         atlas = self.sprites.get(ATLAS_KEY)
         if atlas is not None:
@@ -870,9 +892,7 @@ class PaintedPilot:
                 pygame.Rect(0, mid_y, mid_x, mobility_atlas.get_height() - mid_y),
                 pygame.Rect(mid_x, mid_y, mobility_atlas.get_width() - mid_x, mobility_atlas.get_height() - mid_y),
             )
-            for name, box in zip(
-                ("wheelchair_front", "wheelchair_back", "walker_front", "walker_back"), boxes
-            ):
+            for name, box in zip(("wheelchair_front", "wheelchair_back", "walker_front", "walker_back"), boxes):
                 tile = mobility_atlas.subsurface(box).copy()
                 bounds = tile.get_bounding_rect(min_alpha=15)
                 if bounds.width and bounds.height:
@@ -880,14 +900,14 @@ class PaintedPilot:
         for atlas_name in (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility"):
             self.sprites.pop(atlas_name, None)
         try:
-            assets.release_folder(
-                BASE_FOLDER, (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility")
-            )
+            assets.release_folder(BASE_FOLDER, (ATLAS_KEY, "pilot_hair_front", "pilot_hair_back", "pilot_mobility"))
         except AttributeError:  # compatibilidade com provedores mínimos usados por ferramentas/testes
             pass
-        self.palette = {name: _palette_layers(sprite) for name, sprite in self.sprites.items() if name in {
-            "front_standing", "back_standing", "front_seated", "back_seated"
-        }}
+        self.palette = {
+            name: _palette_layers(sprite)
+            for name, sprite in self.sprites.items()
+            if name in {"front_standing", "back_standing", "front_seated", "back_seated"}
+        }
         self.cache = BoundedCache(24, 20 * 1024 * 1024)
         # Each cached pair is rendered at 3x for antialiasing; keep the raster
         # working set small so rapid appearance changes stay memory-bounded.

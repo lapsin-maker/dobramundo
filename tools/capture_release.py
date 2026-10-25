@@ -70,9 +70,7 @@ def main() -> int:
         app.storage_notice = None
         app.options.limite_voo_s = 0
         app.profile.piloto_montado = True
-        app.profile.piloto.update(
-            pele="pele4", cabelo="crespo", cor_cabelo="preto", roupa="amarela", olhos="castanhos"
-        )
+        app.profile.piloto.update(pele="pele4", cabelo="crespo", cor_cabelo="preto", roupa="amarela", olhos="castanhos")
         for biome in ("amazonia", "caatinga"):
             for contrast in (False, True):
                 app.options.alto_contraste = contrast

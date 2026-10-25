@@ -98,8 +98,12 @@ def test_cursor_corporal_alcanca_os_limites_uteis():
     for _ in range(70):
         source.show(frame({0: (0.5, 0.5), 7: (0.46, 0.5), 8: (0.54, 0.5)}))
         hub.update(1 / 30)
-    for x, y, expected in ((0.75, 0.5, (C.WIDTH - 1, C.HEIGHT // 2)), (0.25, 0.5, (0, C.HEIGHT // 2)),
-                           (0.5, 0.75, (C.WIDTH // 2, C.HEIGHT - 1)), (0.5, 0.25, (C.WIDTH // 2, 0))):
+    for x, y, expected in (
+        (0.75, 0.5, (C.WIDTH - 1, C.HEIGHT // 2)),
+        (0.25, 0.5, (0, C.HEIGHT // 2)),
+        (0.5, 0.75, (C.WIDTH // 2, C.HEIGHT - 1)),
+        (0.5, 0.25, (C.WIDTH // 2, 0)),
+    ):
         for _ in range(70):
             source.show(frame({0: (x, y), 7: (x - 0.04, y), 8: (x + 0.04, y)}))
             hub.update(1 / 30)
@@ -127,10 +131,12 @@ def test_leitura_antiga_invalida_cursor_e_nao_reusa_quadro():
 
 
 def test_perfil_migra_pedidos_e_normaliza_novas_opcoes():
-    profile = Profile.from_dict({
-        "opcoes": {"permanencia_editor": 9.0, "escala_contraste": 9.0},
-        "pedidos_vila": {"horta": "solicitada", "desconhecida": "concluida", "escola": "errada"},
-    })
+    profile = Profile.from_dict(
+        {
+            "opcoes": {"permanencia_editor": 9.0, "escala_contraste": 9.0},
+            "pedidos_vila": {"horta": "solicitada", "desconhecida": "concluida", "escola": "errada"},
+        }
+    )
     assert profile.opcoes.permanencia_editor == 5.0
     assert profile.opcoes.escala_contraste == 1.6
     assert profile.pedidos_vila == {"horta": "solicitada"}
@@ -141,4 +147,3 @@ def test_perfil_migra_pedidos_e_normaliza_novas_opcoes():
     assert old.opcoes.permanencia_editor == 3.0
     assert old.opcoes.escala_contraste == 1.3
     assert old.pedidos_vila == {}
-

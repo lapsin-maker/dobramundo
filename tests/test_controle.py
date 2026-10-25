@@ -14,10 +14,6 @@ from dobramundo.ui.widgets import Button, Menu
 # leituras suficientes para calibrar (2 s a 30 leituras por segundo, com folga)
 
 
-
-
-
-
 @pytest.mark.parametrize("key", sorted(SEGMENTS))
 def test_cada_segmento_vira_um_ponto(key):
     segment = SEGMENTS[key]
@@ -29,8 +25,6 @@ def test_cada_segmento_vira_um_ponto(key):
 def test_tronco_precisa_de_dois_pontos():
     segment = SEGMENTS["tronco_pe"]
     assert segment_point(landmarks({11: (0.5, 0.5)}), segment) is None
-
-
 
 
 def test_calibracao_usa_a_mediana():

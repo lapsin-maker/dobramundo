@@ -186,9 +186,7 @@ def test_theme_tags_bias_only_existing_stage_scenery():
 
     specs = [("AM_Samauma", 420.0), ("CA_Aerogerador", 360.0), ("CA_Mangueira", 250.0)]
     tree_theme = SimpleNamespace(challenge_theme=ChallengeTheme("trees", "Árvores", "low", ("trees",)))
-    combined_theme = SimpleNamespace(
-        challenge_theme=ChallengeTheme("wind", "Energia", "tower", ("trees", "wind"))
-    )
+    combined_theme = SimpleNamespace(challenge_theme=ChallengeTheme("wind", "Energia", "tower", ("trees", "wind")))
     green = WorldView.theme_specs(tree_theme, specs, "green")
     solar = WorldView.theme_specs(combined_theme, specs, "solar")
     assert green.count(specs[0]) > specs.count(specs[0])

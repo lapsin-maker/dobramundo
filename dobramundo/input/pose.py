@@ -157,6 +157,7 @@ class AxisMapper:
         """Define o extremo confortável por direção, mantendo alcances assimétricos."""
         if direction not in self.extents or self.base is None or len(points) < 3:
             return False
+
         def distance(point: Point) -> float:
             if direction == "right":
                 return point[0] - self.base[0]
@@ -165,6 +166,7 @@ class AxisMapper:
             if direction == "up":
                 return self.base[1] - point[1]
             return point[1] - self.base[1]
+
         value = median([distance(point) for point in points])
         if value < 0.015:
             return False

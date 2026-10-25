@@ -74,11 +74,7 @@ def benchmark(seconds: float, device: int, model_path: Optional[Path]) -> dict:
     sample_complete = sample_seconds >= max(0.0, seconds - POLL_INTERVAL_S * 2)
     stopped = not source.running
     successful = (
-        ready
-        and sample_complete
-        and deltas["published"] >= MIN_SAMPLES
-        and stopped
-        and metrics["error"] is None
+        ready and sample_complete and deltas["published"] >= MIN_SAMPLES and stopped and metrics["error"] is None
     )
     resolution = metrics["resolution"]
     return {
@@ -109,13 +105,9 @@ def benchmark(seconds: float, device: int, model_path: Optional[Path]) -> dict:
         "capture_interval_ms": round(metrics["capture_interval_ms"], 2),
         "inference_interval_ms": round(metrics["inference_interval_ms"], 2),
         "last_result_age_ms": (
-            round(metrics["last_result_age_ms"], 2)
-            if metrics["last_result_age_ms"] is not None
-            else None
+            round(metrics["last_result_age_ms"], 2) if metrics["last_result_age_ms"] is not None else None
         ),
-        "last_published_age_ms": (
-            round(metrics["result_age_ms"], 2) if metrics["result_age_ms"] is not None else None
-        ),
+        "last_published_age_ms": (round(metrics["result_age_ms"], 2) if metrics["result_age_ms"] is not None else None),
         "error_count": metrics["errors"],
         "error": metrics["error"],
         "thread_still_running_after_stop": not stopped,

@@ -46,9 +46,7 @@ class BoundedCache(Dict[Hashable, Any]):
         if key in self:
             self.__delitem__(key)
         if key not in self:
-            while len(self) >= self.limit or (
-                self.byte_limit and self.bytes + value_size > self.byte_limit
-            ):
+            while len(self) >= self.limit or (self.byte_limit and self.bytes + value_size > self.byte_limit):
                 self.__delitem__(next(iter(self)))
         super().__setitem__(key, value)
         self.bytes += value_size

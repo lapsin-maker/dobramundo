@@ -26,7 +26,7 @@ def test_reference_route_avoids_an_obstacle_and_checks_full_collision_volume():
     route = find_reachable_route([entity], "dificil")
 
     assert route
-    assert all(abs(x - entity.x) > obstacle.width / 2 + 130 * .42 * .88 for x, _y in route)
+    assert all(abs(x - entity.x) > obstacle.width / 2 + 130 * 0.42 * 0.88 for x, _y in route)
 
 
 def test_route_model_rejects_a_wall_covering_all_lanes_and_altitudes():
@@ -119,4 +119,3 @@ def test_planner_uses_worst_case_speed_for_each_difficulty():
     difficult = RoutePlanner("dificil")
 
     assert normal.speed == difficult.speed * C.NORMAL_SPEED_FACTOR
-

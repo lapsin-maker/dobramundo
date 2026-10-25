@@ -70,8 +70,9 @@ def test_empty_or_tiny_bank_atlas_falls_back_instead_of_dividing_by_zero(display
     assets = Assets()
     original = assets.sprite
     empty = pygame.Surface(size, pygame.SRCALPHA)
-    monkeypatch.setattr(assets, "sprite", lambda folder, name: empty if name.startswith("banks_")
-                        else original(folder, name))
+    monkeypatch.setattr(
+        assets, "sprite", lambda folder, name: empty if name.startswith("banks_") else original(folder, name)
+    )
     painter = WatercolorWorld(assets)
     assert painter.draw(display, World(BIOMES["amazonia"]), 0) is False
 

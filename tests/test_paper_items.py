@@ -13,8 +13,9 @@ def _waste(z: float = 360.0, y: float = 100.0) -> Entity:
     return Entity(z=z, lane=0, kind="waste", y=y, sprite="papel")
 
 
-def _obstacle(kind: str, *, width: float = 100.0, y_min: float = 0.0, y_max: float = 70.0,
-              solar: bool = False) -> Entity:
+def _obstacle(
+    kind: str, *, width: float = 100.0, y_min: float = 0.0, y_max: float = 70.0, solar: bool = False
+) -> Entity:
     spec = ObstacleSpec(kind, "unused", 90.0, width, y_min, y_max)
     return Entity(z=360.0, lane=0, kind=kind, spec=spec, solar=solar)
 
@@ -22,8 +23,12 @@ def _obstacle(kind: str, *, width: float = 100.0, y_min: float = 0.0, y_max: flo
 def test_tokens_nativos_distintos_estaticos_e_sem_assets():
     items = PaperItems()
     kinds = ["papel", "plastico", "metal", "vidro", "shield", "magnet", "repair"]
-    canonical = [items.canonical[("waste", key)] if key in ("papel", "plastico", "metal", "vidro")
-                 else items.canonical[("powerup", key)] for key in kinds]
+    canonical = [
+        items.canonical[("waste", key)]
+        if key in ("papel", "plastico", "metal", "vidro")
+        else items.canonical[("powerup", key)]
+        for key in kinds
+    ]
     assert len({pygame.image.tobytes(surface, "RGBA") for surface in canonical}) == len(kinds)
 
     screen = pygame.Surface((1100, 650), pygame.SRCALPHA)

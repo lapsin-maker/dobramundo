@@ -3,6 +3,7 @@
 Nenhuma imagem ou câmera real é usada. Fora destes helpers, prefira comandos e
 resultados públicos; detalhes internos só para injeção de falhas/invariantes.
 """
+
 from dobramundo.input.pose import SEGMENTS, AxisMapper
 
 CAL_READINGS = 70
@@ -13,7 +14,6 @@ def landmarks(points: dict, visibility: float = 0.9):
     for index, (x, y) in points.items():
         data[index] = (x, y, visibility)
     return data
-
 
 
 class FakeSource:
@@ -36,7 +36,6 @@ class FakeSource:
 
     def snapshot(self):
         return self.seq, self.points, None
-
 
 
 def calibrated(segment: str = "tronco_pe") -> AxisMapper:

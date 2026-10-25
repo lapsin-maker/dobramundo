@@ -19,7 +19,7 @@ def _dwell(scene, key: str) -> None:
 def _assert_no_dwell_overlap(scene, keys: list[str]) -> None:
     buttons = [next(button for button in scene.menu.buttons if button.key == key) for key in keys]
     for i, first in enumerate(buttons):
-        for second in buttons[i + 1:]:
+        for second in buttons[i + 1 :]:
             assert not first.rect.inflate(60, 60).colliderect(second.rect.inflate(60, 60))
 
 
@@ -27,8 +27,10 @@ def test_vila_oferece_destinos_grandes_e_alvos_separados(app):
     scene = VillageScene(app)
     scene.build()
     _assert_no_dwell_overlap(scene, ["voar", "hangar", "piloto", "cuidar"])
-    assert all(next(b for b in scene.menu.buttons if b.key == key).rect.size == (210, 86)
-               for key in ("voar", "hangar", "piloto", "cuidar"))
+    assert all(
+        next(b for b in scene.menu.buttons if b.key == key).rect.size == (210, 86)
+        for key in ("voar", "hangar", "piloto", "cuidar")
+    )
 
 
 def test_compra_exige_confirmacao_e_nao_desconta_duas_vezes(app):
@@ -46,8 +48,7 @@ def test_compra_exige_confirmacao_e_nao_desconta_duas_vezes(app):
 
     _dwell(scene, "confirmar")
     assert upgrade.key in app.profile.vila
-    assert all(app.profile.recursos[key] == before[key] - amount
-               for key, amount in upgrade.cost.items())
+    assert all(app.profile.recursos[key] == before[key] - amount for key, amount in upgrade.cost.items())
     after_purchase = dict(app.profile.recursos)
     # O antigo alvo de confirmação desaparece após a compra e não pode repetir o gasto.
     scene.menu.update(0.1, (380, 593), 0.1)

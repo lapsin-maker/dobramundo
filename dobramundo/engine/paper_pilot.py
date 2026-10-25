@@ -383,17 +383,17 @@ def _painterly_finish(surface: pygame.Surface, view: str, look: dict) -> pygame.
 
 
 def _draw_paper_body(canvas):
-    image = canvas['image']
-    look = canvas['look']
-    rect = canvas['rect']
-    q = canvas['q']
-    ink = canvas['ink']
-    ellipse = canvas['ellipse']
-    stroke = canvas['stroke']
-    polygon = canvas['polygon']
-    wash_arc = canvas['wash_arc']
-    face = canvas['face']
-    shirt = canvas['shirt']
+    image = canvas["image"]
+    look = canvas["look"]
+    rect = canvas["rect"]
+    q = canvas["q"]
+    ink = canvas["ink"]
+    ellipse = canvas["ellipse"]
+    stroke = canvas["stroke"]
+    polygon = canvas["polygon"]
+    wash_arc = canvas["wash_arc"]
+    face = canvas["face"]
+    shirt = canvas["shirt"]
 
     # Soft landing shadow and assistive device are placed behind the body.
     pygame.draw.ellipse(image, (50, 65, 77, 42), rect(25, 212, 140, 14))
@@ -480,16 +480,17 @@ def _draw_paper_body(canvas):
     polygon([(88, 163), (108, 170), (91, 176)], (255, 248, 228), None)
     stroke([(88, 163), (91, 176)], ink, 1.4, None)
 
+
 def _draw_paper_hair_silhouette(canvas):
-    image = canvas['image']
-    look = canvas['look']
-    rect = canvas['rect']
-    ellipse = canvas['ellipse']
-    stroke = canvas['stroke']
-    polygon = canvas['polygon']
-    q = canvas['q']
-    ink = canvas['ink']
-    hair_color = canvas['hair_color']
+    image = canvas["image"]
+    look = canvas["look"]
+    rect = canvas["rect"]
+    ellipse = canvas["ellipse"]
+    stroke = canvas["stroke"]
+    polygon = canvas["polygon"]
+    q = canvas["q"]
+    ink = canvas["ink"]
+    hair_color = canvas["hair_color"]
 
     # Hair silhouette behind the head, with shape-specific volume and strand rhythm.
     style = look["cabelo"]
@@ -542,21 +543,22 @@ def _draw_paper_hair_silhouette(canvas):
                 polygon([(51, 43), (68, 38), (82, 54), (98, 39), (114, 54), (133, 39), (140, 50)], hair_color, ink, 1)
     return style
 
+
 def _draw_paper_face(canvas):
-    image = canvas['image']
-    view = canvas['view']
-    look = canvas['look']
-    face = canvas['face']
-    eye_color = canvas['eye_color']
-    hair_color = canvas['hair_color']
-    rect = canvas['rect']
-    ellipse = canvas['ellipse']
-    polygon = canvas['polygon']
-    wash_ellipse = canvas['wash_ellipse']
-    stroke = canvas['stroke']
-    q = canvas['q']
-    ink = canvas['ink']
-    style = canvas['style']
+    image = canvas["image"]
+    view = canvas["view"]
+    look = canvas["look"]
+    face = canvas["face"]
+    eye_color = canvas["eye_color"]
+    hair_color = canvas["hair_color"]
+    rect = canvas["rect"]
+    ellipse = canvas["ellipse"]
+    polygon = canvas["polygon"]
+    wash_ellipse = canvas["wash_ellipse"]
+    stroke = canvas["stroke"]
+    q = canvas["q"]
+    ink = canvas["ink"]
+    style = canvas["style"]
 
     # Head, cheek volume, ears and face-facing/away expressions.
     if view == "flight":
@@ -667,14 +669,15 @@ def _draw_paper_face(canvas):
             ellipse((136, 76, 9, 11), (45, 146, 157), width=1)
             pygame.draw.ellipse(image, (247, 213, 124), rect(139, 78, 3, 4))
 
+
 def _draw_paper_gesture(canvas):
-    view = canvas['view']
-    face = canvas['face']
-    shirt = canvas['shirt']
-    ellipse = canvas['ellipse']
-    polygon = canvas['polygon']
-    stroke = canvas['stroke']
-    ink = canvas['ink']
+    view = canvas["view"]
+    face = canvas["face"]
+    shirt = canvas["shirt"]
+    ellipse = canvas["ellipse"]
+    polygon = canvas["polygon"]
+    stroke = canvas["stroke"]
+    ink = canvas["ink"]
 
     # Poses: a paper plane close to the chest, or an arm raised to launch it.
     if view == "segura":
@@ -688,12 +691,13 @@ def _draw_paper_gesture(canvas):
         ellipse((154, 108, 17, 18), face, width=1)
         polygon([(158, 104), (168, 87), (170, 107)], (255, 248, 228), ink, 1)
 
+
 def _finish_paper_pilot(canvas):
-    image = canvas['image']
-    view = canvas['view']
-    look = canvas['look']
-    face = canvas['face']
-    style = canvas['style']
+    image = canvas["image"]
+    view = canvas["view"]
+    look = canvas["look"]
+    face = canvas["face"]
+    style = canvas["style"]
 
     # Paper fibers and pigment blooms are clipped to the character silhouette.
     grain = pygame.Surface(image.get_size(), pygame.SRCALPHA)

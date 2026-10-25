@@ -140,7 +140,8 @@ class Profile:
         self.padroes_comprados = sorted({p for p in self.padroes_comprados if p in PATTERN_PRICES})
         self.vila = [k for k in VILLAGE_KEYS if k in set(self.vila)]
         self.pedidos_vila = {
-            str(k): str(v) for k, v in self.pedidos_vila.items()
+            str(k): str(v)
+            for k, v in self.pedidos_vila.items()
             if k in VILLAGE_KEYS and v in ("solicitada", "concluida")
         }
         self.pecas = {k: max(0, min(MAX_PART_LEVEL, int(self.pecas.get(k, 0)))) for k in PART_KEYS}
@@ -164,9 +165,7 @@ class Profile:
         o.limite_voo_s = o.limite_voo_s if type(o.limite_voo_s) is int and o.limite_voo_s in (0, 120, 180, 240) else 0
         o.assistencia_previsivel = o.assistencia_previsivel if isinstance(o.assistencia_previsivel, bool) else False
         o.semente_desafio = (
-            o.semente_desafio
-            if type(o.semente_desafio) is int and 0 <= o.semente_desafio <= 0xFFFFFFFF
-            else 0
+            o.semente_desafio if type(o.semente_desafio) is int and 0 <= o.semente_desafio <= 0xFFFFFFFF else 0
         )
         return self
 

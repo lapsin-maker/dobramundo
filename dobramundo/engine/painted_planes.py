@@ -103,8 +103,9 @@ class PaintedPlanes:
             return pygame.transform.smoothscale(pattern, size)
         return pattern
 
-    def painted(self, plane: str, view: str, color_key: str, pattern_key: str,
-                patterns: Assets) -> Optional[pygame.Surface]:
+    def painted(
+        self, plane: str, view: str, color_key: str, pattern_key: str, patterns: Assets
+    ) -> Optional[pygame.Surface]:
         base = self.base(plane, view)
         if base is None:
             return None
@@ -134,8 +135,7 @@ class PaintedPlanes:
         return out
 
     @staticmethod
-    def mount_pilot(plane_surface: pygame.Surface, pilot_renderer, plane: str,
-                    view: str, look: dict) -> pygame.Surface:
+    def mount_pilot(plane_surface: pygame.Surface, pilot_renderer, plane: str, view: str, look: dict) -> pygame.Surface:
         """Encaixe relativo ao avião ilustrado, independente dos anchors legados."""
         pilot_view = "flight" if view == "flight" else "menu"
         pilot_pose = "back_seated" if view == "flight" else "front_seated"

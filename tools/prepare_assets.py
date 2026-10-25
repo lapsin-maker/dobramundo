@@ -28,8 +28,13 @@ OUTPUT = ROOT / "assets" / "watercolor_prepared"
 BACKDROPS = tuple(f"{biome}_{stage}" for biome in ("amazonia", "caatinga") for stage in range(3))
 PREPARED_SIZES = {name: (C.WIDTH + 32, C.HEIGHT) for name in BACKDROPS}
 PLANE_ATLASES = (
-    "planes_flight_a", "planes_flight_a_clean", "planes_flight_b", "planes_flight_c",
-    "planes_menu_a", "planes_menu_b", "planes_menu_c",
+    "planes_flight_a",
+    "planes_flight_a_clean",
+    "planes_flight_b",
+    "planes_flight_c",
+    "planes_menu_a",
+    "planes_menu_b",
+    "planes_menu_c",
 )
 PREPARED_SIZES.update({name: (768, 512) for name in PLANE_ATLASES})
 BACKDROP_SIZE = (C.WIDTH + 32, C.HEIGHT)
@@ -117,12 +122,13 @@ def build_manifest(generate: bool = True) -> dict:
             record["runtime_variant"] = {
                 "file": f"watercolor_prepared/{path.name}",
                 "dimensions": list(target),
-                "pivot": None if is_backdrop else (
-                    "atlas cells preserve row-major order; pivot handled by runtime cropper"
-                ),
+                "pivot": None
+                if is_backdrop
+                else ("atlas cells preserve row-major order; pivot handled by runtime cropper"),
                 "use": (
                     "flight backdrop; logical canvas plus 32 px parallax overscan"
-                    if is_backdrop else "aircraft atlas; 384×256 px cells, scaled from 768×512 originals"
+                    if is_backdrop
+                    else "aircraft atlas; 384×256 px cells, scaled from 768×512 originals"
                 ),
             }
             if generate:
@@ -139,8 +145,7 @@ def build_manifest(generate: bool = True) -> dict:
             "credit_file": "assets/watercolor/CREDITOS.txt",
             "generation_metadata": generation_records,
             "method": (
-                "project-integrated image generation; local metadata is recorded, "
-                "but is not a pixel-level source map"
+                "project-integrated image generation; local metadata is recorded, but is not a pixel-level source map"
             ),
         },
         "license": "CC BY 4.0 project package; see root LICENSE and assets/watercolor/CREDITOS.txt.",

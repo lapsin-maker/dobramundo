@@ -30,12 +30,6 @@ SEED = 7
 # leituras suficientes para calibrar (2 s a 30 leituras por segundo, com folga)
 
 
-
-
-
-
-
-
 def threat_run(top: float | None = None, focus: bool = True) -> tuple:
     """Voo da Amazônia (normal) com um único obstáculo baixo na faixa 0, a 0,5 s de batida.
 

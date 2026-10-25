@@ -18,8 +18,10 @@ def make_run(**kwargs) -> FlightRun:
 def test_explicit_seed_reproduces_route_and_mission_sequence():
     first = make_run(seed=31821)
     second = make_run(seed=31821)
+
     def signature(run):
         return [(entity.z, entity.x, entity.kind, entity.sprite) for entity in run.world.entities]
+
     assert signature(first) == signature(second)
     assert first.seed == second.seed == 31821
 
@@ -27,8 +29,7 @@ def test_explicit_seed_reproduces_route_and_mission_sequence():
 def test_community_seed_names_region_and_biases_without_removing_other_obstacles():
     seed = 20261025
     amazon = make_run(seed=seed, community_challenge=True)
-    caatinga = FlightRun(BIOMES["caatinga"], "normal", seed=seed, intro=False, focus=False,
-                         community_challenge=True)
+    caatinga = FlightRun(BIOMES["caatinga"], "normal", seed=seed, intro=False, focus=False, community_challenge=True)
     assert amazon.world.challenge_theme.key == "encontro_das_aguas"
     assert caatinga.world.challenge_theme.key == "pomares_do_sao_francisco"
     assert amazon.world.challenge_theme.decorations == ("river", "boat")
@@ -214,9 +215,9 @@ def test_flight_scene_uses_selected_seed_and_replay_preserves_intro_and_preset(a
     assert replay.run.intro == run.intro is False
     assert replay.run.world.challenge_theme.key == run.world.challenge_theme.key
     assert replay.run.mission_preferred_waste == run.mission_preferred_waste == "papel"
-    assert [
-        (entity.z, entity.x, entity.kind, entity.sprite) for entity in replay.run.world.entities
-    ] == [(entity.z, entity.x, entity.kind, entity.sprite) for entity in run.world.entities]
+    assert [(entity.z, entity.x, entity.kind, entity.sprite) for entity in replay.run.world.entities] == [
+        (entity.z, entity.x, entity.kind, entity.sprite) for entity in run.world.entities
+    ]
 
 
 def test_balance_agent_uses_motion_and_returns_partial_interruption_metrics():
@@ -251,4 +252,3 @@ def test_balance_pause_is_wall_time_not_flight_time():
     assert 61.0 <= record["seconds_active"] <= 61.05
     assert 2.0 <= record["seconds_wall"] - record["seconds_active"] <= 2.1
     assert record["interrupted"]
-

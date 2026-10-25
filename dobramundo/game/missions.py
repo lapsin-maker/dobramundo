@@ -114,8 +114,7 @@ class MissionTracker:
             return None
         candidates = [mission for mission in offered if mission.kind != self.last_kind]
         preferred = [
-            mission for mission in candidates
-            if mission.kind == "coletar" and mission.waste == self.preferred_waste
+            mission for mission in candidates if mission.kind == "coletar" and mission.waste == self.preferred_waste
         ]
         if preferred and self.rng.random() < 0.5:
             mission = self.rng.choice(preferred)

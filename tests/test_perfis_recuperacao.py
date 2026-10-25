@@ -277,4 +277,3 @@ def test_scene_factory_is_used_by_goto_and_map_start(app):
     app.create_scene("mapa").start("amazonia")
 
     assert called == ["perfis", "vila", "mapa", "voo"]
-

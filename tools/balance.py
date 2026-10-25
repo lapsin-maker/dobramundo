@@ -41,12 +41,23 @@ def command_for(player, point: Tuple[float, float]) -> Tuple[float, float]:
     return ax, max(-1.0, min(1.0, ay))
 
 
-def desired_command(run: FlightRun, rng: random.Random, collect_share: float, error_rate: float,
-                    reaction_s: float, latency_s: float, counts: Dict[str, int]) -> Tuple[float, float]:
+def desired_command(
+    run: FlightRun,
+    rng: random.Random,
+    collect_share: float,
+    error_rate: float,
+    reaction_s: float,
+    latency_s: float,
+    counts: Dict[str, int],
+) -> Tuple[float, float]:
     """Controlador simples; decide por alvo e deixa a física/sensores do jogo resolver o movimento."""
     threats = [
-        entity for entity in run.world.entities
-        if entity.spec is not None and not entity.hit and not entity.passed and not entity.dodged
+        entity
+        for entity in run.world.entities
+        if entity.spec is not None
+        and not entity.hit
+        and not entity.passed
+        and not entity.dodged
         and entity.z > C.PLAYER_Z
     ]
     if threats:
@@ -71,12 +82,7 @@ def desired_command(run: FlightRun, rng: random.Random, collect_share: float, er
 
     for entity in run.world.entities:
         point = vars(entity).get("balance_target")
-        if (
-            entity.kind == "waste"
-            and point is not None
-            and not entity.collected
-            and entity.z > C.PLAYER_Z
-        ):
+        if entity.kind == "waste" and point is not None and not entity.collected and entity.z > C.PLAYER_Z:
             return command_for(run.player, point)
 
     horizon = run.speed * (reaction_s + latency_s + ANTICIPATION_S + 0.5)
