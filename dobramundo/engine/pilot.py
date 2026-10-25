@@ -1,14 +1,8 @@
-"""Piloto em camadas, montado sobre o avião.
+"""Renderiza o piloto em aquarela e o encaixa no avião.
 
-assets/pilot_layers/<vista>__<camada>.png, geradas por tools/build_assets.py:
-    skin, shirt          tons de cinza; recebem a cor escolhida (multiplicação)
-    base                 calça, tênis, olhos (cor fixa)
-    hair_<estilo>        cinza; recebe a cor do cabelo
-    glasses_<estilo>, acc_<estilo>, hearing, chair     cor fixa
-Cada camada opcional guarda só os pixels visíveis na cena completa, então a
-ordem de desenho (base -> opcionais) já resolve o que fica na frente.
-anchors.json: por vista e avião, a caixa [x0, y0, x1, y1] (em pixels do sprite
-"__none") onde o piloto senta; y0 negativo = o piloto passa do topo do sprite.
+As poses pintadas e os atlases modulares de cabelo/dispositivos são opcionais;
+o desenho procedural de papel segue como fallback. ``anchors.json`` mantém o
+posicionamento por modelo de avião, e as PNGs legadas seguem para compatibilidade.
 """
 
 from __future__ import annotations
@@ -17,13 +11,15 @@ from typing import Optional, Tuple
 
 import pygame
 
-from ..content.pilot import ACCESSORIES, GLASSES, HAIR_COLORS, SHIRT_COLORS, SKIN_TONES, find_option, normalize_pilot
+from ..content.pilot import normalize_pilot
 from .assets import Assets
 from .cache import BoundedCache
+from .painted_pilot import PaintedPilot
+from .paper_pilot import draw_pilot
 
 FOLDER = "pilot_layers"
 INK = (29, 36, 51)
-MIN_PILOT_SHARE = 0.27  # altura mínima do piloto em relação ao sprite do avião
+MIN_PILOT_SHARE = 0.32  # leitura do piloto acima da escala do avião durante o voo
 
 
 def tinted(layer: pygame.Surface, color) -> pygame.Surface:
@@ -49,47 +45,22 @@ class PilotRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         self.anchors = assets.json(FOLDER, "anchors.json") or {}
+        self.painted = PaintedPilot(assets)
         self.cache = BoundedCache(32)  # piloto montado por vista e aparência
 
     def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
         return self.assets.folder(FOLDER).get(f"{view}__{name}")
 
-    def compose(self, view: str, look: dict) -> Optional[pygame.Surface]:
-        """Piloto completo da vista, com as cores escolhidas (em cache por aparência)."""
+    def compose(self, view: str, look: dict, pose: Optional[str] = None) -> Optional[pygame.Surface]:
+        """Piloto 2D de papel, independente das antigas camadas low-poly."""
         look = normalize_pilot(look)
-        key = (view, tuple(sorted(look.items())))
+        key = (view, pose, tuple(sorted(look.items())))
         cached = self.cache.get(key)
         if cached is not None:
             return cached
-        hijab = look["cabelo"] == "hijab"
-        skin = (self.layer(view, "skin_hijab") if hijab else None) or self.layer(view, "skin")
-        if skin is None:
-            return None
-        canvas = pygame.Surface(skin.get_size(), pygame.SRCALPHA)
-        wheelchair = look["cadeira"] == "sim"
-        hair_color = find_option(HAIR_COLORS, look["cor_cabelo"]).color
-        parts = [
-            (skin, find_option(SKIN_TONES, look["pele"]).color),
-            (self.layer(view, "base"), None),
-            (self.layer(view, "shirt"), find_option(SHIRT_COLORS, look["roupa"]).color),
-        ]
-        if hijab:
-            parts.append((self.layer(view, "hijab"), hair_color))  # a "cor do cabelo" vira a cor do lenço
-        elif look["cabelo"] != "raspado":
-            parts.append((self.layer(view, f"hair_{look['cabelo']}"), hair_color))
-        if look["aparelho"] == "sim":
-            parts.append((self.layer(view, "hearing"), None))
-        if find_option(GLASSES, look["oculos"]).key != "nenhum":
-            parts.append((self.layer(view, f"glasses_{look['oculos']}"), None))
-        if find_option(ACCESSORIES, look["acessorio"]).key != "nenhum":
-            parts.append((self.layer(view, f"acc_{look['acessorio']}"), None))
-        if wheelchair:
-            parts.append((self.layer(view, "chair"), None))
-        for surface, color in parts:
-            if surface is None:
-                continue
-            canvas.blit(tinted(surface, color) if color is not None else surface, (0, 0))
-        canvas = ink_outline(canvas)
+        canvas = self.painted.compose(view, look, pose=pose)
+        if canvas is None:
+            canvas = draw_pilot(view, look)
         self.cache[key] = canvas
         return canvas
 
@@ -97,13 +68,21 @@ class PilotRenderer:
         box = self.anchors.get(view, {}).get(plane)
         return tuple(box) if box and len(box) == 4 else None  # type: ignore[return-value]
 
-    def mount(self, plane_surface: pygame.Surface, plane: str, view: str, look: dict) -> pygame.Surface:
+    def mount(
+        self,
+        plane_surface: pygame.Surface,
+        plane: str,
+        view: str,
+        look: dict,
+        *,
+        pilot_pose: Optional[str] = None,
+    ) -> pygame.Surface:
         """Avião + piloto. Sem camadas geradas, devolve o avião como está.
 
         O corpo do piloto (caixa "body" do anchors.json, sem cabelo nem cadeira) é
         escalado para a altura da caixa do avião e alinhado pelo centro da base.
         """
-        pilot = self.compose(view, look)
+        pilot = self.compose(view, look, pose=pilot_pose)
         box = self.anchor(plane, view)
         body = self.anchors.get("body", {}).get(view)
         if pilot is None or box is None or not body:

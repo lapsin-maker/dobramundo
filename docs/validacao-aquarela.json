@@ -1,0 +1,90 @@
+{
+  "data": "2026-10-25",
+  "ambiente": "Windows 11, Python 3.12.10, pygame 2.6.1, SDL dummy",
+  "suite": {
+    "piloto_apos_ajuste": 10,
+    "diff_check": "ok",
+    "passaram": 305,
+    "segundos": 20.63,
+    "ruff": "ok"
+  },
+  "fonte": {
+    "status": "ok",
+    "detector": "ok",
+    "voos": {
+      "amazonia": {
+        "quadros": 1200,
+        "transformacao": 72.8,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 4,
+          "metal": 0,
+          "vidro": 0
+        },
+        "pontos": 65,
+        "media_ms": 2.7,
+        "p95_ms": 4.27
+      },
+      "caatinga": {
+        "quadros": 1200,
+        "transformacao": 72.8,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 4
+        },
+        "pontos": 65,
+        "media_ms": 2.78,
+        "p95_ms": 5.0
+      }
+    }
+  },
+  "executavel": {
+    "frozen": true,
+    "status": "ok",
+    "detector": "ok",
+    "voos": {
+      "amazonia": {
+        "quadros": 1200,
+        "transformacao": 74.0,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 8,
+          "metal": 0,
+          "vidro": 0
+        },
+        "pontos": 130,
+        "media_ms": 2.59,
+        "p95_ms": 4.29
+      },
+      "caatinga": {
+        "quadros": 1200,
+        "transformacao": 71.7,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "pontos": 0,
+        "media_ms": 2.88,
+        "p95_ms": 4.51
+      }
+    }
+  },
+  "limites": [
+    "Sem webcam fisica ativa",
+    "Sem projecao fisica",
+    "Sem avaliacao com criancas",
+    "Menus com poucas amostras no self-test"
+  ]
+}

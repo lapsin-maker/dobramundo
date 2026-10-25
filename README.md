@@ -4,7 +4,13 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
-## Novidades da versão 1.4
+## Prévia — sprint 2: aquarela em movimento
+
+Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).
+
+Baixe o executável e a galeria com gravações reais na [prévia da sprint 2](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint2-aquarela-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT2.md) explica a instalação, o perfil separado e a verificação dos arquivos. Esta prévia mantém a versão interna 1.4.0 e é identificada pela tag da sprint.
+
+## Histórico — versão 1.4
 
 - **Papel e aquarela:** a direção de arte segue a logo. Os sprites recebem um filtro de papel (`tools/stylize.py`), com sombreamento em degraus, contorno de tinta azul-marinho e grão de papel, e os cartões das telas têm sombra e textura de papel. As fontes Fredoka, Nunito e Patrick Hand são embutidas no jogo, sob licença OFL.
 - **Vila como diorama:** morros, rio com ponte, caminhos e um largo central onde o avião pousa. As cinco casas passam de industriais a solarpunk, uma a uma, conforme a vila avança.
@@ -79,7 +85,7 @@ A versão atual tem duas fases, cada uma numa cidade brasileira do seu bioma:
 - A paisagem de cada fase tem três estágios: cidade industrial (dieselpunk), despertar ecológico e cidade solarpunk. Eles se sucedem aos 33,3% e aos 66,7% de transformação.
 - No estágio industrial, peças regionais (guindaste, termelétrica e contêineres em Manaus; torres de transmissão, caixas d'água e galpões em Petrolina) se misturam às estruturas do kit, e silhuetas da cidade regional aparecem no horizonte.
 - O céu das fases poluídas é tingido pelo bioma: cinza e úmido em Manaus, ocre e seco em Petrolina.
-- O cenário é organizado em quarteirões, com vãos entre eles, em vez de uma fila contínua de peças.
+- Na direção aquarelada, água/solo avançam em perspectiva e as peças regionais se aproximam pelas margens. O cenário procedural de reserva usa quarteirões com vãos entre eles.
 
 ## Como se joga
 
@@ -87,13 +93,13 @@ Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a cria
 
 ### Primeira execução
 
-Na primeira execução, a criança passa pelo **Piloto**, pela **Abertura** e pelo **Aviso ao supervisor**, nesta ordem, e cada uma aparece só uma vez. Depois vem a **Calibração**, se o controle for corporal, e então a vila. A abertura pode ser revista em Opções ("Ver a abertura"), e o piloto muda pelo botão Piloto da vila.
+Na primeira execução, a criança começa com um **piloto neutro** e escolhe sua aparência. Depois vêm o **Aviso ao supervisor**, quando necessário, a **Calibração**, se o controle for corporal, e a **vila**. Na primeira decolagem pelo mapa, um treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. O treino pode ser pulado ou repetido em Opções. A história fica disponível em Opções ("Ver a abertura"), e o personagem pode ser modificado pelo botão Piloto da vila.
 
 A abertura é um livro ilustrado de quatro páginas: uma cidade cinzenta e cheia de fumaça; uma criança que encontra um jornal na rua; a dobradura do avião, passo a passo, sobre uma mesa de papel, com a legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo enquanto a cidade ganha cor.
 
 ### Resíduos e recursos
 
-Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Um halo pulsante marca tudo o que se pode pegar, e chevrons âmbar no chão marcam o que colide, em todos os estágios. Ao coletar, um respingo de aquarela na cor do resíduo marca o ponto.
+Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Resíduos têm moldura circular e objeto pintado; benefícios têm moldura hexagonal; obstáculos têm volume e silhueta próprios. Ao coletar, um respingo opcional de aquarela na cor do resíduo marca o ponto.
 
 ### Obstáculos
 
@@ -188,16 +194,18 @@ O hangar oferece 11 dobraduras de voo distinto, entre elas uma miniatura do 14-B
 
 ### Piloto
 
-A criança monta o piloto na tela Piloto, que abre antes da vila na primeira execução e depois fica no menu da vila. Um balão de fala acompanha as escolhas. O botão **Surpresa!** sorteia uma combinação, sem mexer no aparelho auditivo nem na cadeira de rodas, e na primeira vez o botão **Pronto!** confirma a escolha.
+A criança monta o piloto na tela Piloto, que abre antes da vila na primeira execução e depois fica no menu da vila. Um balão de fala acompanha as escolhas. O botão **Surpresa!** sorteia uma combinação preservando óculos, aparelho auditivo, cadeira de rodas, andador e o abafador, quando escolhido. Na primeira vez, o botão **Pronto!** confirma a escolha.
 
 As opções são:
 
 - **Pele:** 10 tons, seis realistas e quatro de fantasia (roxo, azul, verde e rosa).
 - **Cabelo:** 12 estilos (curto, cacheado, black power, longo, tranças, coque, franja, maria-chiquinha, afro puffs, moicano, lenço e raspado), em 10 cores.
-- **Roupa:** 8 cores de camiseta.
+- **Olhos:** 6 cores, com a opção de escolher depois.
+- **Roupa:** 9 cores de camiseta, incluindo o tom de papel.
 - **Óculos:** sem óculos, redondos, quadrados ou de sol.
 - **Acessório:** nenhum, boné, lenço, abafador de ruído, capacete de aviador, flor, tiara ou coroa de papel.
-- **Aparelho auditivo** e **cadeira de rodas:** sim ou não.
+- **Aparelho auditivo:** sim ou não.
+- **Mobilidade:** sem apoio, cadeira de rodas ou andador.
 
 O piloto não tem marcação de gênero, e os dispositivos assistivos são itens comuns da lista.
 
@@ -398,6 +406,10 @@ dobramundo/                          pacote do jogo
         sprites.py                   projeção, neblina e caches de sprite
         cache.py                     BoundedCache (descarte gradual) usado por todos os caches
         plane_skin.py, pilot.py      aparência do avião e piloto em camadas
+        painted_planes.py           aviões pintados com cor, estampa e piloto
+        painted_pilot.py             atlas do piloto, cabelos e dispositivos assistivos
+        paper_pilot.py               piloto procedural de reserva
+        watercolor.py, painted_route.py  horizonte, terreno em perspectiva e margens móveis
         assets.py                    carregamento preguiçoso dos PNG
     input/                           entradas
         hub.py                       teclado, mouse e escolha da fonte e do controle
@@ -414,7 +426,7 @@ tools/                               geração de assets e do cartucho (ver tool
     build_cartridge.py               monta e valida o cartucho do console T-TEA
     stylize.py                       filtro de papel e aquarela aplicado aos sprites
 tests/                               suíte pytest
-docs/                                GDD e arte original da logo
+docs/                                GDD, arte, capturas e documentação de entrega/validação
 docs/arquitetura.md                  arquitetura do código
 run_dobramundo.py                    atalho para rodar pelo código e entrada do PyInstaller
 Dobramundo.spec                      receita do PyInstaller
@@ -452,11 +464,11 @@ O número após `--self-test` é a quantidade de quadros por voo, com padrão de
 
 ### Integração contínua
 
-`.github/workflows/testes.yml` roda lint, testes e self-test a cada push e pull request, em Python 3.8 (mínimo declarado) e 3.12 (versão do build).
+`.github/workflows/testes.yml` roda lint, testes e self-test em pull requests e em pushes para `main` e `dobramundo`, em Python 3.8 (mínimo declarado) e 3.12 (versão do build).
 
 ### Regenerar os assets
 
-Os comandos abaixo estão detalhados, com dependências, em [tools/README.md](tools/README.md).
+Os comandos abaixo estão detalhados, com dependências, em [tools/README.md](tools/README.md). Os geradores de sprites refazem o conjunto procedural de reserva. A arte principal em `assets/watercolor/` foi gerada por IA e está versionada com prompts e procedência; esses scripts não a recriam. O jogo usa os arquivos prontos e não chama serviços de geração.
 
 ```
 python tools/build_assets.py                   # sprites low-poly de fases e vila, já com o filtro de papel
@@ -480,12 +492,13 @@ O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-pyt
 - **Modelos 3D:** kits 3D da equipe, aviões do estúdio 3D do protótipo e modelos low-poly gerados por código (`tools/lowpoly`)
 - **Referências de design:** Star Fox 64, Subway Surfers, It Takes Two e Super Mario World
 - **Programação:** IA generativa (Gemini e Claude) apoiou a programação
+- **Sprint aquarelada:** implementação e integração com apoio do Codex; ilustrações geradas por IA, com [créditos e procedência](assets/watercolor/CREDITOS.txt) e prompts em `assets/watercolor/generation*.json`
 - **Tecnologia:** Python, pygame, OpenCV e MediaPipe Pose
 - **Música e efeitos:** Sintetizados pelo projeto
 - **Fontes:** Fredoka, Nunito e Patrick Hand (Google Fonts, licença OFL)
 - **Evento:** 3ª ExerGame JAM LARVA/UDESC 2026
 
-A música e os efeitos são gerados por síntese no script `tools/make_audio.py`. Os modelos low-poly das fases, da vila, dos resíduos e do piloto são gerados por código em `tools/lowpoly`.
+A música e os efeitos são gerados por síntese no script `tools/make_audio.py`. O conjunto low-poly de reserva é gerado por código em `tools/lowpoly`. A direção visual principal combina os atlases pintados de `assets/watercolor/` com projeção, recortes, cores e camadas em Pygame.
 
 ## Referências
 

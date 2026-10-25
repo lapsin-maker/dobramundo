@@ -77,8 +77,7 @@ Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por perm
 Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente, e cada tela de primeira vez só entra enquanto a condição do perfil não foi cumprida:
 
 ```
-PilotScene (1ª vez: piloto_montado)  -> IntroScene (1ª vez: abertura_vista)
-           -> ConsentScene (1ª vez: consentimento)
+PilotScene (1ª vez: piloto_montado) -> ConsentScene (1ª vez: consentimento)
            -> CalibrationScene (se houver controle corporal)
            -> VillageScene
 ```
@@ -87,7 +86,7 @@ Fluxo a partir da vila:
 
 ```
 VillageScene
-  Decolar ............ MapScene -> [CalibrationScene, se o corpo não estiver calibrado] -> FlightScene
+  Decolar ............ MapScene -> [CalibrationScene, se necessária] -> [TutorialScene, se tutorial_visto=False] -> FlightScene
   Melhorias .......... UpgradesScene (abas Vila e Avião)
   Hangar ............. HangarScene (abas Dobradura, Cor e Padrão)
   Piloto ............. PilotScene
@@ -146,7 +145,11 @@ Em `WorldView.draw_track`, a pista também se purifica em forma de onda (`wave_z
 
 ## 6. Renderização em camadas
 
-`WorldView` (em `engine/world_view.py`) desenha uma fase na ordem do fundo para a frente:
+Na prévia aquarelada, `WorldView.background` usa `WatercolorWorld` para o horizonte e `PaintedRoute` para o percurso. `PaintedGround` projeta texturas de água/solo por faixas de dois pixels, com buffers reutilizados e coordenada vertical derivada de `world.distance`. `PaintedRoute.placements` mantém margens ancoradas no mundo e usa a mesma função `project` das entidades. Reduzir movimento remove efeitos decorativos e diminui a densidade das margens, mas conserva o avanço. Se faltarem terrenos ou células válidas do atlas, o motor prepara e usa o cenário procedural completo.
+
+Objetos interativos usam `PaperItems`, que separa resíduos circulares, benefícios hexagonais e obstáculos pintados. Depois entram avião/piloto, objetos em primeiro plano, efeitos e HUD. A cenografia não participa da colisão.
+
+O caminho procedural de reserva de `WorldView` segue esta ordem:
 
 1. **Céu** (`SkyRenderer.draw`): degradê do céu; panorama do kit tingido pelo bioma (`tint_panorama`, com `polluted_haze`), com transparência conforme a poluição; sol de papel com halo (`draw_sun`); nuvens de fumaça e nuvens de papel recortado (`paper_cloud`) no céu limpo, com 12 níveis de transparência pré-calculados; silhuetas do horizonte em duas fileiras (fundo e frente), com a fileira de fundo misturando as silhuetas regionais (`industrial_skyline`), com paralaxe de 0,55 e 1,0 e transição de 0,6 segundo; decoração móvel (dirigível, balões e pássaros); e o barco (Amazônia) ou o bonde (Caatinga) na linha do horizonte. As silhuetas são montadas em faixas de 2 200 pixels, em pedaços que cabem em 1,5 ms por quadro.
 2. **Neblina**: faixa de cor sólida abaixo da linha do horizonte.
@@ -190,23 +193,27 @@ O desenho é pesado, então cada tipo de dado tem um cache com limite.
 
 ## 8. Piloto em camadas e anchors.json
 
-O piloto é composto por camadas PNG em `assets/pilot_layers/`, geradas por `tools/build_assets.py --pilot` (ver `tools/lowpoly/pilot.py`). Há duas vistas: `flight` (de trás, como no voo) e `menu` (3/4, como no hangar). Os nomes seguem `<vista>__<camada>.png`:
+`PilotRenderer.compose` prefere `PaintedPilot`: base RGBA com quatro poses, máscaras de pele/camisa/olhos, cabelo frontal/traseiro e dispositivos assistivos pintados. `pose='back_seated'` permite sentar no cockpit sem mudar a escolha de mobilidade do perfil. O resultado é cacheado por vista, pose e aparência. Se faltar a base pintada, usa `paper_pilot.draw_pilot`. As opções ficam em `content/pilot.py` e passam por `normalize_pilot`.
+
+`PaintedPlanes` lê os 11 aviões em atlas de voo/hangar, recorta alfa, aplica cor e estampa sobre o papel claro e monta o piloto proporcionalmente. Em voo, só a parte superior do piloto aparece sobre a dobra. Os anchors antigos são usados no fallback de avião, não nos atlases novos.
+
+O kit legado em `assets/pilot_layers/` permanece no pacote e é gerado por `tools/build_assets.py --pilot` (ver `tools/lowpoly/pilot.py`). Seus nomes seguem `<vista>__<camada>.png`:
 
 - `skin`, `shirt`: tons de cinza. Recebem a cor escolhida por multiplicação (`tinted`).
 - `base`: calça, tênis e olhos, com cor fixa.
 - `hair_<estilo>` e `hijab`: cinza. Recebem a cor do cabelo (no lenço, a cor do cabelo vira a cor do lenço). O estilo `raspado` não tem camada. Com o lenço, `skin_hijab` substitui `skin`, porque o lenço muda o recorte da pele.
 - `glasses_<estilo>`, `acc_<estilo>`, `hearing`, `chair`: com cor fixa.
 
-`PilotRenderer.compose` monta as camadas na ordem: pele, base, camisa, cabelo (ou lenço), aparelho auditivo, óculos, acessório e cadeira. Essa ordem resolve o que fica na frente. Depois, `ink_outline` põe um contorno de tinta na composição inteira, e o resultado fica em cache por aparência (`PilotRenderer.cache`). As opções, com as cores de pele, cabelo, roupa e os itens, ficam em `content/pilot.py`, e são validadas em `normalize_pilot`.
+Essas camadas documentam o formato anterior e continuam disponíveis para compatibilidade de conteúdo.
 
 `assets/pilot_layers/anchors.json` tem a ancoragem do piloto:
 
 - `flight` e `menu`: para cada modelo de avião, a caixa `[x0, y0, x1, y1]` em pixels do sprite `<modelo>__none`, onde o piloto senta. Um `y0` negativo indica que o piloto passa do topo do sprite.
 - `body`: para cada vista, a caixa do corpo na camada de referência, usada para escalar o piloto.
 
-`PilotRenderer.mount` escala o corpo para a altura da caixa do avião (nunca menos de 27% da altura do avião, `MIN_PILOT_SHARE`) e alinha pelo centro da base. Sem as camadas ou sem a ancoragem, o avião aparece sem piloto.
+No fallback, `PilotRenderer.mount` escala o corpo para a caixa do avião (com o mínimo `MIN_PILOT_SHARE`) e alinha pelo centro da base. Sem piloto ou ancoragem, devolve o avião sem composição adicional.
 
-A pintura do avião (`PlaneSkin.painted`) usa a camada `paint` de cada sprite. Ela é multiplicada pela cor escolhida ou pelo padrão vestido pelo mapa UV, em que o verde (G) é a linha e o vermelho (R) é a coluna da textura de 256 x 256 pixels.
+A pintura legada do avião usa a camada `paint` e seu mapa UV, em que o verde (G) é a linha e o vermelho (R) é a coluna da textura de 256 x 256 pixels. A rota preferida da sprint usa a máscara de papel de `PaintedPlanes`.
 
 ## 9. Perfil versionado e migração
 
@@ -265,7 +272,7 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 ## Pontos de atenção
 
 - Se o JSON do perfil estiver ilegível, `load_profile` guarda o arquivo como `dobramundo_perfil.corrompido.json` e recomeça com o perfil padrão (e a importação do protótipo).
-- A abertura completa aparece só na primeira execução (`abertura_vista`); depois ela fica em Opções > "Ver a abertura".
+- A história é opcional em Opções > "Ver a abertura". O treino de primeiro voo usa `tutorial_visto`, que só é marcado ao concluir/pular; voltar ao mapa mantém o treino pendente.
 - O mapa (`scenes/map.py`) tem posições fixas para duas fases; uma terceira fase pede reorganizar os botões.
 - O `Dobramundo.spec` empacota as extensões `.png`, `.json`, `.ogg`, `.wav`, `.task`, `.ico`, `.ttf` e `.txt` de `assets/`; se uma fonte faltar, `theme.load_font` cai para `SysFont` e o visual do texto muda.
 - `tools/stylize.py` sobrescreve os PNG de `assets/`; o git guarda os originais.
@@ -299,7 +306,15 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - **Seleção:** `HOLD_MARGIN` (30 px) e `LEAVE_TOLERANCE` (0,5 s) em `ui/widgets.py`.
 - **Cartucho:** `tools/build_cartridge.py` monta `build/cartucho/` sem `app.py`, `main.py`, `selftest.py`, `input/camera.py` e o modelo de pose, gera `CREDITOS.md` e roda `tsdk check` e `tsdk build`. `PLATFORM_KEYS` (ESC, P e F2) fica com o console, e `PLAYER_OPTIONS` define as opções que acompanham a criança registrada.
 
-## Mudanças da versão 1.4
+## Mudanças da sprint aquarelada
+
+`engine/painted_route.py` projeta terreno e margens usando a distância do mundo; `engine/watercolor.py` compõe o horizonte e escolhe o cenário procedural de reserva quando o pacote está incompleto. O piloto usa `engine/painted_pilot.py`, os aviões usam `engine/painted_planes.py`, e `engine/pilot.py` integra o personagem às vistas. As camadas low-poly e `engine/paper_pilot.py` permanecem para compatibilidade e fallback.
+
+`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. O fluxo atual começa em piloto → aviso/calibração quando necessários → vila; a abertura narrativa é opcional. Implementação, capturas e validação: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md). Pacotes e instalação: [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+
+## Histórico — versão 1.4
+
+Os itens abaixo registram a implementação anterior à sprint aquarelada. Os fluxos e renderizadores atuais estão descritos nas seções anteriores.
 
 - **Fontes e cartões** (`ui/theme.py`): `FONT_FILES` carrega Fredoka (títulos e botões), Nunito (leitura) e Patrick Hand (legendas à mão, com `hand=True`) de `assets/fonts`, com `SysFont` como reserva. `panel` desenha cartões de papel com sombra (`SHADOW_OFFSET`), grão (`paper_grain`, de ruído fixo) e borda de tinta, em cache por tamanho e cor.
 - **Filtro de papel** (`tools/stylize.py`): `stylize_image` aplica degraus de claridade, traço nas quebras internas, contorno de tinta azul-marinho e grão. `FOLDERS` lista as pastas de sprites, e `LIGHT_INK_FOLDERS` (aviões) recebe um traço mais fino e cinza-azulado. `tools/build_assets.py` aplica o filtro em cada sprite gerado, com `params_for`. As camadas do piloto não passam por ele.

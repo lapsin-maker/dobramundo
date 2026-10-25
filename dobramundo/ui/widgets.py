@@ -208,7 +208,19 @@ class Menu:
         """
         self.pointer = pointer
         current = self.hover if self.hover in self.buttons and self.hover.enabled else None
-        if (
+        direct = next(
+            (
+                button
+                for button in self.buttons
+                if button.enabled and pointer is not None and button.rect.collidepoint(pointer)
+            ),
+            None,
+        )
+        if direct is not None:
+            # Um cartão vizinho sob o ponteiro vence a margem expandida do atual.
+            # A margem continua ajudando a estabilizar o cursor no espaço entre alvos.
+            hovered = direct
+        elif (
             current is not None
             and pointer is not None
             and current.rect.inflate(2 * HOLD_MARGIN, 2 * HOLD_MARGIN).collidepoint(pointer)

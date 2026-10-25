@@ -1,0 +1,124 @@
+{
+  "description": "Arte gerada para este projeto via imagegen. Originais mantidos fora do repositório. Recortes/tintas/projeção são feitos pelo motor Pygame.",
+  "items": [
+    {
+      "name": "village_start_v2.png",
+      "source": "exec-f0f91db4-fdd8-4c8e-9d26-e657876041f4.png",
+      "prompt": "Edit this watercolor village game backdrop preserving EXACT viewpoint, layout, houses at top and edges, open hangar at top-right, river at left and broad central plaza. This is the START state, colorful playful welcoming BRAZILIAN village but visibly polluted and unsustainable. Keep coral/teal/yellow houses bright, handmade paper and watercolor navy ink. Add quite visible grouped refuse on left river bank, discarded plastic and metal containers, oil-dark patches beside bank and drainage into river, small smoky diesel generator near workshop, unshaded hot bare paving, damaged gutters, a simple industrial chimney far top-left beyond houses. Problems must be visually obvious at game size, localized to edges; not horror, no implication residents are dirty, no dystopia. Gardens are sparse, roofs ordinary no solar, no urban agriculture. Central 50 percent plaza stays empty for game objects and protagonist. Foreground side pockets may show rubbish clusters. Buildings inviting, playful birds paper decorations allowed. NO people, no plane, no UI/text, no central game tokens or built upgrades. Keep high quality watercolor pigment, irregular ink, broad coherent warm lighting.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "village_props.png",
+      "source": "exec-efad7fd3-4057-4a48-b58d-9fd402957cd7.png",
+      "prompt": "Game production SPRITE ATLAS, TRANSPARENT background, exactly 4 columns by 2 rows of EIGHT separate complete illustrated community installations. Equal rectangular cells, all objects centered, fully inside own cell with generous transparent margins, no touching between cells. Reference is watercolor STYLE ONLY. Exquisite hand-painted watercolor on paper, organic navy ink, dimensional folds/shadows and charming Brazilian solarpunk architecture, warm light upper left. Three-quarter front elevated village view, consistent scale. Read left to right top row: 1 colorful community recycling exchange kiosk, coral roof, wooden structure, blue red yellow green sorting baskets, flower pot; 2 distributed food growing garden of three wooden raised beds, leafy greens, tomato vines, small trellis and watering can; 3 solar energy pergola installation with 3 blue panels tilted toward viewer on timber shade roof, tiny inverter and flowering vines; 4 charming timber composting station with open scraps compartment, leaf compost and small wheelbarrow. Bottom row: 5 round white Brazilian rainwater cistern made of plates, blue lid, connected gutter pipe and small tap; 6 bicycle parking timber shelter with 3 colorful bicycles and vines; 7 small cream Brazilian community house with terracotta trim, rich living green roof with shrubs, flowering balcony and climbing plants; 8 slim elegant small wind turbine on timber/cream base with 3 simple blades, garden planting and small battery housing. Absolutely no text letters numbers, no frames, no checkerboard, no icons or flat vector look, no unrelated scenery. Each is a richly painted miniature building/installation, not a symbol. Transparent background all around, soft contact shadows only.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "planes_flight_a.png",
+      "source": "exec-4f106282-bb6a-45bd-bff3-0247ef7c830a.png",
+      "prompt": "Production SPRITE ATLAS for paper-airplane game, TRANSPARENT BACKGROUND, exactly TWO columns TWO rows, FOUR DIFFERENT complete origami airplane models. Use reference ONLY for gorgeous watercolor paper, navy ink and warm coral-orange folded underside. Each airplane is seen from BEHIND and SLIGHTLY ABOVE, flying AWAY toward TOP of frame, both wings visible symmetrically. No pilot or characters. Plane fills own cell center, generous transparent margins; all four cells equal with no overlap, no labels. TOP LEFT classic pointed dart paper airplane long triangular wings; TOP RIGHT broad-wing glider with soft swept wings and short nose; BOTTOM LEFT short stubby playful paper plane with compact blunt triangular wings; BOTTOM RIGHT binder origami glider with thick central paper fold and angular broad wings. Cream watercolor textured paper wings with subtle warm gray fold shading, delicate deep navy organic outlines, rich CORAL-ORANGE central keel/underside pointing toward viewer bottom exactly like reference's airplane. Crisp silhouettes, detailed believable folded paper surfaces with subtle fibers and brush pigment, premium children's watercolor book illustration, not schematic, not vector/flat clipart, no metal/engines, no shadowground, no scenery/UI/text. Transparent background.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "village_final.png",
+      "source": "exec-4c8a52ca-1bd7-4df2-a569-8fc2f98fcb45.png",
+      "prompt": "EDIT exact village into FINAL SOLARPUNK state. Preserve exact camera, house positions, river, central EMPTY plaza and workshop location. Remove ALL rubbish oil fumes diesel generator. Make clear dramatic transition to flourishing sustainable Brazilian community, not just repaint: interconnected ROOFTOP GARDENS and blue solar panels on same houses, food-growing balconies of leafy vegetables and tomatoes on houses, rainwater gutter pipes going to small rooftop/barrel cisterns, vines woven into shaded pedestrian arcades along buildings, fruit trees at edges, visible small vegetable growing terraces beside river, biodiversity flowers and small birds only at edges. Timber workshop has elegant solar canopy integrated around origami awning; reuse existing architecture and local culture. Clear clean blue river and natural bank restoration, warm luminous turquoise sky, joyful colors, distributed food and renewable energy woven into homes. Leave central60percent plaza and lower middle EMPTY to place purchaseable game installations and player. Do NOT place freestanding turbines, solarpergolas,gardenbeds, kiosks in openplaza; those are drawn by game. Colorful artistic watercolor pigment on paper, subtle navy ink same reference. No people, text, interface, airplane.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "village_intermediate.png",
+      "source": "exec-81db30d0-d35e-44ec-a437-1d4e7aba51e1.png",
+      "prompt": "EDIT this exact village into MID restoration state with exactly same camera/plaza/housepositions/river. Keep central plaza empty. Strong difference from polluted start but clearly not full solar: rubbish piles largely removed (just a couple bags at farbank waitingcollection), river partly clearer, chimney no smoke, diesel generator gone fromworkshop. Small rooftop vegetable garden on ONE house, a few green vines and herb windowboxes, one repaired gutter/cistern near house, one pair of small solar panels ONLY on left house, workshoproof remains ordinary. Larger healthy tree canopy than start; colorful houses clean and repaired; a small orchard beginning nearfarleftbank. Main communitybuilding center still ordinary terracotta roof, no huge gardens allover. Originalculture unchanged and joyful. Painterly watercolor same palette navyink warm daylight. No people/text/plane/UI, no freestanding buildable installationsinplaza.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "planes_flight_b.png",
+      "source": "exec-9cb34b30-b01e-48b1-b231-e3c9212b3d9b.png",
+      "prompt": "Create a NEW production transparent SPRITE ATLAS matching supplied four planes STYLE, exact2columns2rows layout with DIFFERENT FOUR paper airplane silhouettes. NO background, NO glow, NO aura, NO drop shadow at all: all pixels outside paper and thin navy ink silhouette FULLY TRANSPARENT. Each model centered in equal cell, 10percentclearinternalmargin, nose towardTOP, viewedfrombehind slightlyabove flyingaway, no pilot. TopLEFT long NEEDLE origami with extremely narrow wings and pointed elongatednose. TopRIGHT flying RECTANGULAR paperwing, broadrectangularwings, shortcentralbody. BottomLEFT origami CRANE bird (tsuru) with narrow long wings, recognizable folded neck/head pointingaway/up and thin tail toward viewer, white/cream with coralorangeinnerfolds. BottomRIGHT ACCORDION folded paperplane with fanlike pleatedwings and sharp centralkeel. SAME cream watercolorpaper pigmentfinefibers, soft warmshadingfolds, delicate navyorganicoutline, coralorange undersidekeel as reference. Believablepaper folds, richdetail, nottechnicaldiagram/vector. No text/labels/gridlines/people/scenery. Fourseparatecompleteairplanes, transparentbackground.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "planes_flight_a_clean.png",
+      "source": "exec-1b5aab46-2bf3-4327-8535-e208d8992148.png",
+      "prompt": "Precise asset cleanup edit. Preserve EXACT four airplane models, layout, all paper details, dimensions, colors, silhouettes. Remove ALL surrounding gray/orange glow, aura, drop shadow and background. The output must have fully transparent pixels everywhere outside the plane's navy outline, with clean antialiased alpha edge. NO halo or shadow whatsoever. Do not change the airplane drawings. Four airplane sprites on genuine transparent background.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "planes_flight_c.png",
+      "source": "exec-387c74c0-9f16-4273-8100-117fd871f45a.png",
+      "prompt": "Production TRANSPARENT sprite atlas EXACTLY2columns2rows matching watercolor cream origami planes reference. TopLEFT paper jet fighter with double vertical folded fins and angular swept wings. TopRIGHT long-tail boom paper glider with straight wide main wings, thin long centralpaperfuselage and separate small tailwing nearviewer. BottomLEFT MINIATURE SANTOS-DUMONT14-BIS aircraft made of folded cream paper and bamboo, recognizableboxkite biplane, squareboxwings and prominentfrontboxelevator, miniaturetoy scale, viewed frombehind/slightlyabove flyingtowardTOP, NO pilot. BottomRIGHT EMPTY transparent cell (threeaircrafttotal). Fully contained eachcellwithmargin andnosepointstopt, viewed frombehind flyingaway sameviewreference. Allcreamwatercolorpaper with coralorangeinnerfold accents/navyfineink, richshadingpigment, not vector. No characters, UI, text, gridline, aura, glow, groundorbackground. Genuinealphaoutsideaircraft.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "items_refined.png",
+      "source": "exec-e7264a69-4a0d-4bbf-9a32-e0978d0c1501.png",
+      "prompt": "Production game SPRITE ATLAS on genuine TRANSPARENT background. EXACT 4 columns by2rows equalcells, seven separate large hand-painted watercolor objects centered fullywithin cell with margin; blankbottomright. Soft navy ink outline, paperfibertexture, richvolumetric brushshade, warmupperleftlight, joyfulchildstorybook like reference. TOP row lefttoright:1 a large crumpled white paperball with distinct folded/angular crinkles;2 a light turquoise discarded plastic bottle with coralorangecap, squeezeddents and ribbedbody;3 a silver aluminum drinkcan slightlycrumpled withpulltab andwarmlight;4 a translucent emerald glassbottle with longnarrowneck andclearreflection. BOTTOMrowlefttoright:5 a turquoise paper shield with cream star and foldedrim;6 a purple/coral horseshoe magnet with two broad pale metalends;7 crossed cream fabric bandage/remendos with coralcentralpatch andsmall stitchholes;8empty. Objects only NO token circles/backplates/badges, no labels, no text, no scenery, no shadows outsideobject, no frame. Must read clearly as different objects atsmall size. Fills70percentofeachcell. Transparentoutsideink.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "obstacles_refined.png",
+      "source": "exec-d3b13258-56c2-4fcb-8276-b07d936bae66.png",
+      "prompt": "Transparent game SPRITE ATLAS EXACT3columns2rows, six separate richly hand-painted watercolor obstacle props withnavyink cream/coral/amber accents. Viewfrontslightlyabove, orthographic nearlystraightfront to line up collisionrects. Everypropwithinown equalcellwithamplemargins, nooverlap. TOProwindustrial:1 LOW broad timber construction barricade with yellow-and-darknavy diagonalwarningstripes and two smallweightedfeet, maximumheightlowbutfillcell;2 OVERHEAD rectangular suspended portcargo crossbeam in weathered timber/metal withwarningstrip alongbottomedge, hangingfrom two verythin ropes that leavecelltop, IMPORTANT ONLY UPPERBEAM noverticalpostsgotoground, entirelyempty below beam;3 tallsolid industrial chimney/tower with warmcoralbrick/metal textures, basesamewidthnotwide, no smoke. BOTTOMrowsolar:4 LOW wooden raisedbed compoststation withlushleafplanting alongtop and amberwarningstrip;5 OVERHEAD solar shadebeam with green vines andpaperlike solarpaneltop, suspendedropes same arrangement noverticalposts noground;6 tallslim communitywaterstorage tower warmcream/turquoise with amberwarningtrim, solidwidth throughout. Differentrecognizablesilhouettes, realobjects NOTflatcards NOTsignarrows. No people/UI/text/arrows/labels/cellborders, no background/dropshadowglow. Textureand dimensionalpaintmatchingreference. Keep6cellsseparate alpha.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "pilot_base.png",
+      "source": "exec-3fcf5c83-19f2-4b9f-b344-45467892b37d.png",
+      "prompt": "Production CHARACTER BASE SPRITE ATLAS, TRANSPARENT background, EXACT2columns2rows of SAME age8 child in FOUR views, allfullbody, eachcentered owncellwithlargeclearmargins. Professional charming children's book watercolor, expressive delicate navyink, organic soft brushpigment, subtlefinepapergrain, naturalgraceful anatomy, head only1/4ofstandingheight, NOT giantbabyhead/notchibi/notflatvector. Genderneutral appearance, bald head because hair is added bygame, light PEACH skin with rich softlypainted cheeks/ears/nose/chin, warm expressivebrown eyes and friendly relaxed smile on FRONTviews. Outfit simple SKY BLUE short-sleevedshirt withcollar/seams/creasedfabric, navytrousers, creamcanvas sneakers, NO orangeclothing and NOhair. TopLEFT standing FRONT, arms relaxedslightlyawaybody/handsvisible. TopRIGHT standing BACK, backofhead ears andneckvisible, noface, armsrelaxed. BottomLEFT seated FRONT in invisiblechair (nochairdrawn), kneesbent legsprojectforward, handslightlyonlap. BottomRIGHT seated BACK in invisiblechair, rearofhead torso hipsandkneesclearlydrawn. Childheightconsistentwithinstandingrow, sittingheight~75percentstanding. This is a modular charactergamebase: NOhair/hat/glasses/accessories/chair/walker/groundshadow/text/airplanes, no background. Delicate luminous rounded humanforms and watercolordetail comparable to reference, subtleinkline notheavycartoonstroke. Genuinefullytransparentoutsidebody.",
+      "date": "2026-10-25",
+      "tool": "image_gen built-in"
+    },
+    {
+      "name": "planes_menu_a",
+      "source": "exec-dbf5cc70-1bce-47c7-a127-a7ac21700d6c.png",
+      "prompt": "Create production game sprite atlas of PAPER AIRPLANES in the same delicate watercolor on textured ivory folded paper and thin navy ink style as the reference. Match the exact 4 model silhouettes and construction visible in the reference but now show a BEAUTIFUL THREE-QUARTER tabletop display view for a hangar menu, nose facing slightly toward viewer and right, wing folds clearly visible. 2x2 grid, four fully separate sprites in reading order: dart (classic triangular origami), broad glider, rounded broad stubby, binder with folded-up wing edges. Each sprite entirely within its equal quarter with 8 percent cell padding. White/ivory paper, vivid coral-orange visible underside and keel, hand painted shading, actual folds, subtle paper grain, excellent detailed game asset. NO pilot, NO characters, NO labels, NO text, NO borders, NO glow, NO cast shadow, NO surrounding scene. Real fully transparent background alpha zero. Keep silhouettes unmistakably different.",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    },
+    {
+      "name": "planes_menu_b",
+      "source": "exec-fe5ba0da-6d58-452a-ac0b-4678cddf1288.png",
+      "prompt": "Create production game sprite atlas of PAPER AIRPLANES in the same delicate watercolor on textured ivory folded paper and thin navy ink style as the reference. Match the exact 4 model silhouettes and construction visible in the reference but now show a BEAUTIFUL THREE-QUARTER tabletop display view for a hangar menu, nose facing slightly toward viewer and right, wing folds clearly visible. 2x2 grid, four fully separate sprites in reading order: very slender needle, rectangular paper hoverboard, origami crane bird, accordion-fold fan-wing glider. Each sprite entirely within its equal quarter with 8 percent cell padding. White/ivory paper, vivid coral-orange visible underside and keel, hand painted shading, actual folds, subtle paper grain, excellent detailed game asset. NO pilot, NO characters, NO labels, NO text, NO borders, NO glow, NO cast shadow, NO surrounding scene. Real fully transparent background alpha zero. Keep silhouettes unmistakably different.",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    },
+    {
+      "name": "planes_menu_c",
+      "source": "exec-a1a14a3e-96a7-42bf-84fd-611a1130c640.png",
+      "prompt": "Create production game sprite atlas of PAPER AIRPLANES in the same delicate watercolor on textured ivory folded paper and thin navy ink style as the reference. Match the exact 4 model silhouettes and construction visible in the reference but now show a BEAUTIFUL THREE-QUARTER tabletop display view for a hangar menu, nose facing slightly toward viewer and right, wing folds clearly visible. 2x2 grid, four fully separate sprites in reading order: paper jet fighter with twin fins, tail boom paper aeroplane, Santos Dumont 14bis inspired origami biplane, empty bottom-right cell. Each sprite entirely within its equal quarter with 8 percent cell padding. White/ivory paper, vivid coral-orange visible underside and keel, hand painted shading, actual folds, subtle paper grain, excellent detailed game asset. NO pilot, NO characters, NO labels, NO text, NO borders, NO glow, NO cast shadow, NO surrounding scene. Real fully transparent background alpha zero. Keep silhouettes unmistakably different.",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    },
+    {
+      "name": "banks_amazonia",
+      "source": "exec-663d838a-9865-4a1a-af9e-22f0b718e91c.png",
+      "prompt": "Production game scenery sprite atlas matching the supplied painterly concept: rich real watercolor pigment on warm paper, delicate dark navy ink contours, organic detailed 3D storybook forms. Twelve separate Brazilian Amazon riverbank scenery sprites, 4 columns x 3 equal rows. Reading order: ROW1 colorful worn wooden stilt house with a few litter bags beside its piles; small rusty diesel river port with cargo and chimney; lush açaí and buriti palms; richly detailed Teatro Amazonas pink belle epoque building with mosaic yellow green blue dome. ROW2 colorful renovated stilt house with flower pots; regional two-deck white riverboat with red stripe; rubber tree with large foliage; a giant samauma tree with buttress roots. ROW3 same stilt house now with solar rooftop and vertical food garden; floating community food garden with banana and vegetable plants on wooden platform; clean little riverside school with shaded veranda solar canopy and rain tank; leafy lush riverbank with big victoria-regia leaves. Architectural sprites all belong to Manaus/Amazonas not generic fantasy. Industrial colorfulness stays joyful. Nature is biodiverse. Each object stays fully INSIDE its equal rectangular grid cell with at least 9 percent padding all sides. Consistent ground level at bottom of each cell. Camera looks from just slightly above at three-quarter frontal facade, so sprites can become roadside billboards viewed from river. NO text, NO grid lines, NO frames, NO unified backdrop, NO island ground patches, NO cast shadows or fog/glow around sprites. Genuine transparent alpha background, crisp readable separated silhouettes; don't merge neighboring cells. Landscape 4:3 atlas. ",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    },
+    {
+      "name": "banks_caatinga",
+      "source": "exec-da8a9b73-a59e-413b-abc1-f98b15e82928.png",
+      "prompt": "Production game scenery sprite atlas matching the supplied painterly concept: rich real watercolor pigment on warm paper, delicate dark navy ink contours, organic detailed 3D storybook forms. Twelve separate Brazilian Caatinga/Sao Francisco Petrolina river region scenery sprites, 4 columns x 3 equal rows. Reading order: ROW1 cheerful colorful taipa clay house with terracotta roof and a few litter bags; small diesel pump station with rusty tanks and chimney; tall mandacaru and xique-xique cacti with natural twisting arms; dense juazeiro tree with spreading canopy. ROW2 renovated taipa house with small garden; pale circular cisterna de placas with conical roof and rain pipe; irrigated mango orchard grove with plump green foliage; tall carnauba palms and an umbuzeiro tree. ROW3 cheerful taipa house with solar roof and balcony food plants; collective irrigated grapevine trellis kitchen garden; modern colorful local school with green roof solar canopy and distributed food beds; elegant small wind turbine with solar panel array and local scrub at base. Architecture and plants clearly Petrolina Brazilian semiarid, never generic North American desert. Each object stays fully INSIDE its equal rectangular grid cell with at least 9 percent padding all sides. Consistent ground level at bottom of each cell. Camera looks from just slightly above at three-quarter frontal facade, so sprites can become roadside billboards viewed from river. NO text, NO grid lines, NO frames, NO unified backdrop, NO island ground patches, NO cast shadows or fog/glow around sprites. Genuine transparent alpha background, crisp readable separated silhouettes; don't merge neighboring cells. Landscape 4:3 atlas. ",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    },
+    {
+      "name": "terrain_tiles",
+      "source": "exec-9d7463b7-7ef9-4970-8912-4d56f29b5653.png",
+      "prompt": "Production seamless watercolor MATERIAL TEXTURE atlas, 2 columns x 2 equal rows filling the entire canvas, no gaps, no borders. Strict orthographic TOP DOWN, no horizon and NO perspective. Each of the 4 square quadrants is a separate endlessly repeatable subtle hand painted material. TOP LEFT: natural Rio Negro very dark warm tea-brown water with deep indigo reflections and long flowing ochre and ivory current streaks, low contrast. TOP RIGHT: natural Solimoes river golden clay ochre and amber brown water with pale warm ivory long current streaks, low contrast. BOTTOM LEFT: warm pale sandy terracotta soil of Brazilian caatinga with gentle watercolor mottling and tiny pebble marks, NO plants. BOTTOM RIGHT: soft green moist riverbank earth with watercolor grasslike granular brush texture, NO identifiable plants. All textures on fibrous watercolor paper, pigments organic softly pooled, rich yet restrained colors, excellent painterly children's storybook game quality. Absolutely no landscape objects, no letters, no icons, no shadows, no white edges. Material marks run vertically along each tile (game will perspective map it).",
+      "date": "2026-10-25",
+      "tool": "built-in imagegen"
+    }
+  ]
+}

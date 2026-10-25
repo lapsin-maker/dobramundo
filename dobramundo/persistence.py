@@ -57,6 +57,8 @@ class Options:
     controle_posicao: bool = True  # o corpo indica onde o avião fica (não: indica a velocidade)
     momento_foco: bool = True  # câmera lenta guiada perto de uma batida
     efeitos_fortes: bool = True  # clarões e tremor de tela (desligar para sensibilidade sensorial)
+    reduzir_movimento: bool = False  # menos movimento decorativo; mantém avanço do percurso
+    abertura_automatica: bool = False  # avança sozinha a história opcional
     centralizar_sozinho: bool = True  # cabeça e mãos: posição neutra automática, refeita após ausência
     # Calibração do chão (projeção + webcam): onde a câmera vê os 4 alvos projetados
     # (superior esquerdo, superior direito, inferior direito, inferior esquerdo), 0..1.
@@ -71,6 +73,7 @@ class Profile:
     consentimento_em: str = ""  # data e hora (ISO) da confirmação do supervisor
     abertura_vista: bool = False
     piloto_montado: bool = False  # a criança já montou o personagem (primeira tela do jogo)
+    tutorial_visto: bool = False  # ensaio opcional de controles antes da primeira decolagem
     modo: str = "normal"
     controle: str = "teclado"
     estrelas: Dict[str, int] = field(default_factory=dict)

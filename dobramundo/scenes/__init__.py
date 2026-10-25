@@ -29,6 +29,7 @@ from .options import OptionsScene  # noqa: E402
 from .pilot import PilotScene  # noqa: E402
 from .projection import ProjectionScene  # noqa: E402
 from .result import ResultScene  # noqa: E402
+from .tutorial import TutorialScene  # noqa: E402
 from .upgrades import UpgradesScene  # noqa: E402
 from .village import VillageScene  # noqa: E402
 
@@ -41,6 +42,7 @@ SCENES.update(
         "mapa": MapScene,
         "voo": FlightScene,
         "resultado": ResultScene,
+        "tutorial": TutorialScene,
         "hangar": HangarScene,
         "piloto": PilotScene,
         "melhorias": UpgradesScene,

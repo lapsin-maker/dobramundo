@@ -1,7 +1,7 @@
 """Carregamento preguiçoso dos assets (PNG, JSON).
 
-Cada pasta de assets/ é lida uma única vez, na primeira consulta, e todos os
-PNGs dela ficam disponíveis pelo nome (sem extensão). Um PNG colocado em
+Consultas por pasta ou nomes são cacheadas; cada PNG decodificado é compartilhado
+entre as consultas. sprite() lê apenas a imagem pedida. Um PNG colocado em
 assets/<pasta>/ ao lado do executável substitui o embutido.
 """
 
@@ -44,6 +44,7 @@ class Assets:
 
     def __init__(self) -> None:
         self._folders: Dict[str, SpriteSet] = {}
+        self._loaded: Dict[str, pygame.Surface] = {}
         self._scenery: Optional[SpriteSet] = None
 
     def folder(self, name: str, names: Optional[Iterable[str]] = None) -> SpriteSet:
@@ -61,14 +62,18 @@ class Assets:
             for path in sorted(directory.glob("*.png")):
                 if wanted is not None and path.stem not in wanted:
                     continue
-                image = load_image(path)
+                image = self._loaded.get(str(path))
+                if image is None:
+                    image = load_image(path)
+                    if image is not None:
+                        self._loaded[str(path)] = image
                 if image is not None:
                     sprites[path.stem] = image
         self._folders[key] = sprites
         return sprites
 
     def sprite(self, folder: str, name: str) -> Optional[pygame.Surface]:
-        return self.folder(folder).get(name)
+        return self.folder(folder, names=(name,)).get(name)
 
     @property
     def scenery(self) -> SpriteSet:

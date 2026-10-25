@@ -1,6 +1,12 @@
 # Ferramentas de geração de assets
 
-Os scripts desta pasta criam os arquivos de `assets/` que o jogo carrega. O jogo não precisa das ferramentas para rodar: ele usa os PNG, OGG e JSON já gerados. Use-as para regenerar ou ajustar um asset.
+Os scripts desta pasta criam parte dos arquivos de `assets/` que o jogo carrega. O jogo não precisa das ferramentas para rodar: ele usa os PNG, OGG e JSON já gerados. Use-as para regenerar ou ajustar os assets indicados na tabela abaixo.
+
+## Arte aquarelada da sprint 2
+
+A direção visual principal está em `assets/watercolor/`: fundos, terreno, margens, vila, piloto, aviões e objetos pintados. Esses PNGs foram gerados por IA e estão versionados; `build_assets.py` e `stylize.py` não recriam esse conjunto. Prompts e identificadores das saídas estão em `generation.json`, `generation-sprint2.json` e `generation-pilot-sprint2.json`, na mesma pasta, junto de `CREDITOS.txt`.
+
+O jogo recorta os atlases, aplica cores e estampas e projeta as peças em Pygame. Não gera imagens nem acessa serviços de IA durante a execução. Os geradores low-poly abaixo mantêm os sprites procedurais de reserva. Para revisar os novos PNGs, preserve a disposição dos atlases e confira os recortes em `painted_route.py`, `painted_pilot.py`, `painted_planes.py`, `paper_items.py` e `village_art.py`. Os testes correspondentes e o self-test estão descritos em [DIRECAO_AQUARELA.md](../docs/DIRECAO_AQUARELA.md).
 
 A pasta tem duas partes:
 

@@ -15,10 +15,10 @@ import math
 import pygame
 
 from .. import config as C
-from ..content import texts
 from ..content.biomes import BIOMES
 from ..content.progress import VILLAGE_UPGRADES
 from ..engine import paper
+from ..engine.village_art import destination_icon, village_prop
 from ..persistence import MODE_LABELS
 from ..ui import theme as T
 from ..ui.widgets import row
@@ -36,14 +36,15 @@ HOUSES = [
 ]
 # Onde cada melhoria aparece na vila: x, base y, altura (três núcleos e um largo central).
 SLOTS = {
-    "paineis": (610, 318, 96),
-    "turbina": (980, 300, 220),
-    "telhado_verde": (165, 436, 150),
-    "horta": (300, 478, 66),
-    "compostor": (420, 462, 70),
-    "ponto_troca": (690, 468, 96),
-    "cisterna": (830, 440, 96),
-    "bicicletario": (930, 486, 58),
+    # Meia-lua em dois agrupamentos habitados; deixa o corredor do avião livre.
+    "paineis": (680, 500, 90),
+    "turbina": (1040, 430, 90),
+    "telhado_verde": (100, 430, 90),
+    "horta": (450, 520, 72),
+    "compostor": (330, 500, 72),
+    "ponto_troca": (210, 470, 85),
+    "cisterna": (800, 500, 90),
+    "bicicletario": (920, 470, 68),
 }
 TREES = [
     (60, 350, 70, 1),
@@ -117,60 +118,163 @@ def draw_ground(scene: Scene, screen: pygame.Surface, progress: float) -> None:
     pygame.draw.ellipse(screen, lerp_color(PATH_COLOR, (255, 255, 255), 0.2), square)
 
 
+def draw_house(screen: pygame.Surface, x: int, base_y: int, height: int, index: int, progress: float) -> None:
+    """Casa em massas de papel; usada apenas no fundo procedural de fallback."""
+    solar = progress >= (index + 0.5) / len(HOUSES)
+    width = int(height * 1.05)
+    body = pygame.Rect(x - width // 2, base_y - int(height * 0.68), width, int(height * 0.68))
+    paper.shadow(screen, (x, base_y - 2), width + 28, max(9, height // 8), 45)
+    body_color = rgb("f5e6c6") if solar else rgb("aeb4b5")
+    roof_color = rgb("dd8460") if solar else rgb("7b7c78")
+    pygame.draw.rect(screen, paper.INK, body.inflate(6, 6), border_radius=8)
+    pygame.draw.rect(screen, body_color, body, border_radius=7)
+    roof = [(body.left - 12, body.top + 8), (x, body.top - height // 3), (body.right + 12, body.top + 8)]
+    paper.ink_polygon(screen, roof, roof_color, paper.INK, max(3, height // 34))
+    window_w, window_h = max(15, width // 5), max(20, height // 4)
+    for wx in (body.left + width // 5, body.right - width // 5 - window_w):
+        pane = pygame.Rect(wx, body.top + height // 4, window_w, window_h)
+        pygame.draw.rect(screen, paper.INK, pane.inflate(4, 4), border_radius=4)
+        pygame.draw.rect(screen, rgb("a8d7d8") if solar else rgb("c1c4bd"), pane, border_radius=3)
+    door = pygame.Rect(x - width // 10, base_y - height // 3, width // 5, height // 3)
+    pygame.draw.rect(screen, paper.INK, door.inflate(3, 3), border_radius=4)
+    pygame.draw.rect(screen, rgb("9b6945"), door, border_radius=3)
+    if solar:
+        panel = [
+            (x - width // 3, body.top + 10),
+            (x, body.top - height // 8),
+            (x + width // 3, body.top + 10),
+            (x, body.top + height // 18),
+        ]
+        paper.ink_polygon(screen, panel, rgb("79aebc"), paper.INK, 2)
+        pygame.draw.line(screen, rgb("f5e6c6"), (x, body.top - height // 7), (x, body.top + height // 18), 2)
+
+
+def _watercolor_background(scene: Scene, progress: float) -> tuple[tuple[pygame.Surface, int], ...] | None:
+    """Mistura os fundos pintados da vila em três estágios de transformação."""
+    cache = scene.watercolor_backgrounds
+    if not cache:
+        for name in (
+            "village_start_v2",
+            "village_start",
+            "village_intermediate",
+            "village_final",
+            "village_clean",
+        ):
+            source = scene.app.assets.sprite("watercolor", name)
+            cache[name] = scene.scaled(source, (C.WIDTH, C.HEIGHT), ("watercolor", name)) if source else None
+    start = cache.get("village_start_v2") or cache.get("village_start")
+    intermediate = cache["village_intermediate"] or cache["village_clean"]
+    final = cache["village_final"] or cache["village_clean"] or intermediate
+    if start is None and intermediate is None and final is None:
+        return None
+    start = start or intermediate or final
+    intermediate = intermediate or start
+    final = final or intermediate
+    # Se o fornecedor ainda não tiver entregue os três arquivos, repete o mais
+    # próximo disponível sem quebrar a vila; cada fundo continua no mesmo recorte.
+    for surface in {start, intermediate, final}:
+        surface.set_alpha(255)
+    stage = max(0.0, min(2.0, progress * 2))
+    if stage <= 1:
+        base, overlay, blend = start, intermediate, stage
+    else:
+        base, overlay, blend = intermediate, final, stage - 1
+    if base is overlay:
+        base.set_alpha(255)
+        scene.watercolor_mix = None
+        return ((base, 255),)
+    overlay.set_alpha(round(255 * blend))
+    scene.watercolor_mix = overlay
+    return ((base, 255), (overlay, round(255 * blend)))
+
+
 def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> None:
-    """Diorama da vila do perfil (usado também na tela de melhorias)."""
+    """Diorama ilustrado e obras localizadas (também usado na tela de cuidado)."""
     app, t = scene.app, scene.time
     progress = village_progress(app.profile)
-    draw_ground(scene, screen, progress)
+    background_layers = _watercolor_background(scene, progress)
+    illustrated = background_layers is not None
+    if background_layers is None:
+        draw_ground(scene, screen, progress)
+    else:
+        for layer, alpha in background_layers:
+            layer.set_alpha(alpha)
+            screen.blit(layer, (0, 0))
+    prop_atlas = app.assets.sprite("watercolor", "village_props")
     scenery = app.assets.scenery
     owned = set(app.profile.vila)
     items = []  # (base y, tipo, dados): desenhados do fundo para a frente
-    for i, (industrial, solar, x, base_y, height) in enumerate(HOUSES):
-        name = solar if progress >= (i + 0.5) / len(HOUSES) else industrial
-        items.append((base_y, "sprite", (name, x, base_y, height, None)))
+    if not illustrated:
+        # Fundo procedural legado: preserva a evolução gradual das cinco casas.
+        for i, (industrial, solar, x, base_y, height) in enumerate(HOUSES):
+            name = solar if progress >= (i + 0.5) / len(HOUSES) else industrial
+            items.append((base_y, "house", (name, x, base_y, height, i)))
     for upgrade in VILLAGE_UPGRADES:
         x, base_y, height = SLOTS.get(upgrade.key, upgrade.slot)
         if upgrade.key in owned:
             items.append((base_y, "sprite", (upgrade.sprite, x, base_y, height, upgrade.key)))
         elif upgrade.key == highlight:
-            items.append((base_y, "ghost", (x, base_y, height)))
-    for x, y, height, seed in TREES:
-        items.append((y, "tree", (x, y, height, seed)))
-    for k, (phase, shirt) in enumerate(PEOPLE):
-        route = PATH_LEFT if k % 2 == 0 else PATH_RIGHT
-        u = (phase + t * 0.035) % 2.0
-        u = u if u <= 1.0 else 2.0 - u  # vai e volta pelo caminho
-        curve = paper.bezier(route[0], route[1], route[2], route[3], 40)
-        px, py = curve[int(u * 39)]
-        items.append((py, "person", (px, py, 34 + 14 * (py - 400) / 120, shirt, t * 9 + k)))
+            items.append((base_y, "ghost", (upgrade.key, x, base_y, height)))
+    if not illustrated:
+        for x, y, height, seed in TREES:
+            items.append((y, "tree", (x, y, height, seed)))
+        for k, (phase, shirt) in enumerate(PEOPLE):
+            route = PATH_LEFT if k % 2 == 0 else PATH_RIGHT
+            u = (phase + t * 0.035) % 2.0
+            u = u if u <= 1.0 else 2.0 - u  # vai e volta pelo caminho
+            curve = paper.bezier(route[0], route[1], route[2], route[3], 40)
+            px, py = curve[int(u * 39)]
+            items.append((py, "person", (px, py, 34 + 14 * (py - 400) / 120, shirt, t * 9 + k)))
     items.sort(key=lambda item: item[0])
     canopy = lerp_color(CANOPY_POLLUTED, CANOPY_CLEAN, progress)
     for _, kind, data in items:
         if kind == "sprite":
             name, x, base_y, height, key = data
-            sprite = scenery.get(name)
-            if sprite is None:
-                continue
-            img = scene.scaled(sprite, (height * 3, height))
+            if key is not None:
+                sprite = village_prop(key, prop_atlas)
+                prop_height = max(112, int(height * 1.55))
+                prop_width = min(int(prop_height * 1.5), max(120, 2 * min(x, C.WIDTH - x) - 8))
+                img = scene.scaled(sprite, (prop_width, prop_height), ("village_prop", key, prop_width, prop_height))
+            else:
+                sprite = scenery.get(name)
+                if sprite is None:
+                    continue
+                img = scene.scaled(sprite, (height * 3, height))
             rect = img.get_rect(midbottom=(x, base_y))
-            paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 55)
+            if key is None or prop_atlas is None:
+                paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 55)
             screen.blit(img, rect)
             if key == highlight:
                 pygame.draw.rect(screen, T.SUN, rect.inflate(10, 10), 4, border_radius=12)
         elif kind == "ghost":
-            x, base_y, height = data
-            ghost = pygame.Rect(0, 0, height, height)
-            ghost.midbottom = (x, base_y)
-            pygame.draw.rect(screen, T.SUN, ghost, 3, border_radius=12)
-            scene.text.blit(screen, "?", ghost.center, T.SIZES["title"], T.SUN, True, "center")
+            key, x, base_y, height = data
+            if prop_atlas is not None:
+                sprite = village_prop(key, prop_atlas)
+                prop_height = max(112, int(height * 1.55))
+                prop_width = min(int(prop_height * 1.5), max(120, 2 * min(x, C.WIDTH - x) - 8))
+                img = scene.scaled(sprite, (prop_width, prop_height), ("village_prop_preview", key)).copy()
+                img.set_alpha(175)
+                rect = img.get_rect(midbottom=(x, base_y))
+                paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 42)
+                screen.blit(img, rect)
+                pygame.draw.rect(screen, T.SUN, rect.inflate(12, 12), 4, border_radius=12)
+            else:
+                ghost = pygame.Rect(0, 0, height, height)
+                ghost.midbottom = (x, base_y)
+                pygame.draw.rect(screen, T.SUN, ghost, 3, border_radius=12)
+                scene.text.blit(screen, "?", ghost.center, T.SIZES["title"], T.SUN, True, "center")
+        elif kind == "house":
+            _name, x, base_y, height, index = data
+            draw_house(screen, x, base_y, height, index, progress)
         elif kind == "tree":
             x, y, height, seed = data
             paper.tree(screen, (x, y), height, canopy, rgb("8a5a3a"), seed)
         else:
             px, py, height, shirt, phase = data
             paper.person(screen, (px, py), height, shirt, rgb("e8b48a"), phase)
-    paper.smoke(screen, (1035, 150), t, 1.0 - progress, 1)
-    paper.sparkles(screen, pygame.Rect(0, 280, C.WIDTH, 220), t, progress, rgb("f6c33b"))
+    if not illustrated:
+        paper.smoke(screen, (1035, 150), t, 1.0 - progress, 1)
+        paper.sparkles(screen, pygame.Rect(0, 280, C.WIDTH, 220), t, progress, rgb("f6c33b"))
 
 
 class VillageScene(Scene):
@@ -190,22 +294,46 @@ class VillageScene(Scene):
             )
             return
 
-        rects = row(pygame.Rect(16, 560, C.WIDTH - 32, 76), 6, 10)
+        # Alvos grandes, separados para que as zonas de retenção do dwell não se
+        # sobreponham. Opções e créditos ficam atrás do destino secundário.
         self.menu.set_buttons(
             [
                 self.button(
-                    rects[0],
-                    texts.UI["decolar"],
+                    (25, 548, 210, 86),
+                    "VOAR",
                     lambda: self.goto("mapa"),
+                    icon=destination_icon("voar"),
                     color=T.ORANGE,
-                    sublabel="Mapa dos biomas",
-                    key="decolar",
+                    key="voar",
+                    size=T.SIZES["label"],
                 ),
-                self.button(rects[1], texts.UI["melhorias"], lambda: self.goto("melhorias"), sublabel="Vila e avião"),
-                self.button(rects[2], texts.UI["hangar"], lambda: self.goto("hangar"), sublabel="Avião e pintura"),
-                self.button(rects[3], texts.UI["piloto"], lambda: self.goto("piloto"), sublabel="Personalizar"),
-                self.button(rects[4], texts.UI["opcoes"], lambda: self.goto("opcoes"), sublabel="Controle e som"),
-                self.button(rects[5], texts.UI["sobre"], lambda: self.goto("sobre"), sublabel="ODS e créditos"),
+                self.button(
+                    (295, 548, 210, 86),
+                    "HANGAR",
+                    lambda: self.goto("hangar"),
+                    icon=destination_icon("hangar"),
+                    key="hangar",
+                    size=T.SIZES["label"],
+                ),
+                self.button(
+                    (565, 548, 210, 86),
+                    "PILOTO",
+                    lambda: self.goto("piloto"),
+                    icon=destination_icon("piloto"),
+                    key="piloto",
+                    size=T.SIZES["label"],
+                ),
+                self.button(
+                    (835, 548, 210, 86),
+                    "CUIDAR",
+                    lambda: self.goto("melhorias"),
+                    icon=destination_icon("cuidar"),
+                    color=T.GREEN,
+                    key="cuidar",
+                    size=T.SIZES["label"],
+                ),
+                self.button((730, 12, 130, 48), "Opções", lambda: self.goto("opcoes"), key="opcoes"),
+                self.button((922, 12, 130, 48), "Sobre", lambda: self.goto("sobre"), key="sobre"),
             ]
         )
 
@@ -227,25 +355,31 @@ class VillageScene(Scene):
         plane = skin.surface(profile.aviao, "menu", color, pattern, profile.piloto)
         if plane is not None:
             key = ("vila", skin.look_key(profile.aviao, color, pattern, profile.piloto))
-            img = self.scaled(plane, (250, 170), key)
+            backgrounds = self.watercolor_backgrounds
+            painted = any(backgrounds.get(name) is not None for name in ("village_start_v2", "village_start"))
+            plane_size = (225, 150) if painted else (250, 170)
+            img = self.scaled(plane, plane_size, key)
             bob = math.sin(self.time * 2.2) * 6
-            paper.shadow(screen, (SQUARE[0], SQUARE[1] + 3), 190 - int(bob * 3), 34, 60)
-            screen.blit(img, img.get_rect(center=(SQUARE[0], int(330 + bob))))
+            paper.shadow(screen, (SQUARE[0], SQUARE[1] + 3), int(img.get_width() * 0.88) - int(bob * 3), 34, 60)
+            screen.blit(img, img.get_rect(center=(SQUARE[0], int((340 if painted else 330) + bob))))
         progress = village_progress(profile)
-        self.title(
+        # Cabeçalho sólido: título e progresso não se perdem sobre os detalhes do fundo.
+        header = pygame.Rect(16, 12, 410, 110)
+        T.panel(screen, header, T.PAPER, T.NAVY, 248, 18, 3)
+        self.text.blit(screen, "Sua vila", (32, 20), T.SIZES["title"], T.NAVY, True)
+        self.text.blit(
             screen,
-            "Vila-base",
-            f"Vila {int(progress * 100)}% sustentável   •   {profile.total_stars()} de "
-            f"{3 * len(BIOMES)} estrelas   •   Modo {MODE_LABELS[profile.modo]}",
+            f"{profile.total_stars()} / {3 * len(BIOMES)} estrelas · {MODE_LABELS[profile.modo]}",
+            (32, 64),
+            T.SIZES["small"],
+            T.NAVY,
+            True,
         )
-        self.resource_bar(screen)
-        logo = app.assets.sprite("ui", "logo")
-        if logo is not None:
-            screen.blit(self.scaled(logo, (210, 117)), (C.WIDTH - 226, 60))
-        tip = texts.TIPS[int(self.time // 7) % len(texts.TIPS)]
-        tip_rect = pygame.Rect(16, 512, C.WIDTH - 32, 38)
-        T.panel(screen, tip_rect, T.PAPER, T.TEAL, 230, 12, 2)
-        self.text.blit(screen, tip, tip_rect.center, T.SIZES["body"], T.INK, anchor="center")
+        self.text.blit(screen, f"{int(progress * 100)}% sustentável", (235, 55), T.SIZES["small"], T.INK, True)
+        bar = pygame.Rect(235, 82, 180, 16)
+        pygame.draw.rect(screen, T.PAPER, bar, border_radius=8)
+        pygame.draw.rect(screen, T.TEAL, (bar.left, bar.top, int(bar.width * progress), bar.height), border_radius=8)
+        self.resource_bar(screen, right=710, top=16)
         if app.save_failed:
             warn = pygame.Rect(16, 466, C.WIDTH - 32, 38)
             T.panel(screen, warn, T.PAPER, T.RED, 240, 12, 3)

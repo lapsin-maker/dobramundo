@@ -1,0 +1,59 @@
+[
+  {
+    "name": "amazonia_2.png",
+    "source": "exec-1d8acfcc-a71c-4ad6-9caf-d2149fb20b8d.png",
+    "prompt": "Production background asset for Dobramundo. Use supplied approved image ONLY as watercolor art style and composition reference. Create the CLEAN SOLARPUNK MANAUS environment WITHOUT ALL UI, stars, bars, plane, pilot, tokens, obstacle, coins, labels or foreground characters. One wide landscape image aspect 1100:650. Horizon / river vanishing point MUST be horizontally centered at 33 percent from image top. Perspective looks forward along a very broad river flight corridor. Keep central 60 percent of entire image AND lower central 75 percent empty calm water with very subtle broad washes so interactive objects will be drawn over it. The Negro's dark tea water on left meets the warm silty Solimoes on right; retain natural colors even though water is healthy. Banks stay at far left/right edges. Recognizable Teatro Amazonas pink facade and colored dome on left far bank, simple lush rounded rainforest masses with samauma silhouette behind it; restored timber palafitas with solar roofs on right far bank; a small regional boat at distant horizon, not foreground. Optimistic Brazilian solarpunk integrated in culture, large shapes and restrained details. Beautiful HAND PAINTED WATERCOLOR ON PAPER, deep navy loose ink outlines, warm offwhite paper, organic brush pigment and clean silhouette. Sky pastel turquoise with soft paper clouds and warm sun, pale value grouping for horizon. Match the art quality of reference, reduce microtexture noise and don't make forest photorealistic. NO road, NO lane markings, NO buildings blocking middle, NO text, NO borders, NO interface, NO airplane. This is a game backdrop, never a screenshot.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in",
+    "reference": "conceito-manaus aprovado pelo usuário"
+  },
+  {
+    "name": "amazonia_0.png",
+    "source": "exec-7a631f42-6763-4d21-958d-5ac44d5a0819.png",
+    "prompt": "EDIT this production watercolor environment while preserving EXACT camera, river shape, horizon height, composition, Teatro Amazonas position, bank silhouettes, image size. Keep the central river completely empty for gameplay. No UI, planes, tokens, labels, foreground character or gameplay obstacles. Maintain handcrafted paper/watercolor style and navy ink. Create the INDUSTRIAL START state of Manaus: muted humid blue-gray sky, fewer tree canopies on the banks, same heritage theater visible but subdued, modest palafitas still dignified, solar panels replaced by ordinary roofs. Add a regional port crane and small smokestacks only at far left edge behind the theater; localized wisps of industrial smoke, a subtle patch of oil near far bank, small grouped rubbish on bank, not covering river corridor. River keeps natural dark Negro left and ochre Solimoes right, muted but still legible. Hopeful child-friendly storybook, not horror or total desolation, not brown monochrome.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "amazonia_1.png",
+    "source": "exec-5cf3cca4-7515-44fe-91fa-d96dc83c9624.png",
+    "prompt": "EDIT this production watercolor environment while preserving EXACT camera, river shape, horizon height, composition, Teatro Amazonas position, bank silhouettes, image size. Keep the central river completely empty for gameplay. No UI, planes, tokens, labels, foreground character or gameplay obstacles. Maintain handcrafted paper/watercolor style and navy ink. Create the ECOLOGICAL AWAKENING middle state of Manaus: same city and theater, fresh but not fully lush vegetation returning in clusters on banks, palafitas repaired with ordinary roofs and just one small emerging solar panel, no large solar infrastructure yet. A soft mixed gray-blue and cream sky with sunlight returning; small port structures remain visible behind trees. Natural two water currents remain distinct, clean of oil. A few large victoria-regia leaves along the far left bank only. Gentle sense of restoration halfway complete, intermediate between polluted industrial town and fully solar thriving city, not identical to supplied solar final state.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "caatinga_2.png",
+    "source": "exec-ae4a0efb-8555-4b18-b5d8-dedc9b9c9949.png",
+    "prompt": "Production environment background asset for Dobramundo, wide landscape 1100:650. Reference image is STYLE ONLY, create a NEW scene PETROLINA CAATINGA in optimistic Brazilian SOLARPUNK state. Beautiful hand-painted watercolor on textured warm ivory paper with navy loose ink, soft pigment, large rounded shapes, clean game readability. Forward perspective horizon at ONE THIRD image height. Broad EMPTY pale sandy stone flight corridor from central horizon to entire bottom central 70 percent, no lines or road lanes. The Sao Francisco river runs along the LEFT edge, blue-green with distant bridge connecting Petrolina and Juazeiro, no fantasy skyline. At left far bank tiny local wooden boat with carranca prow. At right distant small taipa homes and a round white rural water cistern, orchard in orderly irrigation rows, solar shade roofs and one very distant wind turbine. Native distinctive mandacaru and xique-xique cacti, juazeiro broad canopies, carnauba palm; sparse dry caatinga vegetation, NOT rainforest. Warm ochre ground, dusty coral building accents, turquoise sky with paper clouds, verdant orchard only locally irrigated. Central gameplay corridor and lower70percent are empty pale paper ground, absolutely no UI, text, plane, pilot, collectibles or gameplay obstacles. Keep architecture only at lateral edges. Charming children's storybook like reference.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "village_start.png",
+    "source": "exec-c03265fc-bcab-4847-9b3f-c84083eedb53.png",
+    "prompt": "Production watercolor background asset for Dobramundo village hub. Reference image STYLE ONLY: hand-painted watercolor, navy loose ink, pigment on warm ivory paper, charming Brazilian children's storybook quality. Wide landscape1100:650, higher three-quarter OVERHEAD viewpoint looking down at a small Brazilian riverside village courtyard. Large central open oval warm pale sand PAPER PLAZA occupying central70percent and lower middle, completely empty and uncluttered where game will draw plane, characters and eight improvement props. Village buildings stay along TOP and outermost LEFT/RIGHT edges. At top-left a modest colorful timber riverside house and footbridge by a small river; top-center cream low community house with red clay roof; top-right rounded open craft HANGAR workshop with origami wing-like awning, big open doorway, no plane inside. Cozy coral, teal, warm yellow paint. Starting village before restoration: modest slightly worn buildings, small localized debris sacks at far top-left edge, subdued little gardens, cloudy turquoise/gray sky edge, hopeful and inviting, NEVER desolate or horror. Leave broad empty areas in bottom two thirds for eight buildable projects. No built-in solar panels, garden beds, turbines, benches, well, recycling bins or lantern props in central plaza: these are game upgrades later. No people, airplane, UI, text, numbers, labels, tokens, or borders. Not an isometric 3D render. Match beautiful organic watercolor of reference.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "caatinga_0.png",
+    "source": "exec-6e06c284-6fc1-4469-8971-12bfa1afef51.png",
+    "prompt": "EDIT this exact watercolor Petrolina environment. Preserve exact image dimensions, horizon, camera, bridge position, river on left, open empty sandy central corridor, lateral buildings and vegetation silhouettes. INDUSTRIAL starting stage: muted dusty blue-gray sky with a few light smoke wisps, two small industrial workshop chimneys only far right beyond houses, irrigation orchard struggling but still there, fewer green leaves, no solar panels or wind turbines. Modest dignified taipa houses and white round cistern remain, recognizable mandacaru/xique-xique remain healthy native drought-adapted plants, not evidence of damage. Localized litter near far bank and one small water pollution stain away from center; river not completely dry. Friendly children storybook watercolor, no apocalypse. No UI/text/plane/people/game objects. Keep middle and lower central corridor empty.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "caatinga_1.png",
+    "source": "exec-6efa893d-b398-4784-98ed-cd75fb824734.png",
+    "prompt": "EDIT this exact watercolor Petrolina environment. Preserve exact image dimensions, horizon, camera, bridge position, river on left, open empty sandy central corridor, lateral buildings and native plant silhouettes. ECOLOGICAL AWAKENING middle stage: fresh juazeiro leaves returning, irrigated orchard beginning with small new rows but not fully productive, taipa houses repaired, white rural cistern and rainwater collection visible. Native dry caatinga retained, never green rainforest. Remove all large solar arrays/wind turbines, just one small panel near cistern. Sky warm clearing blue mixed gentle gray clouds. River cleaner, bank cleared. Subtly intermediate progress between industrial and final solar state. No UI/text/plane/people/game objects. Keep middle and lower central corridor empty.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  },
+  {
+    "name": "village_clean.png",
+    "source": "exec-0d0ec93f-6451-45ad-a9dc-4082b0cc5197.png",
+    "prompt": "EDIT this exact watercolor village background preserving EXACT layout camera houses workshop river footbridge and LARGE EMPTY CENTRAL PLAZA. Create restored cleaned flourishing state: existing timber homes painted fresh coral/teal, community house fresh cream, origami wing workshop awning renewed, river clean blue, modest colorful flower clusters and trees only along outer edges, brighter clear turquoise sky. Remove the debris sacks top-left. Central and lower two-thirds plaza stays completely empty warm paper sandy area so game can draw upgrade props, NO baked solar panels, turbines, wells, benches, gardenbeds, recycling bins, lanterns. Houses retain local Brazilian character, no futuristic towers. Beautiful hand watercolor ink style. No UI, text, people, planes, characters, labels, frames.",
+    "date": "2026-10-25",
+    "tool": "image_gen built-in"
+  }
+]

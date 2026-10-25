@@ -46,6 +46,7 @@ class HangarScene(Scene):
                 selected=self.tab == key,
                 key=f"tab_{key}",
                 size=T.SIZES["body"],
+                icon=T.icon_surface({"modelo": "paper", "cor": "palette", "padrao": "pattern"}[key], 30, T.NAVY),
             )
             for i, (key, label) in enumerate(TABS)
         ]
@@ -123,13 +124,23 @@ class HangarScene(Scene):
     def draw(self, screen: pygame.Surface) -> None:
         app = self.app
         profile = app.profile
-        app.backdrop(screen, self.last_dt, None, 40.0)
-        T.veil(screen, (10, 18, 40), 120)
-        self.title(screen, texts.UI["hangar"], "Escolha a dobradura e a pintura do seu avião de papel")
-        wallet = f"Pontos para padrões: {points_text(profile.pontos)}"
-        self.text.blit(screen, wallet, (C.WIDTH - 24, 24), T.SIZES["body"], T.NAVY, True, "topright")
-        card = pygame.Rect(24, 86, 516, 470)
-        T.panel(screen, card, T.PAPER, T.NAVY, 245, 22, 3)
+        T.watercolor_backdrop(screen, "sky")
+        self.text.blit(screen, "Hangar de papel", (28, 18), T.SIZES["title"], T.NAVY, True)
+        self.text.blit(screen, "Escolha uma dobradura, uma cor e um padrão.", (30, 58), T.SIZES["small"], T.INK)
+        wallet_box = pygame.Rect(C.WIDTH - 254, 18, 226, 50)
+        T.panel(screen, wallet_box, T.PAPER, T.TEAL, 245, 15, 2)
+        screen.blit(T.icon_surface("star", 34, T.TEAL), (wallet_box.left + 10, wallet_box.top + 8))
+        self.text.blit(
+            screen,
+            f"{points_text(profile.pontos)} pontos",
+            (wallet_box.left + 54, wallet_box.centery),
+            T.SIZES["body"],
+            T.NAVY,
+            True,
+            "midleft",
+        )
+        card = pygame.Rect(24, 84, 516, 472)
+        T.panel(screen, card, T.PAPER, T.NAVY, 250, 22, 2)
         skin = app.view.skin
         color, pattern = profile.plane_color(self.plane), profile.plane_pattern(self.plane)
         menu_view = skin.surface(self.plane, "menu", color, pattern, profile.piloto)
@@ -137,21 +148,27 @@ class HangarScene(Scene):
             img = self.scaled(
                 menu_view, (460, 270), ("hangar", skin.look_key(self.plane, color, pattern, profile.piloto))
             )
-            bob = math.sin(self.time * 2.0) * 6
+            bob = 0.0 if app.options.reduzir_movimento else math.sin(self.time * 2.0) * 5
             screen.blit(img, img.get_rect(center=(card.centerx, card.top + 170 + bob)))
         flight_view = skin.surface(self.plane, "flight", color, pattern, profile.piloto)
         if flight_view is not None:
             img = self.scaled(
-                flight_view, (180, 110), ("hangar_voo", skin.look_key(self.plane, color, pattern, profile.piloto))
+                flight_view, (150, 90), ("hangar_voo", skin.look_key(self.plane, color, pattern, profile.piloto))
             )
-            screen.blit(img, img.get_rect(bottomright=(card.right - 18, card.bottom - 18)))
+            preview_rect = img.get_rect(bottomright=(card.right - 18, card.bottom - 18))
+            screen.blit(img, preview_rect)
             self.text.blit(
-                screen, "em voo", (card.right - 108, card.bottom - 134), T.SIZES["small"], T.MUTED, anchor="midtop"
+                screen,
+                "visão de voo",
+                (preview_rect.centerx, preview_rect.top - 18),
+                T.SIZES["small"],
+                T.MUTED,
+                anchor="midbottom",
             )
         name = dict(PLANE_MODELS)[self.plane]
-        self.text.blit(screen, name, (card.left + 24, card.top + 330), T.SIZES["title"], T.NAVY, True)
+        self.text.blit(screen, name, (card.left + 24, card.top + 320), T.SIZES["title"], T.NAVY, True)
         paint = pattern_label(pattern) if pattern != "liso" else color_label(color)
-        self.text.blit(screen, f"Pintura: {paint}", (card.left + 24, card.top + 378), T.SIZES["body"], T.INK)
+        self.text.blit(screen, f"Pintura: {paint}", (card.left + 24, card.top + 364), T.SIZES["body"], T.INK)
         self.draw_menu(screen)
         for button in self.menu.buttons:
             if button.key.startswith("aviao_"):
