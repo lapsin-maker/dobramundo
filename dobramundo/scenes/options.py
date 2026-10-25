@@ -45,10 +45,10 @@ class OptionsScene(Scene):
             )
             buttons.append(self.button((x + width - 64, y, 64, ROW_H), ">", plus, key=f"{key}+"))
 
-        def toggle(x: int, y: int, key: str, label: str, on: bool, action: Callable) -> None:
+        def toggle(x: int, y: int, key: str, label: str, on: bool, action: Callable, w: int = width) -> None:
             buttons.append(
                 self.button(
-                    (x, y, width, ROW_H),
+                    (x, y, w, ROW_H),
                     f"{label}: {'sim' if on else 'não'}",
                     action,
                     selected=on,
@@ -69,15 +69,27 @@ class OptionsScene(Scene):
             lambda: self.set_segment(index + 1),
         )
         y += ROW_H + GAP
+        half = (width - GAP) // 2
         buttons.append(
             self.button(
-                (left, y, width, ROW_H),
+                (left, y, half, ROW_H),
                 texts.UI["calibrar"],
                 self.calibrate,
                 enabled=profile.controle != "teclado",
                 size=T.SIZES["body"],
                 key="calibrar",
-                sublabel="Posição neutra do segmento",
+                sublabel="Posição neutra",
+            )
+        )
+        buttons.append(
+            self.button(
+                (left + half + GAP, y, half, ROW_H),
+                "Posição" if o.controle_posicao else "Velocidade",
+                lambda: self.flip("controle_posicao"),
+                selected=o.controle_posicao,
+                size=T.SIZES["body"],
+                key="posicao",
+                sublabel="Controle do avião",
             )
         )
         y += ROW_H + GAP
@@ -112,7 +124,6 @@ class OptionsScene(Scene):
             lambda: self.set_surface(s_index + 1),
         )
         y += ROW_H + GAP
-        half = (width - GAP) // 2
         buttons.append(
             self.button(
                 (left, y, half, ROW_H),
@@ -133,6 +144,8 @@ class OptionsScene(Scene):
                 key="gir",
             )
         )
+        y += ROW_H + GAP
+        toggle(left, y, "foco", "Momento de foco (câmera lenta)", o.momento_foco, lambda: self.flip("momento_foco"))
         y = 128
         for key, label in (
             ("volume_geral", "Volume geral"),
@@ -150,14 +163,22 @@ class OptionsScene(Scene):
                 (lambda k=key: self.adjust(k, 0.1, 0.0, 1.0)),
             )
             y += ROW_H + GAP
-        toggle(right, y, "silencio", texts.UI["silencio"], o.silencio, lambda: self.flip("silencio"))
+        toggle(right, y, "silencio", texts.UI["silencio"], o.silencio, lambda: self.flip("silencio"), half)
+        toggle(right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
         y += ROW_H + GAP
         toggle(right, y, "contraste", texts.UI["alto_contraste"], o.alto_contraste, lambda: self.flip("alto_contraste"))
         y += ROW_H + GAP
-        toggle(right, y, "tela", "Tela cheia (F11)", o.tela_cheia, self.fullscreen)
-        y += ROW_H + GAP
         toggle(
             right, y, "inverter", "Inverter subir e descer", o.inverter_vertical, lambda: self.flip("inverter_vertical")
+        )
+        y += ROW_H + GAP
+        toggle(
+            right,
+            y,
+            "efeitos",
+            "Efeitos fortes (clarão, tremor)",
+            o.efeitos_fortes,
+            lambda: self.flip("efeitos_fortes"),
         )
         buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         buttons.append(self.button((340, 570, 300, 64), "Ver a abertura", self.intro, key="abertura"))

@@ -33,16 +33,25 @@ class Player:
         self.maneuver_time = 0.0
 
     # ----------------------------------------------------------------- voo
-    def update(self, dt: float, ix: float, iy: float) -> None:
-        """ix: -1 (esquerda) .. 1 (direita); iy: -1 (descer) .. 1 (subir)."""
-        ix = clamp(ix, -1.0, 1.0)
-        iy = clamp(iy, -1.0, 1.0)
+    def update(
+        self, dt: float, ix: float, iy: float, target: Optional[Tuple[float, float]] = None, exact: bool = False
+    ) -> None:
+        """Velocidade (ix: -1 esquerda .. 1 direita; iy: -1 descer .. 1 subir) ou, com target,
+        posição: (x, y) do mundo até onde o avião vai suavemente (exact: vai direto, no
+        desvio guiado do momento de foco)."""
         stats = self.stats
         response = 1.0 - math.exp(-C.FLIGHT_RESPONSE * stats.response * dt)
-        self.vx += (ix * C.MAX_LATERAL_SPEED * stats.max_speed - self.vx) * response
-        self.vy += (iy * C.MAX_VERTICAL_SPEED * stats.max_speed - self.vy) * response
-        self.x += self.vx * dt
-        self.y += self.vy * dt
+        if target is not None and exact:
+            self.place(dt, target)
+        elif target is not None:
+            self.steer_to(dt, target)
+        else:
+            ix = clamp(ix, -1.0, 1.0)
+            iy = clamp(iy, -1.0, 1.0)
+            self.vx += (ix * C.MAX_LATERAL_SPEED * stats.max_speed - self.vx) * response
+            self.vy += (iy * C.MAX_VERTICAL_SPEED * stats.max_speed - self.vy) * response
+            self.x += self.vx * dt
+            self.y += self.vy * dt
         if abs(self.x) > C.MAX_PLAYER_X:
             self.x = clamp(self.x, -C.MAX_PLAYER_X, C.MAX_PLAYER_X)
             self.vx = 0.0
@@ -53,6 +62,35 @@ class Player:
         self.roll += (target_roll - self.roll) * response
         self.cam_x += (self.x * C.CAMERA_FOLLOW - self.cam_x) * response
         self.update_maneuver(dt)
+
+    def steer_to(self, dt: float, target: Tuple[float, float]) -> None:
+        """Aproxima o avião de target sem passar das velocidades máximas (sem ultrapassar o ponto)."""
+        if dt <= 0:
+            return
+        stats = self.stats
+        follow = 1.0 - math.exp(-C.POSITION_RESPONSE * stats.response * dt)
+        step_x = C.MAX_LATERAL_SPEED * stats.max_speed * dt
+        step_y = C.MAX_VERTICAL_SPEED * stats.max_speed * dt
+        dx = clamp((target[0] - self.x) * follow, -step_x, step_x)
+        dy = clamp((target[1] - self.y) * follow, -step_y, step_y)
+        self.x += dx
+        self.y += dy
+        self.vx = dx / dt
+        self.vy = dy / dt
+
+    def place(self, dt: float, point: Tuple[float, float]) -> None:
+        if dt > 0:
+            self.vx = (point[0] - self.x) / dt
+            self.vy = (point[1] - self.y) / dt
+        self.x, self.y = point
+
+    @staticmethod
+    def command_target(ax: float, ay: float) -> Tuple[float, float]:
+        """Comando corporal (-1..1, 0 na postura calibrada) -> ponto da pista (x, altura)."""
+        ax = clamp(ax, -1.0, 1.0)
+        ay = clamp(ay, -1.0, 1.0)
+        top = C.MAX_ALTITUDE - C.REST_ALTITUDE if ay > 0 else C.REST_ALTITUDE - C.MIN_ALTITUDE
+        return ax * C.MAX_PLAYER_X, C.REST_ALTITUDE + ay * top
 
     def hitbox(self) -> Hitbox:
         half_w = C.PLANE_WIDTH * 0.42 * self.stats.hitbox  # um pouco menor que o desenho

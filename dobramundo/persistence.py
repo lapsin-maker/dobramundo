@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .config import HISTORY_LIMIT
 from .content.biomes import BIOME_ORDER
 from .content.items import WASTE_KEYS
 from .content.pilot import DEFAULT_PILOT, normalize_pilot
@@ -52,6 +53,9 @@ class Options:
     permanencia: float = 1.2  # segundos parado sobre um botão para selecioná-lo
     sensibilidade: float = 1.0  # alcance do movimento corporal (maior = movimento menor basta)
     inverter_vertical: bool = False  # câmera vista de cima (chão, mesa): subir e descer trocados
+    controle_posicao: bool = True  # o corpo indica onde o avião fica (não: indica a velocidade)
+    momento_foco: bool = True  # câmera lenta guiada perto de uma batida
+    efeitos_fortes: bool = True  # clarões e tremor de tela (desligar para sensibilidade sensorial)
 
 
 @dataclass
@@ -74,6 +78,8 @@ class Profile:
     padroes: Dict[str, str] = field(default_factory=dict)  # avião -> padrão
     piloto: Dict[str, str] = field(default_factory=lambda: dict(DEFAULT_PILOT))
     voos: int = 0
+    voos_fase: Dict[str, int] = field(default_factory=dict)  # bioma -> voos concluídos
+    historico: List[dict] = field(default_factory=list)  # resumo dos últimos voos (supervisor)
     opcoes: Options = field(default_factory=Options)
 
     # ------------------------------------------------------------ consultas
@@ -112,6 +118,8 @@ class Profile:
         self.cores = {m: c for m, c in self.cores.items() if m in PLANE_KEYS and c in PLANE_COLOR_KEYS}
         self.padroes = {m: c for m, c in self.padroes.items() if m in PLANE_KEYS and c in PLANE_PATTERN_KEYS}
         self.piloto = normalize_pilot(self.piloto)
+        self.voos_fase = {b: max(0, int(self.voos_fase[b])) for b in BIOME_ORDER if b in self.voos_fase}
+        self.historico = [_flat(e) for e in self.historico if isinstance(e, dict)][-HISTORY_LIMIT:]
         o = self.opcoes
         for name in ("volume_geral", "volume_musica", "volume_efeitos"):
             setattr(o, name, max(0.0, min(1.0, float(getattr(o, name)))))
@@ -142,6 +150,11 @@ class Profile:
             return profile.normalize()
         except (TypeError, ValueError, AttributeError, IndexError) as exc:
             raise ProfileError(f"perfil inválido ({exc.__class__.__name__})") from exc
+
+
+def _flat(entry: dict) -> dict:
+    """Entrada do histórico só com textos e números (nada que quebre o JSON)."""
+    return {str(k): v for k, v in entry.items() if isinstance(v, (str, int, float)) and not isinstance(v, bool)}
 
 
 class ProfileError(ValueError):

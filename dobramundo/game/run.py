@@ -7,6 +7,7 @@ para som, mensagens e efeitos.
 
 from __future__ import annotations
 
+import math
 import random
 from typing import Dict, List, Mapping, Optional, Tuple
 
@@ -16,6 +17,7 @@ from ..content.items import POWERUP_KINDS, WASTE_KEYS
 from ..content.planes import POWERUP_MANEUVERS, START_MANEUVER, ManeuverRow
 from ..content.progress import RESOURCES_PER_WASTE, plane_stats, stars_for
 from .entities import Beam, Entity, FloatingText, entity_hitbox
+from .focus import FocusMoment, intended_point
 from .missions import BONUS_POINTS, BONUS_RESOURCES, BONUS_RESTORATION, MissionTracker
 from .player import Player
 from .world import World
@@ -32,11 +34,14 @@ class FlightRun:
         parts: Optional[Mapping[str, int]] = None,
         maneuvers: Optional[Dict[str, List[ManeuverRow]]] = None,
         rng: Optional[random.Random] = None,
+        intro: bool = False,
+        focus: bool = True,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.parts = dict(parts or {})
-        self.world = World(biome, mode, rng)
+        self.world = World(biome, mode, rng, intro)
+        self.focus = FocusMoment(mode, focus)
         self.missions = MissionTracker(mode, random.Random(self.world.rng.random()))
         self.player = Player(plane_stats(self.parts), maneuvers)
         self.lives = C.MAX_LIVES
@@ -59,6 +64,13 @@ class FlightRun:
         self.beams: List[Beam] = []
         self.floating: List[FloatingText] = []
         self.events: List[Event] = []
+        # medida de movimento (resultado e histórico): só com controle corporal
+        self.flight_time = 0.0  # segundos reais de voo (sem pausas)
+        self.active_time = 0.0  # segundos com o comando corporal em movimento
+        self.travel = 0.0  # caminho do comando: 1 = de um extremo ao outro do alcance
+        self.body_time = 0.0  # segundos com o corpo controlando
+        self.last_command: Optional[Tuple[float, float]] = None
+        self.hits = 0
         self.player.start_maneuver(START_MANEUVER)
 
     # --------------------------------------------------------------- regras
@@ -151,6 +163,7 @@ class FlightRun:
         if self.invincible or self.complete or self.shield_timer > 0 or self.invulnerable_timer > 0:
             return
         self.lives = max(0, self.lives - 1)
+        self.hits += 1
         self.invulnerable_timer = C.INVULNERABLE_S
         self.hit_flash_timer = C.HIT_FLASH_S
         self.combo = 1
@@ -170,10 +183,18 @@ class FlightRun:
                 self.streak = 0
 
     # ---------------------------------------------------------------- quadro
-    def update(self, dt: float, ix: float = 0.0, iy: float = 0.0) -> None:
+    def update(self, dt: float, ix: float = 0.0, iy: float = 0.0, target: Optional[Tuple[float, float]] = None) -> None:
+        """Um quadro de tempo real. ix, iy: velocidade (-1..1); target: comando de posição
+        (-1..1 nos dois eixos, 0 na postura calibrada), que tem prioridade sobre ix e iy."""
         if self.finished:
             return
-        dt = min(dt, C.MAX_DT)
+        real_dt = min(dt, C.MAX_DT)
+        self.flight_time += real_dt
+        player = self.player
+        aim = None if target is None else player.command_target(*target)
+        command = target if target is not None else (ix, iy)
+        self.focus.update(self, real_dt, command, intended_point(player, aim))
+        dt = real_dt * self.focus.time_scale  # tempo do mundo (lento no momento de foco)
         had_shield = self.shield_timer > 0
         self.shield_timer = max(0.0, self.shield_timer - dt)
         if had_shield and self.shield_timer == 0:
@@ -182,8 +203,13 @@ class FlightRun:
         self.invulnerable_timer = max(0.0, self.invulnerable_timer - dt)
         self.hit_flash_timer = max(0.0, self.hit_flash_timer - dt)
         self.update_combo(dt)
-        self.player.update(dt, ix, iy)
+        guide = self.focus.guide_point()
+        if guide is not None:
+            player.update(dt, 0.0, 0.0, guide, exact=True)
+        else:
+            player.update(dt, ix, iy, aim)
         self.world.advance(dt, self.speed * dt)
+        self.announce_lessons()
         self.check_collisions()
         self.count_passes()
         self.missions.update(dt)
@@ -200,6 +226,43 @@ class FlightRun:
             self.complete_timer += dt
             if self.complete_timer >= COMPLETE_GLIDE_S:
                 self.finished = True
+
+    def announce_lessons(self) -> None:
+        """Legenda de cada objeto da abertura didática, LESSON_LEAD_S antes de ele chegar."""
+        reach = self.speed * C.LESSON_LEAD_S
+        for entity in self.world.entities:
+            if entity.lesson and not entity.announced and entity.z - C.PLAYER_Z <= reach:
+                entity.announced = True
+                self.emit("lesson", entity.lesson)
+
+    def record_movement(self, dt: float, command: Tuple[float, float]) -> None:
+        """Comando corporal do quadro (-1..1) para a medida de movimento do resultado."""
+        self.body_time += dt
+        last, self.last_command = self.last_command, command
+        if last is None or dt <= 0:
+            return
+        step = math.hypot(command[0] - last[0], command[1] - last[1])
+        self.travel += step / 2.0
+        if step / dt >= C.ACTIVE_COMMAND_SPEED:
+            self.active_time += dt
+
+    def summary(self) -> Dict[str, object]:
+        """Resumo do voo para o histórico do perfil (supervisor, terapeuta, cartucho)."""
+        return {
+            "fase": self.biome.key,
+            "modo": self.mode,
+            "concluida": int(self.complete),
+            "transformacao": round(self.restoration, 1),
+            "estrelas": self.stars,
+            "pontos": self.score,
+            "batidas": self.hits,
+            "foco_acertos": self.focus.successes,
+            "foco_total": self.focus.total,
+            "duracao_s": round(self.flight_time, 1),
+            "corpo_s": round(self.body_time, 1),
+            "movimento_s": round(self.active_time, 1),
+            "alcances": round(self.travel, 1),
+        }
 
     def mission_event(self, kind: str, waste: Optional[str] = None) -> None:
         """Conta para a meta atual; cumprida, dá a recompensa e avisa a cena."""
@@ -245,7 +308,7 @@ class FlightRun:
             elif entity.kind in POWERUP_KINDS:
                 if overlaps:
                     self.collect_powerup(entity)
-            elif overlaps:
+            elif overlaps and not entity.dodged:
                 entity.hit = True
                 self.take_hit()
                 if self.game_over:

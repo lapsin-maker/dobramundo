@@ -37,30 +37,65 @@ DIFFICULTY_RAMP_S = 240.0  # segundos até a dificuldade máxima
 MAX_LATERAL_SPEED = 620.0  # unidades/s para os lados
 MAX_VERTICAL_SPEED = 420.0  # unidades/s para cima/baixo
 FLIGHT_RESPONSE = 9.0  # quão rápido o avião responde aos comandos
+# Controle por posição (corpo): a postura indica o ponto da pista onde o avião deve
+# ficar e ele vai até lá suavemente. Parado, o avião fica parado.
+POSITION_RESPONSE = 5.0  # 1/s: aproximação exponencial ao ponto pedido
 MIN_ALTITUDE = 22.0
 MAX_ALTITUDE = 155.0  # acima disso o avião ficaria sob o HUD
+REST_ALTITUDE = (MIN_ALTITUDE + MAX_ALTITUDE) / 2  # altura com o corpo na postura calibrada
 START_ALTITUDE = 60.0
 MAX_PLAYER_X = LANE_WIDTH  # mantém o avião inteiro na tela
 MAX_ROLL_DEG = 26.0
+PAPER_FLUTTER_DEG = 1.6  # tremular do papel no voo reto
+PITCH_STRETCH = 0.12  # quanto o avião "mostra a barriga" ao subir (fração da altura)
 PLANE_WIDTH = 130.0  # envergadura visual/colisão (mundo)
 PLANE_HEIGHT = 34.0
 MAX_LIVES = 3
 INVULNERABLE_S = 1.25
 HIT_FLASH_S = 0.28
+HIT_SHAKE_S = 0.35  # tremor curto da tela na colisão (opção "efeitos fortes")
+
+# ------------------------------------------------------- momento de foco
+# Perto de uma batida, o mundo desacelera e uma seta pede um movimento. Tempos em
+# segundos reais, salvo indicação.
+FOCUS_WINDOW_S = {"normal": 1.8, "dificil": 1.2}  # tempo para fazer o movimento
+FOCUS_SLOW = 0.12  # velocidade do mundo enquanto a seta espera
+FOCUS_GUIDE_S = 0.45  # desvio guiado depois do acerto
+FOCUS_GUIDE_SLOW = 0.45  # velocidade do mundo durante o desvio guiado
+FOCUS_GUIDE_HOLD_S = 1.2  # o avião fica no ponto seguro até o obstáculo passar (no máximo isto)
+FOCUS_IMPACT_S = (0.3, 0.75)  # segundos de mundo até a batida que abrem o momento
+FOCUS_COOLDOWN_S = 9.0  # intervalo mínimo entre dois momentos
+FOCUS_FIRST_S = 5.0  # o primeiro só depois disto
+FOCUS_STEP = 0.3  # movimento novo do comando (escala -1..1) que vale como resposta
+FOCUS_CAPTION_S = 0.8  # "Boa!" ou "Quase!"
+FOCUS_MARGIN = 16.0  # folga do ponto seguro em relação ao obstáculo
+FOCUS_POINTS = 50
+
+# ---------------------------------------------------- abertura didática
+# Começo de fase que apresenta uma coisa por vez: só resíduos, depois um obstáculo
+# de cada tipo, sozinho e com legenda. Tempos em segundos de voo à velocidade inicial.
+INTRO_FIRST_WASTE_S = 3.5
+INTRO_LESSONS = (("low", 9.0), ("gate", 14.0), ("tower", 19.0))
+INTRO_END_S = 22.0  # a partir daqui, o sorteio normal
+LESSON_LEAD_S = 2.2  # a legenda aparece este tempo antes de o objeto chegar
+
+# ------------------------------------------------- medida de movimento
+ACTIVE_COMMAND_SPEED = 0.25  # comando (escala -1..1) por segundo que conta como "em movimento"
+HISTORY_LIMIT = 60  # voos guardados no histórico do perfil
 
 # ------------------------------------------------- transformação da cidade
 ERA_SPAN = 100.0 / 3.0  # três estágios do mesmo tamanho (33,3% e 66,7%)
 START_RESTORATION = 5.0
-# Fase de ~3,5 min com a criança pegando 4 de cada 10 resíduos (ver tools/balance.py).
-RESTORATION_PER_TRASH = 0.35  # Difícil
-RESTORATION_COMBO_BONUS = 0.04  # com combo >= COMBO_BONUS_FROM
+# Fase de ~4 min com a criança pegando 4 de cada 10 resíduos (ver tools/balance.py).
+RESTORATION_PER_TRASH = 0.115  # Difícil
+RESTORATION_COMBO_BONUS = 0.013  # com combo >= COMBO_BONUS_FROM
 REPAIR_RESTORATION = 2.0  # reparo com vidas cheias
 NORMAL_TRASH_EVERY = 4  # Normal: 1 resíduo a cada 4 do Difícil
 NORMAL_TRASH_POINTS = 65  # pontos fixos por resíduo no Normal
 NORMAL_SPEED_FACTOR = 0.5  # Normal: metade da velocidade-base
 # Cada coleta do Normal é mais rara (1 em 4, à metade da velocidade) e rende bem mais:
 # calibrado para a fase durar o mesmo que no Difícil (ver tools/balance.py).
-NORMAL_RESTORATION_PER_TRASH = 2.24
+NORMAL_RESTORATION_PER_TRASH = 1.18
 HARD_TRASH_POINTS = 15  # Difícil: 15 x combo por resíduo
 COMBO_WINDOW_S = 2.2
 COMBO_STEP = 4  # a cada 4 coletas seguidas o combo sobe

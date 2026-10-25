@@ -27,9 +27,12 @@ PLASTIC = 0.7548776662466927  # outra sequência para o estágio solarpunk
 class World:
     """Estado da pista: trechos, transformação e objetos."""
 
-    def __init__(self, biome: Biome, mode: str = "normal", rng: Optional[random.Random] = None) -> None:
+    def __init__(
+        self, biome: Biome, mode: str = "normal", rng: Optional[random.Random] = None, intro: bool = False
+    ) -> None:
         self.biome = biome
         self.mode = mode
+        self.intro = intro  # abertura didática: uma coisa por vez antes do sorteio
         self.rng = rng or random.Random()
         self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
         self.visual = C.START_RESTORATION  # transformação desenhada (alcança a real aos poucos)
@@ -57,10 +60,12 @@ class World:
         self.green_since: Dict[int, float] = {}
         self.solar_since: Dict[int, float] = {}
         self.set_restoration(restoration)
+        self.plan_intro()
         z = 520.0
         while z <= C.TRACK_LENGTH:
             self.spawn_pattern(z)
             z += self.rng.choice((100.0, 120.0, 140.0))
+        self.spawn_lessons()
 
     def set_restoration(self, value: float) -> None:
         """Atribuição direta (início, testes): o cenário fica no estado final na hora."""
@@ -178,6 +183,50 @@ class World:
         )
         return green, solar
 
+    # ------------------------------------------------- abertura didática
+    def plan_intro(self) -> None:
+        """Converte os tempos da abertura em posições absolutas da pista (velocidade inicial)."""
+        factor = C.NORMAL_SPEED_FACTOR if self.mode == "normal" else 1.0
+        speed = (C.BASE_SPEED + self.restoration * C.RESTORATION_SPEED_GAIN) * factor
+
+        def at(seconds: float) -> float:
+            return C.PLAYER_Z + seconds * speed
+
+        self.intro_waste_from = at(C.INTRO_FIRST_WASTE_S) if self.intro else 0.0
+        self.intro_until = at(C.INTRO_END_S) if self.intro else 0.0
+        self.pending_lessons = [(kind, at(seconds)) for kind, seconds in C.INTRO_LESSONS] if self.intro else []
+        self.first_waste_taught = not self.intro
+
+    def in_intro(self, z: float) -> bool:
+        return self.distance + z < self.intro_until
+
+    def spawn_lessons(self) -> None:
+        """Põe na pista cada obstáculo da abertura quando a posição dele entra no alcance."""
+        while self.pending_lessons and self.pending_lessons[0][1] - self.distance <= C.TRACK_LENGTH:
+            kind, position = self.pending_lessons.pop(0)
+            z = position - self.distance
+            solar = self.spawn_is_solar(z)
+            spec = self.next_obstacle(kind, solar)
+            self.entities.append(Entity(z, 0, kind, 0.0, spec.sprite, spec, solar, lesson=kind))
+            # um resíduo no caminho certo mostra a resposta: por cima, por baixo ou ao lado
+            lane, height = {"low": (0, C.TRASH_HEIGHTS[2]), "gate": (0, C.TRASH_HEIGHTS[0])}.get(
+                kind, (self.rng.choice((-1, 1)), C.TRASH_HEIGHTS[1])
+            )
+            self.entities.append(Entity(z, lane, "waste", height, self.next_waste()))
+
+    def intro_pattern(self, z: float) -> None:
+        """Trecho da abertura: só resíduos, longe do caminho dos obstáculos apresentados."""
+        position = self.distance + z
+        if position < self.intro_waste_from:
+            return
+        lane = self.rng.choice((-1, 1))  # a faixa do meio fica para as lições
+        if self.waste_allowed() or not self.first_waste_taught:
+            entity = Entity(z, lane, "waste", C.TRASH_HEIGHTS[1], self.next_waste())
+            if not self.first_waste_taught:
+                entity.lesson = "waste"
+                self.first_waste_taught = True
+            self.entities.append(entity)
+
     # -------------------------------------------------------------- spawn
     @property
     def difficulty(self) -> float:
@@ -206,6 +255,9 @@ class World:
         return spec
 
     def spawn_pattern(self, z: float) -> None:
+        if self.in_intro(z):
+            self.intro_pattern(z)
+            return
         rng = self.rng
         lanes = [-1, 0, 1]
         waste_lane = rng.choice(lanes)
@@ -247,6 +299,7 @@ class World:
             self.spawn_pattern(new_z + 20.0)
         for entity in self.entities:
             entity.z -= dz
+        self.spawn_lessons()
 
     def prune(self) -> None:
         """Remove o que já passou pelo avião ou foi coletado (não cobre a visão)."""

@@ -4,13 +4,22 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
+## Novidades da versão 1.2
+
+- **Controle por posição:** com o controle corporal, o corpo indica o ponto em que o avião deve ficar, e o avião vai até lá suavemente. Ficar parado mantém o avião parado. A opção "Controle do avião", em Opções, volta ao controle por velocidade.
+- **Momento de foco:** perto de uma batida, o tempo desacelera e uma seta indica o movimento que desvia do obstáculo. Acertar rende pontos e um desvio guiado. Pode ser desligado em Opções.
+- **Abertura didática:** o começo do voo apresenta uma coisa de cada vez, com legendas que ensinam cada manobra.
+- **Sensação de voo:** o avião tremula como papel e inclina o nariz ao subir. A opção "Efeitos fortes (clarão, tremor)" desliga clarões e tremores da tela.
+- **Medida de movimento:** o resultado mostra o tempo em movimento, os alcances percorridos e os momentos de foco acertados. Cada voo entra no histórico do perfil, para o supervisor ou o terapeuta acompanhar.
+- **Equilíbrio recalibrado:** a simulação de `tools/balance.py` passou a pegar de fato 4 de cada 10 resíduos (antes pegava menos, porque reaproveitava decisões). Com isso, a transformação por coleta e os custos da vila e das peças foram recalibrados para que a fase continue durando cerca de 4 minutos.
+
 ## O jogo
 
 O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança pilota um avião de papel reciclado sobre cidades brasileiras poluídas e, a cada voo, as transforma em cidades solarpunk integradas à natureza do seu bioma. O nome une a dobradura de papel à transformação do mundo, como na canção *Aquarela*, popularizada por Toquinho.
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.1.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.2.0.
 
 ### Tema e objetivo
 
@@ -61,6 +70,19 @@ Cada tipo de obstáculo pede uma manobra:
 - **Portal:** passar por baixo.
 - **Torre:** desviar para o lado.
 
+### Abertura didática
+
+No Normal, o começo de cada voo apresenta uma coisa de cada vez. Nos primeiros segundos, só há resíduos, com a legenda "Pegue os resíduos!". Depois vêm um obstáculo baixo, um portal e uma torre, cada um sozinho na faixa do meio, com a legenda correspondente ("Passe por cima!", "Passe por baixo!" ou "Desvie para o lado!") e um resíduo no caminho certo, que mostra a resposta. O sorteio normal começa por volta dos 22 segundos. No Difícil, a abertura aparece só no primeiro voo de cada fase.
+
+### Momento de foco
+
+Quando um obstáculo vai atingir o avião em poucos instantes e a criança ainda não reagiu, o mundo passa a andar a 12% da velocidade normal. Uma seta aparece junto do avião, com um pedido em destaque: "SUBA!" para obstáculo baixo, "DESÇA!" para portal, "PARA A ESQUERDA!" ou "PARA A DIREITA!" para torre. Uma barra mostra o tempo restante, que é de 1,8 segundo no Normal e de 1,2 segundo no Difícil.
+
+- **Acerto ("Boa!"):** o avião faz um desvio guiado até um ponto seguro, o obstáculo não bate e a criança ganha 50 pontos.
+- **Erro ("Quase!"):** o tempo volta ao normal, e o obstáculo só bate se o avião continuar no caminho.
+
+Só conta o movimento feito depois que a seta aparece. Os momentos ocorrem no máximo a cada 9 segundos (o primeiro, após 5 segundos) e não aparecem com escudo, invulnerabilidade ou no modo de demonstração; os obstáculos da abertura didática sempre têm o seu momento. A opção "Momento de foco (câmera lenta)", em Opções, desliga o recurso.
+
 ### Power-ups
 
 - **Escudo:** 6 segundos sem colisões.
@@ -90,13 +112,13 @@ A dificuldade é a primeira escolha do mapa, em dois cartões grandes: **Normal*
 | Velocidade | Metade da velocidade-base (170 unidades/s) | Velocidade plena (340 unidades/s) |
 | Resíduos | 1 a cada 4 sorteados | Todos |
 | Pontos por resíduo | 65, fixos | 15 vezes o combo |
-| Transformação por coleta | 2,24 pontos percentuais | 0,35, mais 0,04 com combo de 4 ou mais |
+| Transformação por coleta | 1,18 ponto percentual | 0,115, mais 0,013 com combo de 4 ou mais |
 | Recursos por coleta | 4 | 1 |
 | Combo | Não há | Sobe a cada 4 coletas seguidas, até 8 vezes |
 
 O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 240 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 30 unidades/s no Difícil (metade no Normal); a transformação acrescenta até mais 30.
 
-Com a criança pegando 4 de cada 10 resíduos, uma fase dura cerca de 4 minutos no Normal e 3,8 no Difícil, e tudo da vila e do avião fica comprado em cerca de 8 voos no Normal e 6 no Difícil (simulação em `tools/balance.py`).
+Com a criança pegando 4 de cada 10 resíduos, uma fase dura cerca de 3,7 minutos no Normal e 3,8 no Difícil, e tudo da vila e do avião fica comprado em cerca de 11 voos no Normal e 5 no Difícil (simulação em `tools/balance.py`).
 
 ### Metas curtas
 
@@ -108,14 +130,14 @@ A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar
 
 | Melhoria | Custo | Descrição |
 |---|---|---|
-| Ponto de troca | 30 papel, 30 plástico | Separa os resíduos e os transforma em recursos |
-| Horta urbana | 40 papel, 30 vidro | Alimento fresco plantado no meio da vila |
-| Painéis solares | 60 metal, 50 vidro | Microgeração de energia limpa nos telhados |
-| Compostor | 40 plástico, 30 metal | Restos orgânicos viram adubo para a horta |
-| Cisterna | 50 plástico, 40 metal | Guarda a água da chuva para regar e beber |
-| Bicicletário | 50 metal, 30 plástico | Bicicletas no lugar dos carros a diesel |
-| Telhado verde | 60 papel, 40 vidro | Plantas no telhado refrescam as casas |
-| Turbina eólica | 80 metal, 50 vidro, 30 papel | O vento também gera energia para a vila |
+| Ponto de troca | 72 papel, 72 plástico | Separa os resíduos e os transforma em recursos |
+| Horta urbana | 96 papel, 72 vidro | Alimento fresco plantado no meio da vila |
+| Painéis solares | 144 metal, 120 vidro | Microgeração de energia limpa nos telhados |
+| Compostor | 96 plástico, 72 metal | Restos orgânicos viram adubo para a horta |
+| Cisterna | 120 plástico, 96 metal | Guarda a água da chuva para regar e beber |
+| Bicicletário | 120 metal, 72 plástico | Bicicletas no lugar dos carros a diesel |
+| Telhado verde | 144 papel, 96 vidro | Plantas no telhado refrescam as casas |
+| Turbina eólica | 192 metal, 120 vidro, 72 papel | O vento também gera energia para a vila |
 
 ### Peças do avião
 
@@ -123,9 +145,9 @@ As peças são reaproveitadas de resíduos. Cada uma tem dois níveis e altera o
 
 | Peça | Nível 1 | Nível 2 | Efeito por nível |
 |---|---|---|---|
-| Estabilizador | 50 papel, 30 plástico | 90 papel, 60 plástico, 30 metal | Caixa de colisão 7% menor e inclinação nas curvas 20% menor |
-| Leme reaproveitado | 50 plástico, 30 metal | 80 plástico, 60 metal, 30 vidro | Resposta do avião 18% mais rápida |
-| Quilha de lata | 50 metal, 30 vidro | 80 metal, 60 vidro, 30 papel | Velocidade máxima 8% maior e zona morta do controle corporal 25% menor |
+| Estabilizador | 120 papel, 72 plástico | 216 papel, 144 plástico, 72 metal | Caixa de colisão 7% menor e inclinação nas curvas 20% menor |
+| Leme reaproveitado | 120 plástico, 72 metal | 192 plástico, 144 metal, 72 vidro | Resposta do avião 18% mais rápida |
+| Quilha de lata | 120 metal, 72 vidro | 192 metal, 144 vidro, 72 papel | Velocidade máxima 8% maior e zona morta do controle corporal 25% menor |
 
 ### Hangar
 
@@ -139,7 +161,12 @@ A criança monta o piloto com tom de pele, estilo e cor do cabelo, roupa, óculo
 
 ### Controle corporal pela webcam
 
-O controle usa visão computacional (MediaPipe Pose). O jogo acompanha o segmento escolhido e converte seu deslocamento, em relação à postura neutra, em dois eixos que movem o avião para cima, para baixo, para a esquerda e para a direita.
+O controle usa visão computacional (MediaPipe Pose). O jogo acompanha o segmento escolhido e converte seu deslocamento, em relação à postura calibrada, em dois eixos que movem o avião para cima, para baixo, para a esquerda e para a direita.
+
+Em Opções, a opção **Controle do avião** escolhe o modo:
+
+- **Posição (padrão):** a postura calibrada corresponde ao centro da pista, em altura média. O corpo indica o ponto em que o avião deve ficar, e o avião vai até lá suavemente. Ficar parado mantém o avião parado. Se a câmera perder o segmento, o avião mantém o rumo.
+- **Velocidade:** o deslocamento do corpo define a velocidade do avião, como nas versões anteriores.
 
 | Segmento | Pontos do MediaPipe Pose usados |
 |---|---|
@@ -170,6 +197,8 @@ O controle usa visão computacional (MediaPipe Pose). O jogo acompanha o segment
 | Caixas de colisão, no voo | F3 |
 | Modo demonstração, no voo, sem colisões | F2 |
 
+Com o controle corporal por posição, uma tecla de direção pressionada pelo supervisor tem prioridade sobre o corpo enquanto estiver apertada.
+
 O mouse também seleciona botões por permanência quando não há controle corporal ativo.
 
 ### Superfícies de exibição
@@ -181,11 +210,12 @@ As opções **Espelhar** e **Girar 180°** atingem a imagem inteira. Espelhar se
 ## Acessibilidade, segurança e privacidade
 
 - **Alto contraste:** dessatura o fundo e destaca avião, resíduos, obstáculos e alertas com cores intensas e contornos espessos.
+- **Efeitos fortes:** a opção "Efeitos fortes (clarão, tremor)", em Opções, quando desligada, tira o clarão vermelho da colisão, o clarão da estrela e o tremor da tela, e suaviza o tom do momento de foco. Para crianças com sensibilidade sensorial.
 - **Som:** volumes geral, de música e de efeitos, e opção de silêncio, que reduz a carga sensorial em casos de hipersensibilidade auditiva. Cada estágio tem sua própria trilha, com troca suave.
-- **Ritmo:** tempo de permanência e sensibilidade ajustáveis, pausa automática e pausa a qualquer momento com P ou Esc.
+- **Ritmo:** tempo de permanência e sensibilidade ajustáveis, pausa automática, pausa a qualquer momento com P ou Esc, e momento de foco desligável.
 - **Vídeo:** processado localmente, quadro a quadro, e nunca gravado. O supervisor vê apenas uma miniatura ao vivo, mantida em memória.
 - **Supervisão:** o uso requer a supervisão de um adulto (Pereira et al., 2023). Na primeira execução, o jogo mostra um aviso ao supervisor, que precisa confirmar a leitura antes de seguir.
-- **Dados e LGPD:** o aviso cita os arts. 11 e 14 da Lei nº 13.709/2018 (LGPD) e informa que o uso depende do consentimento dos responsáveis. O perfil salvo guarda progresso, personalização e opções. Não guarda imagens nem medidas do corpo: a calibração da postura neutra fica só na memória e é refeita a cada sessão.
+- **Dados e LGPD:** o aviso cita os arts. 11 e 14 da Lei nº 13.709/2018 (LGPD) e informa que o uso depende do consentimento dos responsáveis. O perfil salvo guarda progresso, personalização, opções e o histórico dos últimos 60 voos. Cada voo guarda um resumo: fase, modo, tipo de controle, data, duração, transformação, estrelas, pontos, batidas, momentos de foco acertados e tempo e alcances em movimento. Não guarda imagens nem medidas do corpo: o movimento aparece só como tempo e alcances somados por voo, e a calibração da postura neutra fica só na memória e é refeita a cada sessão.
 
 ## Instalar e jogar
 
@@ -275,9 +305,10 @@ dobramundo/                          pacote do jogo
         texts.py                     textos, créditos e referências
     game/                            regras do voo, sem pygame
         run.py                       um voo: vidas, pontos, combo, estrelas e eventos
+        focus.py                     momento de foco: batida, seta e desvio guiado
         missions.py                  metas curtas dentro do voo
-        world.py                     pista, trechos e transformação
-        player.py                    física do avião e manobras
+        world.py                     pista, trechos, transformação e abertura didática
+        player.py                    física do avião, manobras e controle por posição
         entities.py                  objetos e caixas de colisão
     engine/                          desenho pseudo-3D
         world_view.py                ordem de pintura de uma fase

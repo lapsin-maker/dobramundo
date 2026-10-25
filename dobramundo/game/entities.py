@@ -21,6 +21,10 @@ class Entity:
     collected: bool = False
     hit: bool = False  # obstáculo que acertou o avião (não conta como desviado)
     passed: bool = False  # já passou pelo avião (contado nas metas)
+    focused: bool = False  # já abriu um momento de foco (não abre outro)
+    dodged: bool = False  # desviado no momento de foco: não bate mais
+    lesson: str = ""  # objeto da abertura didática (tipo apresentado na legenda)
+    announced: bool = False  # a legenda da lição já apareceu
 
     @property
     def x(self) -> float:

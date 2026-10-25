@@ -17,6 +17,7 @@ from ..paths import find_pose_model
 from ..util import clamp
 from .pose import SEGMENTS, BodyControl, PoseCameraSource
 
+FlightCommand = Tuple[float, float, Optional[Tuple[float, float]]]  # (ix, iy, alvo de posição)
 FLIGHT_KEYS = {
     pygame.K_LEFT: "left",
     pygame.K_a: "left",
@@ -41,6 +42,7 @@ class InputHub:
         self.body: Optional[BodyControl] = None
         self.source = None  # fonte da câmera, compartilhada entre segmentos
         self.segment_key = "teclado"
+        self.position_control = True  # o corpo indica onde o avião fica (senão, a velocidade)
         self.source_factory = lambda: PoseCameraSource(find_pose_model())
 
     # --------------------------------------------------------- corpo
@@ -62,12 +64,18 @@ class InputHub:
             self.source = self.source_factory()
             self.source.start()
         self.body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y)
+        self.body.mapper.hold_when_lost = self.position_control
 
-    def configure(self, sensitivity: float, dead_scale: float, invert_y: bool = False) -> None:
+    def configure(
+        self, sensitivity: float, dead_scale: float, invert_y: bool = False, position: Optional[bool] = None
+    ) -> None:
+        if position is not None:
+            self.position_control = position
         if self.body is not None:
             self.body.mapper.sensitivity = sensitivity
             self.body.mapper.dead_scale = dead_scale
             self.body.mapper.invert_y = invert_y
+            self.body.mapper.hold_when_lost = self.position_control
 
     def stop_camera(self) -> None:
         """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""
@@ -127,6 +135,21 @@ class InputHub:
             ix += ax
             iy += ay
         return clamp(ix, -1.0, 1.0), clamp(iy, -1.0, 1.0)
+
+    def flight_command(self) -> FlightCommand:
+        """(ix, iy, alvo) para o voo.
+
+        Teclado: velocidade. Corpo calibrado com controle por posição: alvo (-1..1 nos dois
+        eixos, 0 na postura calibrada) e velocidade zero; uma tecla apertada pelo supervisor
+        tem prioridade enquanto estiver pressionada. Corpo com controle por velocidade: soma
+        aos eixos do teclado, como antes.
+        """
+        held = self.held()
+        ix = (1 if "right" in held else 0) - (1 if "left" in held else 0)
+        iy = (1 if "up" in held else 0) - (1 if "down" in held else 0)
+        if self.body_ready and self.position_control and not (ix or iy):
+            return 0.0, 0.0, self.body.axes()
+        return self.flight_axes() + (None,)
 
     def body_pointer(self) -> Optional[Tuple[int, int]]:
         """Cursor corporal nos menus (None antes da calibração ou sem câmera)."""

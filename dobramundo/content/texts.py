@@ -253,8 +253,27 @@ STAGE_MESSAGES = (
     "Energia limpa e natureza integradas à vida da cidade.",
 )
 
+# Abertura didática: legenda de cada coisa apresentada sozinha no começo da fase.
+LESSONS: Dict[str, Tuple[str, str]] = {
+    "waste": ("Pegue os resíduos!", "Cada um ajuda a transformar a cidade."),
+    "low": ("Passe por cima!", "Suba o avião para passar sobre o obstáculo."),
+    "gate": ("Passe por baixo!", "Desça o avião para passar sob a passagem."),
+    "tower": ("Desvie para o lado!", "Vá para a esquerda ou para a direita."),
+}
+
+# Momento de foco: a seta pede um movimento enquanto o tempo anda devagar.
+FOCUS_PROMPTS: Dict[str, str] = {
+    "up": "SUBA!",
+    "down": "DESÇA!",
+    "left": "PARA A ESQUERDA!",
+    "right": "PARA A DIREITA!",
+}
+FOCUS_SUCCESS = "Boa!"
+FOCUS_MISS = "Quase!"
+
 TIPS = (
     "Colete os resíduos coloridos e desvie dos obstáculos.",
+    "Quando o tempo ficar lento, siga a seta com um movimento só.",
     "Os obstáculos podem ser evitados por cima, por baixo ou ao lado.",
     "Escudo, ímã e reparo ajudam você no voo. Pegue-os quando puder.",
     "Peças do avião ajudam a conquistar as três estrelas da fase.",

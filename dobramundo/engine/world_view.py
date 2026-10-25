@@ -562,8 +562,13 @@ class WorldView:
                 image = self.remember_rotation(key, pygame.transform.rotozoom(img, angle, 1.0))
             width = size[0]
         else:
+            # papel tremulando no ar e nariz que sobe ou desce com a velocidade vertical
+            # (em degraus, para reaproveitar as imagens giradas prontas)
+            flutter = C.PAPER_FLUTTER_DEG * math.sin(self.elapsed * 7.0)
+            pitch = clamp(player.vy / C.MAX_VERTICAL_SPEED, -1.0, 1.0)
+            height = max(4, int(height * (1.0 + round(pitch * C.PITCH_STRETCH * 25) / 25)))
             base = self.cache.get(sprite, ("plane", look_key), (width, height))
-            angle = round(player.roll / 2.0) * 2.0
+            angle = round((player.roll + flutter) / 2.0) * 2.0
             key = (look_key, width, height, angle)
             image = self.rotations.get(key)
             if image is None:

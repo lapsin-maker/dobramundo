@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pygame
 
@@ -13,6 +13,7 @@ from ..content.biomes import BIOMES
 from ..content.items import WASTE_TYPES
 from ..content.planes import load_maneuvers
 from ..content.progress import PART_BY_KEY, STAR_THRESHOLDS, parts_ok
+from ..engine.sprites import project
 from ..game.run import FlightRun
 from ..ui import theme as T
 from ..ui.widgets import row, star
@@ -20,7 +21,10 @@ from ..util import lerp_color
 from .base import Scene
 
 RESUME_COUNTDOWN = 3.0
+FOCUS_SOUNDS = {"foco": "sfx_desvio_alerta", "foco_ok": "sfx_desvio_ok", "foco_quase": "sfx_desvio_quase"}
+ARROW_VECTORS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 _maneuvers = None
+_vignettes: Dict[Tuple[Tuple[int, int], bool], pygame.Surface] = {}
 
 
 def maneuvers():
@@ -28,6 +32,24 @@ def maneuvers():
     if _maneuvers is None:
         _maneuvers = load_maneuvers()
     return _maneuvers
+
+
+def focus_vignette(size: Tuple[int, int], strong: bool) -> pygame.Surface:
+    """Tom azul com bordas mais escuras do momento de foco (feito uma vez por tamanho)."""
+    key = (size, strong)
+    surf = _vignettes.get(key)
+    if surf is None:
+        small = pygame.Surface((88, 52), pygame.SRCALPHA)
+        w, h = small.get_size()
+        base, edge = (46, 120) if strong else (28, 60)
+        for y in range(h):
+            for x in range(w):
+                dx, dy = (x - w / 2) / (w / 2), (y - h / 2) / (h / 2)
+                d = min(1.0, (dx * dx + dy * dy) ** 0.5)
+                small.set_at((x, y), (18, 44, 96, int(base + (edge - base) * d * d)))
+        surf = pygame.transform.smoothscale(small, size)
+        _vignettes[key] = surf
+    return surf
 
 
 class Banner:
@@ -43,13 +65,16 @@ class FlightScene(Scene):
         super().__init__(app)
         self.biome = BIOMES[biome_key]
         p = app.profile
-        self.run = FlightRun(self.biome, p.modo, p.pecas, maneuvers())
+        # abertura didática: sempre no Normal; no Difícil, só no primeiro voo da fase
+        intro = p.modo == "normal" or p.voos_fase.get(biome_key, 0) == 0
+        self.run = FlightRun(self.biome, p.modo, p.pecas, maneuvers(), intro=intro, focus=app.options.momento_foco)
         self.look = app.plane_look()
         self.paused = False
         self.auto_paused = False
         self.countdown = 0.0
         self.banners: List[Banner] = []
         self.flash = 0.0
+        self.shake = 0.0
         self.cam_surface: Optional[pygame.Surface] = None
         self.cam_bytes: Optional[bytes] = None
         self.music = self.stage_music(0)
@@ -144,13 +169,16 @@ class FlightScene(Scene):
             if self.menu.update(dt, hub.pointer(), self.app.options.permanencia):
                 self.app.audio.play("sfx_selecao")
             return
-        ix, iy = hub.flight_axes()
-        self.run.update(dt, ix, iy)
+        ix, iy, target = hub.flight_command()
+        if hub.body_ready:
+            self.run.record_movement(dt, hub.body.axes())
+        self.run.update(dt, ix, iy, target)
         self.handle_run_events()
         for banner in self.banners:
             banner.ttl -= dt
         self.banners = [b for b in self.banners if b.ttl > 0]
         self.flash = max(0.0, self.flash - dt)
+        self.shake = max(0.0, self.shake - dt)
         if self.run.finished:
             self.goto("resultado", self.run)
 
@@ -165,13 +193,20 @@ class FlightScene(Scene):
                 audio.play("sfx_escudo_fim")
             elif name == "hit":
                 audio.play("sfx_colisao")
+                if self.app.options.efeitos_fortes:
+                    self.shake = C.HIT_SHAKE_S
+            elif name in FOCUS_SOUNDS:
+                audio.play(FOCUS_SOUNDS[name])
+            elif name == "lesson":
+                title, subtitle = texts.LESSONS[str(data)]
+                self.banners.append(Banner(title, subtitle, T.WHITE, 2.6))
             elif name == "stage":
                 audio.play("sfx_estagio")
                 audio.music(self.stage_music(int(data)))
                 self.banners.append(Banner(texts.STAGE_NAMES[int(data)], texts.STAGE_MESSAGES[int(data)], T.SUN, 3.4))
             elif name == "star":
                 audio.play("sfx_estrela")
-                self.flash = 0.6
+                self.flash = 0.6 if self.app.options.efeitos_fortes else 0.0
                 if data == 2 and not parts_ok(self.biome.required_parts, self.run.parts):
                     need = ", ".join(PART_BY_KEY[k].name for k in self.biome.required_parts)
                     self.banners.append(Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6))
@@ -189,9 +224,17 @@ class FlightScene(Scene):
     def draw(self, screen: pygame.Surface) -> None:
         view = self.app.view
         view.draw_run(screen, self.run, self.look)
-        if self.run.hit_flash_timer > 0:
+        strong = self.app.options.efeitos_fortes
+        if self.shake > 0:
+            # tremor só do cenário (o HUD fica parado e legível)
+            amount = 9.0 * self.shake / C.HIT_SHAKE_S
+            screen.scroll(int(amount * math.sin(self.time * 63.0)), int(amount * 0.5 * math.cos(self.time * 51.0)))
+        if self.run.hit_flash_timer > 0 and strong:
             T.veil(screen, (170, 30, 20), int(110 * self.run.hit_flash_timer / C.HIT_FLASH_S) // 10 * 10)
+        if self.run.focus.state == "pending":
+            screen.blit(focus_vignette(screen.get_size(), strong), (0, 0))
         self.draw_hud(screen)
+        self.draw_focus(screen)
         self.draw_banners(screen)
         self.draw_camera(screen)
         if self.paused:
@@ -250,6 +293,63 @@ class FlightScene(Scene):
             True,
         )
 
+    def draw_focus(self, screen: pygame.Surface) -> None:
+        """Seta do momento de foco junto do avião, pedido em letras grandes e tempo que resta."""
+        focus = self.run.focus
+        if focus.state is None:
+            return
+        player = self.run.player
+        sx, sy, _ = project(player.x, player.y, C.PLAYER_Z, self.app.view.cam)
+        if focus.state != "pending":
+            ok = focus.state == "success"
+            self.text.blit(
+                screen,
+                texts.FOCUS_SUCCESS if ok else texts.FOCUS_MISS,
+                (int(sx), int(sy) - 90),
+                T.SIZES["title"],
+                T.SUN if ok else T.WHITE,
+                True,
+                "center",
+            )
+            return
+        dx, dy = ARROW_VECTORS[focus.direction]
+        pulse = 1.0 + 0.08 * math.sin(self.time * 16.0)
+        self.draw_arrow(screen, (sx + dx * 130, sy + dy * 110), (dx, dy), 62 * pulse)
+        prompt = texts.FOCUS_PROMPTS[focus.direction]
+        width = max(340, self.text.font(T.SIZES["hero"], True).size(prompt)[0] + 60)
+        # embaixo, longe do avião e da seta (que podem apontar para cima)
+        card = pygame.Rect(C.WIDTH // 2 - width // 2, C.HEIGHT - 124, width, 108)
+        T.panel(screen, card, T.NAVY, T.SUN, 225, 18, 3)
+        self.text.blit(screen, prompt, (C.WIDTH // 2, card.top + 38), T.SIZES["hero"], T.SUN, True, "center")
+        bar = pygame.Rect(C.WIDTH // 2 - 140, card.top + 80, 280, 14)
+        pygame.draw.rect(screen, T.NAVY_DARK, bar.inflate(6, 6), border_radius=9)
+        fill = bar.copy()
+        fill.width = max(1, int(bar.width * focus.progress))
+        pygame.draw.rect(screen, T.SUN, fill, border_radius=7)
+
+    @staticmethod
+    def draw_arrow(screen: pygame.Surface, center, direction, size: float) -> None:
+        """Seta grossa apontando para direction ((1, 0) direita, (0, -1) cima...)."""
+        cx, cy = center
+        ux, uy = direction
+        px, py = -uy, ux  # perpendicular
+
+        def at(along: float, across: float):
+            return (int(cx + ux * along + px * across), int(cy + uy * along + py * across))
+
+        head, neck, tail, shaft, wing = size, size * 0.1, -size, size * 0.36, size * 0.8
+        points = [
+            at(head, 0),
+            at(neck, wing),
+            at(neck, shaft),
+            at(tail, shaft),
+            at(tail, -shaft),
+            at(neck, -shaft),
+            at(neck, -wing),
+        ]
+        pygame.draw.polygon(screen, T.SUN, points)
+        pygame.draw.polygon(screen, T.NAVY, points, 5)
+
     def draw_mission(self, screen: pygame.Surface) -> None:
         """Meta curta atual, logo abaixo do painel da transformação."""
         mission = self.run.missions.text
@@ -274,8 +374,8 @@ class FlightScene(Scene):
     def draw_banners(self, screen: pygame.Surface) -> None:
         if self.flash > 0:
             T.veil(screen, (255, 236, 150), int(80 * self.flash / 0.6) // 10 * 10)
-        if not self.banners:
-            return
+        if not self.banners or self.run.focus.state == "pending":
+            return  # a seta do momento de foco fica sozinha na tela
         banner = self.banners[-1]
         fade = min(1.0, banner.ttl / 0.4, (banner.total - banner.ttl) / 0.3 + 0.2)
         title = self.text.render(banner.title, T.SIZES["title"], T.NAVY, True)
