@@ -23,12 +23,17 @@ nome ou diagnóstico da criança nesta ficha.
 | Exploração e assistência | Erros, pausas e término curto | Ajuda permanece previsível; sem eliminação no modo exploração; conquistas preservadas | Pendente com participante |
 | Menus | Escolher aparência, trocar opções e retirar o cursor | Nenhuma confirmação involuntária em sequência; alvo e progresso de permanência compreensíveis | Pendente com participante |
 | Transformação | Estado industrial colorido, etapa intermediária, solarpunk | Participante reconhece a relação entre coleta/obra e a mudança na vila | Pendente com participante |
+| Continuidade entre voos | Encerrar aos 30–60 s e decolar de novo | A paisagem mantém o progresso, vidas recomeçam e a criança entende que iniciou outro voo | Pendente com participante |
+| História inicial | Criar piloto, acompanhar/pular jornal, reabrir o jogo | Ordem compreensível, Pular acessível e história não se repete sem pedido | Pendente com participante |
+| Alto contraste ampliado | Escalas 1,0, 1,3 e 1,6, avião nos quatro extremos | Indicadores de borda antecipam ameaças sem distrair ou esconder o caminho | Pendente com participante |
+| Pequenas missões | Observar a barra discreta e a troca após o prazo | Troca percebida sem sensação de perda de recursos ou pressão de tempo | Pendente com participante |
 | Uso prolongado | 20–30 min no equipamento de destino, alternando biomas e alto contraste | Sem aumento contínuo de memória, congelamentos ou perda de salvamento | Pendente físico |
 | Console T-TEA | Instalar cartucho, abrir, trocar cena, concluir e reabrir sessão | Assets PNG decodificados, perfil do SDK preservado, resumo registrado uma vez | Pendente console |
 
-Se uma etapa falhar, registrar o gesto/situação e a semente exibida no resultado,
-sem dados pessoais. Repetir a mesma rota com as mesmas opções ajuda a separar
-problemas do desenho do percurso de limitações do rastreamento ou da projeção.
+Se uma etapa falhar, registrar o gesto/situação, sem dados pessoais. A semente
+fica no histórico técnico; o resultado só a mostra em desafios. Voar de novo
+mantém a semente e as opções, mas parte da cidade já transformada. Isso ajuda
+a investigar o percurso, sem prometer a reprodução exata da partida anterior.
 
 ## Evidência técnica disponível
 

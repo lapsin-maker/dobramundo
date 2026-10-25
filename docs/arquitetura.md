@@ -2,6 +2,16 @@
 
 Este documento descreve o código do pacote `dobramundo/` como ele está no repositório. A visão de jogo está no GDD (`docs/GDD_Dobramundo_v10.pdf`), e o uso do projeto está no `README.md`.
 
+## Estado atual — versão 1.7
+
+O perfil e as migrações estão em `profile_model.py`; `persistence.py` cuida do armazenamento, rejeita revisões antigas e preserva arquivos de versões futuras. No desktop, `instance_lock.py` impede duas instâncias de usar o mesmo diretório de dados. O console conserva a persistência fornecida pelo SDK.
+
+`game/settlement.py` concentra a liquidação idempotente. `FlightScene` só inicia a sessão depois do preparo e `ResultScene` aplica os efeitos ao entrar ou fechar, sem gravação no construtor. `transformacao_cidades` preserva o maior progresso de cada bioma. Uma nova decolagem restaura vidas e velocidade inicial; não restaura posição ou entidades do voo anterior. O fluxo inicial consulta `abertura_vista` e apresenta o jornal pulável após a montagem do piloto.
+
+`scenes/flight_hud.py` contém a apresentação do voo. `RenderContext` explicita as entradas da composição de fundo. As superfícies derivadas compartilham um orçamento de 192 MiB em `engine/cache.py`; arte base, buffers ativos e RSS são medidos separadamente. O preparo inclui mipmaps do terreno e a aparência selecionada. A geometria invariável das linhas do chão é reutilizada, e cada linha de saída tem sua própria amostra de textura.
+
+`InputFrame` acompanha a mesma sequência consumida até o canvas e a apresentação desktop. Essa telemetria não mede o atraso físico do sensor ou do projetor. `tools/runtime_assets.py` fornece o inventário comum dos pacotes, com uma variante por imagem utilizada. Os protocolos e resultados atuais estão em [validação 1.7](validacao-v1.7/README.md); as seções de versões anteriores abaixo registram a evolução e devem ser lidas junto destas mudanças.
+
 ## 1. Camadas
 
 O pacote se divide em camadas com dependências em um sentido só: cada camada usa as de baixo, e nenhuma usa as de cima.

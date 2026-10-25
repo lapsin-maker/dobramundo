@@ -17,11 +17,13 @@ import sys
 import tarfile
 import zipfile
 from pathlib import Path, PurePosixPath
+from typing import Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from dobramundo import __version__  # noqa: E402
+from tools.build_cartridge import DESKTOP_ONLY  # noqa: E402
 from tools.runtime_assets import runtime_assets  # noqa: E402
 
 
@@ -40,11 +42,100 @@ def unique(root: Path, pattern: str) -> Path:
     return files[0]
 
 
-def verified_build(root: Path) -> dict:
+def verified_build(
+    root: Path,
+    expected_commit: Optional[str] = None,
+    expected_ci_run_id: Optional[str] = None,
+    expected_ci_attempt: Optional[str] = None,
+) -> dict:
     report = json.loads(unique(root, "self_test.json").read_text(encoding="utf-8"))
     if report.get("status") != "ok" or report.get("camera", {}).get("detector") != "ok":
         raise ValueError("O pacote precisa de self-test aprovado incluindo detector")
+    if report.get("versao") != __version__:
+        raise ValueError("A versão do executável não corresponde à versão da release")
+    if not report.get("run_id"):
+        raise ValueError("Relatório de build sem identificador de execução")
+    if expected_commit and (
+        report.get("build_commit") != expected_commit or report.get("github_sha") != expected_commit
+    ):
+        raise ValueError("O commit do executável não corresponde ao commit aprovado pela CI")
+    if expected_ci_run_id and report.get("github_run_id") != expected_ci_run_id:
+        raise ValueError("A execução de CI do executável não corresponde ao relatório aprovado")
+    if expected_ci_attempt and report.get("github_run_attempt") != expected_ci_attempt:
+        raise ValueError("A tentativa de CI do executável não corresponde ao relatório aprovado")
     return report
+
+
+def portable_sources(root: Path) -> Dict[str, Path]:
+    """Map source files copied into the cartucho by build_cartridge.stage()."""
+    package_root = root / "dobramundo"
+    result = {}
+    for path in package_root.rglob("*.py"):
+        relative = path.relative_to(package_root).as_posix()
+        if relative in DESKTOP_ONLY or "__pycache__" in path.parts:
+            continue
+        result["dobramundo/" + relative] = path
+    return result
+
+
+def github_run_id(ci_report: dict) -> Optional[str]:
+    for key in ("databaseId", "runId", "run_id", "id", "github_run_id"):
+        value = ci_report.get(key)
+        if value is not None and str(value):
+            return str(value)
+    url = ci_report.get("url", "")
+    match = re.search(r"/actions/runs/(\d+)(?:/|$)", url)
+    return match.group(1) if match else None
+
+
+def github_run_attempt(ci_report: dict) -> Optional[str]:
+    for key in ("runAttempt", "run_attempt", "attempt", "github_run_attempt"):
+        value = ci_report.get(key)
+        if value is not None and str(value):
+            return str(value)
+    return None
+
+
+def assert_tracked_inputs(paths: List[Path], root: Path = ROOT) -> None:
+    tracked = set(
+        subprocess.check_output(["git", "ls-files", "-z"], cwd=root)
+        .decode("utf-8", errors="surrogateescape")
+        .split("\0")
+    )
+    missing = sorted(
+        path.relative_to(root).as_posix() for path in paths if path.relative_to(root).as_posix() not in tracked
+    )
+    if missing:
+        raise ValueError("Entradas do pacote não rastreadas pelo commit: " + ", ".join(missing[:8]))
+
+
+def assert_clean_checkout(root: Path = ROOT) -> None:
+    status = subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True).strip()
+    if status:
+        raise ValueError("A árvore de trabalho contém alterações fora do commit da release")
+
+
+def validate_cartridge_sources(archive: zipfile.ZipFile, root: Path) -> None:
+    expected = portable_sources(root)
+    names = archive.namelist()
+    if len(names) != len(set(names)):
+        raise ValueError("Cartucho contém caminhos duplicados")
+    actual = {name for name in names if name.startswith("dobramundo/") and name.endswith(".py")}
+    if actual != set(expected):
+        missing = sorted(set(expected) - actual)
+        extra = sorted(actual - set(expected))
+        raise ValueError(
+            f"Fontes portáteis do cartucho diferem do inventário: faltando={missing[:6]} excedentes={extra[:6]}"
+        )
+    for name, source in expected.items():
+        if archive.read(name) != source.read_bytes():
+            raise ValueError("Código do cartucho difere da árvore validada: " + name)
+
+
+def write_batch(path: Path, content: str) -> None:
+    """Write Windows launchers with CRLF even when packaging on Linux."""
+    normalized = content.replace("\r\n", "\n").replace("\r", "\n")
+    path.write_bytes(normalized.replace("\n", "\r\n").encode("ascii"))
 
 
 def validate_tar(path: Path) -> None:
@@ -80,9 +171,19 @@ def package(args) -> dict:
         raise ValueError("A árvore da release difere da árvore validada")
     if subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip() != args.release_commit:
         raise ValueError("Execute na revisão da release para resolver a versão corretamente")
-    if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, text=True).strip():
-        raise ValueError("A árvore de trabalho contém alterações fora do commit da release")
-    windows_report, linux_report = verified_build(args.windows), verified_build(args.linux)
+    assert_clean_checkout(ROOT)
+    ci_run = github_run_id(ci)
+    if ci_run is None:
+        raise ValueError("Relatório da CI sem identificador de execução")
+    ci_attempt = github_run_attempt(ci)
+    windows_report = verified_build(args.windows, args.build_commit, ci_run, ci_attempt)
+    linux_report = verified_build(args.linux, args.build_commit, ci_run, ci_attempt)
+    if windows_report.get("run_id") == linux_report.get("run_id"):
+        raise ValueError("Builds Windows e Linux têm o mesmo identificador de execução local")
+    if not windows_report.get("github_run_attempt") or windows_report.get("github_run_attempt") != linux_report.get(
+        "github_run_attempt"
+    ):
+        raise ValueError("Builds Windows e Linux não pertencem à mesma tentativa de CI")
     windows = unique(args.windows, "Dobramundo.exe").parent
     if not (windows / "_internal").is_dir():
         raise ValueError("O diretório _internal precisa acompanhar o executável")
@@ -94,24 +195,31 @@ def package(args) -> dict:
         manifest_text = archive.read("ttea.toml").decode("utf-8")
         if re.search(r'^version\s*=\s*"' + re.escape(__version__) + r'"\s*$', manifest_text, re.MULTILINE) is None:
             raise ValueError("A versão do cartucho difere da release")
-        for name in archive.namelist():
-            if name.startswith("dobramundo/") and name.endswith(".py"):
-                source = ROOT / name
-                if not source.is_file() or archive.read(name) != source.read_bytes():
-                    raise ValueError("Código do cartucho difere da árvore validada: " + name)
-        for source, relative in runtime_assets(ROOT, console=True):
+        validate_cartridge_sources(archive, ROOT)
+        asset_records = list(runtime_assets(ROOT, console=True))
+        expected_asset_names = {"assets/" + relative.as_posix() for _source, relative in asset_records}
+        actual_asset_names = {
+            name for name in archive.namelist() if name.startswith("assets/") and not name.endswith("/")
+        }
+        if actual_asset_names != expected_asset_names:
+            missing = sorted(expected_asset_names - actual_asset_names)
+            extra = sorted(actual_asset_names - expected_asset_names)
+            raise ValueError(f"Assets do cartucho diferem do inventário: faltando={missing[:6]} excedentes={extra[:6]}")
+        assert_tracked_inputs([*portable_sources(ROOT).values(), *(source for source, _relative in asset_records)])
+        for source, relative in asset_records:
             if archive.read("assets/" + relative.as_posix()) != source.read_bytes():
                 raise ValueError("Asset do cartucho difere do inventário: " + str(relative))
     args.out.mkdir(parents=True, exist_ok=True)
-    (windows / "Jogar-Dobramundo.bat").write_text(
-        '@echo off\nsetlocal\ncd /d "%~dp0"\n"%~dp0Dobramundo.exe" %*\n', encoding="ascii"
+    write_batch(
+        windows / "Jogar-Dobramundo.bat",
+        '@echo off\nsetlocal\ncd /d "%~dp0"\n"%~dp0Dobramundo.exe" %*\n',
     )
-    (windows / "Continuar-perfil-1.5.bat").write_text(
+    write_batch(
+        windows / "Continuar-perfil-1.5.bat",
         '@echo off\nsetlocal\ncd /d "%~dp0"\n'
         'if not exist "%LOCALAPPDATA%\\Dobramundo-1.5.0" (\n'
         " echo Perfil anterior nao encontrado. Use Jogar-Dobramundo.bat.\n pause\n exit /b 1\n)\n"
         'set "DOBRAMUNDO_DATA_DIR=%LOCALAPPDATA%\\Dobramundo-1.5.0"\n"%~dp0Dobramundo.exe" %*\n',
-        encoding="ascii",
     )
     (windows / "LEIA-ME.txt").write_text(
         f"Dobramundo {__version__}\n\nExtraia toda a pasta e abra Jogar-Dobramundo.bat.\n"
@@ -153,6 +261,8 @@ def package(args) -> dict:
         "desktop_build_commit": args.build_commit,
         "source_tree": tree(args.release_commit),
         "build_ci": ci.get("url"),
+        "build_ci_run_id": ci_run,
+        "build_ci_run_attempt": ci_attempt,
         "validation": {"windows": windows_report, "linux": linux_report},
         "physical_acceptance": "separate; see docs/VALIDACAO_PRESENCIAL.md",
         "artifacts": [{"file": path.name, "bytes": path.stat().st_size, "sha256": sha256(path)} for path in files],

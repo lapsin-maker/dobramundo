@@ -44,6 +44,10 @@ class PaintedGround(GroundRenderer):
         self.fog_cache = {}
         self.vertical_mips = {name: [tile] for name, tile in self.textures.items()}
         self.line_buffers = {}
+        # Geometry is invariant over time and biome. Cache it once per available
+        # mip count so direct/partial renderer use remains compatible with the
+        # normal staged warm-up path.
+        self.row_geometry = {}
 
     def warm_tasks(self):
         # Each lower-resolution level is a separate bounded warm-up unit.
@@ -61,24 +65,34 @@ class PaintedGround(GroundRenderer):
 
     def prepare_line_buffers(self, name: str, rows) -> None:
         for y, _z, _group in rows:
-            middle_y = y + self.ROW_HEIGHT // 2
-            middle_z = C.CAMERA_HEIGHT * C.FOV / (middle_y + 0.5 - C.HORIZON_Y)
-            width = max(8, round(self.TILE_X * C.FOV / middle_z))
+            _depths, _middle_z, width, _mip_level = self._geometry(name, y)
             key = name, y
             if key not in self.line_buffers:
                 band = display_format(pygame.Surface((1024, self.ROW_HEIGHT)))
                 line = display_format(pygame.Surface((width, self.ROW_HEIGHT)))
                 self.line_buffers[key] = [line, (), band]
 
+    def _geometry(self, name: str, y: int):
+        key = name, y, len(self.vertical_mips[name])
+        geometry = self.row_geometry.get(key)
+        if geometry is None:
+            depths = tuple(
+                C.CAMERA_HEIGHT * C.FOV / (row_y + 0.5 - C.HORIZON_Y) for row_y in range(y, y + self.ROW_HEIGHT)
+            )
+            middle_z = depths[self.ROW_HEIGHT // 2]
+            width = max(8, round(self.TILE_X * C.FOV / middle_z))
+            sample_rows = tuple(row_z / self.TILE_Z * 1024 for row_z in depths)
+            step = max(abs(sample_rows[0] - sample_rows[1]), abs(sample_rows[1] - sample_rows[2]))
+            mip_level = 0
+            while step / (2**mip_level) > 1.25 and mip_level < len(self.vertical_mips[name]) - 1:
+                mip_level += 1
+            geometry = depths, middle_z, width, mip_level
+            self.row_geometry[key] = geometry
+        return geometry
+
     def queue_line(self, jobs, name, y, z, left, right, distance, cam):
-        depths = tuple(C.CAMERA_HEIGHT * C.FOV / (row_y + 0.5 - C.HORIZON_Y) for row_y in range(y, y + self.ROW_HEIGHT))
-        z = depths[self.ROW_HEIGHT // 2]
-        width = max(8, round(self.TILE_X * C.FOV / z))
+        depths, _middle_z, width, mip_level = self._geometry(name, y)
         raw_vs = tuple((row_z + distance) / self.TILE_Z * 1024 for row_z in depths)
-        step = max(abs(raw_vs[0] - raw_vs[1]), abs(raw_vs[1] - raw_vs[2]))
-        mip_level = 0
-        while step / (2**mip_level) > 1.25 and mip_level < len(self.vertical_mips[name]) - 1:
-            mip_level += 1
         texture = self.vertical_mips[name][mip_level]
         mip_factor = 2**mip_level
         indices = tuple(int(v / mip_factor) % texture.get_height() for v in raw_vs)
@@ -91,14 +105,12 @@ class PaintedGround(GroundRenderer):
         line = buffer[0]
         band = buffer[2]
         if buffer[1] != signature:
-            if indices[0] - indices[1] == 1 and indices[1] - indices[2] == 1:
-                source_band = texture.subsurface((0, indices[2], texture.get_width(), self.ROW_HEIGHT))
-                source_band = pygame.transform.flip(source_band, False, True)
-                pygame.transform.scale(source_band, (width, self.ROW_HEIGHT), line)
-            else:
-                for row, v in enumerate(indices):
-                    band.blit(texture, (0, row), (0, v, texture.get_width(), 1))
-                pygame.transform.scale(band, (width, self.ROW_HEIGHT), line)
+            # Copy the three exact source rows into a reusable band. This also
+            # handles wrapped/non-contiguous indices and avoids a temporary
+            # subsurface plus vertical-flip allocation for the common case.
+            for row, v in enumerate(indices):
+                band.blit(texture, (0, row), (0, v, texture.get_width(), 1))
+            pygame.transform.scale(band, (width, self.ROW_HEIGHT), line)
             buffer[1] = signature
         origin = cam * width / self.TILE_X - C.WIDTH / 2
         x, src = left, int(origin + left) % width

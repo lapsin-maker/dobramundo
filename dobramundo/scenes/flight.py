@@ -160,6 +160,7 @@ class FlightScene(FlightHUDMixin, Scene):
         super().enter()
         self.app.view.set_biome(self.biome)
         self.app.view.prepare_look(self.look)
+        self.app.view.prepare_first_frame(self.run, self.look)
         self.app.input.resync_keys()
 
     # ------------------------------------------------------------- pausa

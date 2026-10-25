@@ -46,7 +46,7 @@ def main() -> int:
     from dobramundo.app import App
     from dobramundo.content.biomes import BIOMES
     from dobramundo.content.progress import VILLAGE_UPGRADES
-    from dobramundo.engine.painted_route import PaintedGround
+    from dobramundo.engine.painted_route import PaintedGround, PaintedRoute
     from dobramundo.persistence import Profile
     from dobramundo.scenes import make_scene
 
@@ -99,7 +99,10 @@ def main() -> int:
                     "frame": index,
                     "distance": round(float(distance), 2),
                     "visual_restoration": round(float(visual), 2),
-                    "stage_mix": list(app.view.watercolor.stage_mix(float(visual))),
+                    "horizon_stage_mix": list(app.view.watercolor.stage_mix(float(visual))),
+                    "bank_stage_mix_by_depth": {
+                        str(depth): list(PaintedRoute.stage_blend(float(visual), depth)) for depth in (100, 500, 1500)
+                    },
                 }
             )
         path = args.out / f"{biome_key}-{kind}-reduzir-{int(reduced)}.gif"

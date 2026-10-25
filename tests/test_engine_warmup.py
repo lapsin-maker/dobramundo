@@ -72,9 +72,39 @@ def test_only_selected_flight_look_is_queued_and_prepared_incrementally(display,
     # Entering again must revisit the look: a cache eviction can happen between flights.
     view.prepare_look(selected)
     assert view.warmup_pending
+    assert len(view.warm_queue) == 4  # completed jobs must not accumulate on repeat flights
+    assert view.warmup_timings == []
     while view.warmup_pending:
         view.step_warm_up(0.01)
     assert calls[:4] == calls[4:]
+    assert len(view.warmup_timings) == 4
+
+
+def test_warmup_keeps_every_task_timing_in_current_bounded_queue(display):
+    view = WorldView(Assets())
+    view.warm_queue = [(str(index), lambda: None) for index in range(80)]
+    while view.warmup_pending:
+        view.step_warm_up(1)
+    assert len(view.warmup_timings) == 80
+    assert view.warmup_timings[0][0] == "0"
+
+
+def test_first_view_is_prepared_offscreen_without_advancing_rules(display, monkeypatch):
+    from dobramundo.game.run import FlightRun
+
+    view = WorldView(Assets())
+    run = FlightRun(BIOMES["amazonia"], "normal", {}, seed=7, intro=False)
+    look = PlaneLook("bis14", "azul", "liso", {})
+    frames = []
+    monkeypatch.setattr(view, "draw_run", lambda canvas, r, appearance: frames.append((canvas, r, appearance)))
+    before = run.flight_time, run.world.distance
+    view.prepare_first_frame(run, look)
+    assert not frames
+    view.step_warm_up(1)
+    assert len(frames) == 1 and frames[0][0] is not display
+    assert frames[0][1:] == (run, look)
+    assert (run.flight_time, run.world.distance) == before
+    assert view.warm_queue[0][1] == view._prepared_task
 
 
 def test_painted_ground_samples_every_pixel_inside_each_batched_band(display):

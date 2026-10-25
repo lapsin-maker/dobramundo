@@ -88,6 +88,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self._biome_scenery_names = self.scenery_names(biome)
             self.warm_queue = self.warm_tasks()
             self._warmup_index = 0
+            self.warmup_timings.clear()
             self._queued_looks.clear()
 
     @staticmethod
@@ -351,6 +352,9 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             # The global budget may have evicted this look since the last flight.
             # Queue cached lookups again; deduplicate only the work still pending.
             self._queued_looks.clear()
+            self.warm_queue.clear()
+            self._warmup_index = 0
+            self.warmup_timings.clear()
         self._queued_looks.add(key)
         self.warm_queue.extend(
             [
@@ -379,6 +383,19 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         sprite = self.assets.sprite(folder, name)
         if sprite is not None:
             target[name] = sprite
+
+    def prepare_first_frame(self, run: FlightView, look: PlaneLook) -> None:
+        """Warm view-dependent scales before the flight becomes interactive.
+
+        The scratch frame never replaces the preparation screen and advances no
+        rules. Its indivisible cost is reported as its own preparation task.
+        """
+
+        def prepare() -> None:
+            preview = pygame.Surface((C.WIDTH, C.HEIGHT)).convert()
+            self.draw_run(preview, run, look)
+
+        self.warm_queue.append(("Preparando primeira vista", prepare))
 
     def _prepare_ground_mip(self, name: str) -> None:
         ground = self.watercolor.route.ground
@@ -409,11 +426,16 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self.warmup_max_task_ms = max(self.warmup_max_task_ms, elapsed_ms)
             self.warmup_overruns += int(elapsed_ms > budget_ms)
             self.warmup_timings.append((label, elapsed_ms))
-            if len(self.warmup_timings) > 64:
-                del self.warmup_timings[:-64]
+            # Completed tasks must not retain a previous run/appearance through
+            # their closures. Keep the label/slot for progress until the next queue.
+            self.warm_queue[self._warmup_index] = (label, self._prepared_task)
             self._warmup_index += 1
             if time.perf_counter() - start >= budget_s:
                 break
+
+    @staticmethod
+    def _prepared_task() -> None:
+        pass
 
     def update(self, dt: float) -> None:
         if not self.reduce_motion:

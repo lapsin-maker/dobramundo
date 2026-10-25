@@ -41,9 +41,23 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
     reports = ROOT / "build" / "desktop-selftest"
     reports.mkdir(parents=True, exist_ok=True)
     run_id = uuid.uuid4().hex
+    git_root = ROOT if (ROOT / ".git").exists() else Path(__file__).resolve().parents[1]
+    build_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=git_root, text=True).strip()
+    github_sha = os.environ.get("GITHUB_SHA")
+    ci_run_id = os.environ.get("GITHUB_RUN_ID")
+    ci_attempt = os.environ.get("GITHUB_RUN_ATTEMPT")
+    provenance = {
+        "build_commit": build_commit,
+        "github_sha": github_sha,
+        "github_run_id": ci_run_id,
+        "github_run_attempt": ci_attempt,
+    }
     (reports / "self_test.json").write_text(
-        json.dumps({"status": "building", "run_id": run_id}) + "\n", encoding="utf-8"
+        json.dumps({"status": "building", "run_id": run_id, **provenance}) + "\n",
+        encoding="utf-8",
     )
+    if github_sha and github_sha != build_commit:
+        raise RuntimeError("GITHUB_SHA difere do checkout usado para gerar o executável")
     require_linux_egl_runtime(require_camera)
     env = dict(os.environ, DOBRA_ONEFILE="1" if onefile else "0")
     subprocess.run(
@@ -87,6 +101,7 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
         camera = data.get("camera", {})
         camera["modelo"] = bool(camera.get("modelo"))
         data["run_id"] = run_id
+        data.update(provenance)
         (reports / "self_test.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         completed.check_returncode()
         if data.get("status") != "ok":
