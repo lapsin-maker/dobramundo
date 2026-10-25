@@ -13,7 +13,7 @@ from typing import Dict, Mapping, NamedTuple, Tuple
 from ..config import ERA_SPAN
 
 Cost = Dict[str, int]  # tipo de resíduo -> quantidade
-COST_SCALE = 5  # custos-base x 5: tudo comprado em ~10 voos no Normal e ~6 no Difícil (tools/balance.py)
+COST_SCALE = 12  # custos-base x 12: tudo comprado em ~11 voos no Normal e ~5 no Difícil (tools/balance.py)
 
 
 def scaled(cost: Cost) -> Cost:

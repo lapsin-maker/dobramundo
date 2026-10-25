@@ -231,11 +231,12 @@ def test_fase_dura_alguns_minutos(mode):
 
     run = make_run(mode=mode, clear=False)
     run.invincible = True
-    rng, decided, t = random.Random(2), set(), 0.0
+    rng, t = random.Random(2), 0.0
     while not run.complete and t < 600:
         for entity in run.world.entities:
-            if entity.kind == "waste" and id(entity) not in decided and entity.z <= C.PLAYER_Z + 60:
-                decided.add(id(entity))
+            # a marca fica no objeto: id() se repete quando objetos antigos são liberados
+            if entity.kind == "waste" and not hasattr(entity, "decided") and entity.z <= C.PLAYER_Z + 60:
+                entity.decided = True
                 if rng.random() < 0.4:
                     run.player.x, run.player.y = entity.x, min(C.MAX_ALTITUDE, entity.y)
         run.update(1 / 30)

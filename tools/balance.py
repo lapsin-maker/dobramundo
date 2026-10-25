@@ -29,17 +29,18 @@ LIMIT_S = 1200.0
 def simulate(mode: str, share: float, seed: int, biome: str = "amazonia"):
     """Devolve (segundos até 100%, coletas, recursos, segundos por estágio)."""
     rng = random.Random(seed)
-    run = FlightRun(BIOMES[biome], mode, {}, rng=random.Random(seed))
+    # como no jogo: abertura didática sempre no Normal (no Difícil, só no primeiro voo da fase)
+    run = FlightRun(BIOMES[biome], mode, {}, rng=random.Random(seed), intro=mode == "normal")
     run.invincible = True
-    decided = {}
     stage_times = []
     t = 0.0
     while not run.complete and t < LIMIT_S:
         for entity in run.world.entities:
-            if entity.kind != "waste" or id(entity) in decided or entity.z > C.PLAYER_Z + 60:
+            # a decisão fica no próprio objeto: id() se repete quando objetos antigos são liberados
+            if entity.kind != "waste" or hasattr(entity, "decided") or entity.z > C.PLAYER_Z + 60:
                 continue
-            decided[id(entity)] = rng.random() < share
-            if decided[id(entity)]:
+            entity.decided = rng.random() < share
+            if entity.decided:
                 run.player.x, run.player.y = entity.x, min(C.MAX_ALTITUDE, entity.y)
         stage = run.stage
         run.update(DT)

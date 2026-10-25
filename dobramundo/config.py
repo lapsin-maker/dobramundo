@@ -86,16 +86,16 @@ HISTORY_LIMIT = 60  # voos guardados no histórico do perfil
 # ------------------------------------------------- transformação da cidade
 ERA_SPAN = 100.0 / 3.0  # três estágios do mesmo tamanho (33,3% e 66,7%)
 START_RESTORATION = 5.0
-# Fase de ~3,5 min com a criança pegando 4 de cada 10 resíduos (ver tools/balance.py).
-RESTORATION_PER_TRASH = 0.35  # Difícil
-RESTORATION_COMBO_BONUS = 0.04  # com combo >= COMBO_BONUS_FROM
+# Fase de ~4 min com a criança pegando 4 de cada 10 resíduos (ver tools/balance.py).
+RESTORATION_PER_TRASH = 0.115  # Difícil
+RESTORATION_COMBO_BONUS = 0.013  # com combo >= COMBO_BONUS_FROM
 REPAIR_RESTORATION = 2.0  # reparo com vidas cheias
 NORMAL_TRASH_EVERY = 4  # Normal: 1 resíduo a cada 4 do Difícil
 NORMAL_TRASH_POINTS = 65  # pontos fixos por resíduo no Normal
 NORMAL_SPEED_FACTOR = 0.5  # Normal: metade da velocidade-base
 # Cada coleta do Normal é mais rara (1 em 4, à metade da velocidade) e rende bem mais:
 # calibrado para a fase durar o mesmo que no Difícil (ver tools/balance.py).
-NORMAL_RESTORATION_PER_TRASH = 2.24
+NORMAL_RESTORATION_PER_TRASH = 1.18
 HARD_TRASH_POINTS = 15  # Difícil: 15 x combo por resíduo
 COMBO_WINDOW_S = 2.2
 COMBO_STEP = 4  # a cada 4 coletas seguidas o combo sobe
