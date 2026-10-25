@@ -360,9 +360,13 @@ class WorldView:
 
     # ----------------------------------------------------------- objetos
     def halo(self, screen: pygame.Surface, world: World, entity: Entity, size: float) -> None:
-        """Estágio solarpunk, só no Difícil: halo pulsante atrás do que se pode PEGAR."""
+        """Halo pulsante atrás do que se pode PEGAR, em todos os estágios e modos.
+
+        O GDD pede distinguir resíduos de obstáculos: o halo marca o que se coleta e os
+        chevrons no chão (alert) marcam o que colide.
+        """
         halo = self.fx.get("halo_coletavel")
-        if self.mode != "dificil" or halo is None or not world.final_at(entity.z):
+        if halo is None:
             return
         pulse = (0.94, 1.0, 1.06)[int(self.elapsed * 4.0 + entity.z * 0.01) % 3]
         h = size * C.FINAL_HALO_SCALE * pulse
@@ -434,8 +438,7 @@ class WorldView:
                 self.fallback_ball(screen, entity, color, 20)
         else:
             spec = entity.spec
-            if entity.solar or hc:
-                self.alert(screen, entity, spec)
+            self.alert(screen, entity, spec)
             sprite = self.scenery.get(spec.sprite)
             if sprite is not None:
                 self.blit_world(

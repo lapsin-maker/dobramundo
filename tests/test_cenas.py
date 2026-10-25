@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 import pytest
-from test_controle import FakeSource
+from test_controle import CAL_READINGS, FakeSource
 
 from dobramundo import config as C
 from dobramundo.content.progress import VILLAGE_BY_KEY
@@ -130,9 +130,7 @@ def test_pausa_automatica_e_retomada(app):
     app.apply_options()
     from test_controle import landmarks
 
-    from dobramundo.input.pose import AxisMapper
-
-    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+    for _ in range(CAL_READINGS):
         source.show(landmarks({16: (0.5, 0.5)}))
         app.input.update(1 / 30)
     scene = show(app, FlightScene(app, "amazonia"))
@@ -226,3 +224,15 @@ def test_falha_ao_salvar_aparece_na_vila(app, monkeypatch):
     app.save()
     show(app, VillageScene(app))
     assert app.save_failed
+
+
+def test_superficie_aplica_o_segmento_sugerido(app):
+    source = FakeSource()
+    app.input.source_factory = lambda: source
+    app.profile.controle = "tronco_pe"
+    app.apply_options()
+    scene = show(app, OptionsScene(app))
+    from dobramundo.persistence import SURFACES
+
+    scene.set_surface(SURFACES.index("chao"))
+    assert app.profile.controle == "pes" and scene.toast.text

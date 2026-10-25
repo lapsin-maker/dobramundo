@@ -340,7 +340,8 @@ O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-pyt
 - **Equipe:** Liga de Psiquiatria e Neurociências – CENSUPEG
 - **Membros:** João Pedro Turnes (capitão), Isabella Cordeiro Sonza, Gerciane Larice da Silva Barros e Luiz Felipe Santana Tomio
 - **Captura:** Adaptada do T-TEA 2.0 (LARVA/UDESC)
-- **Modelos 3D:** Feitos pela equipe em Blender e modelos low-poly gerados por código (tools/lowpoly)
+- **Modelos 3D:** kits 3D da equipe, aviões do estúdio 3D do protótipo e modelos low-poly gerados por código (`tools/lowpoly`)
+- **Referências de design:** Star Fox 64, Subway Surfers, It Takes Two e Super Mario World
 - **Programação:** IA generativa (Gemini e Claude) apoiou a programação
 - **Tecnologia:** Python, pygame, OpenCV e MediaPipe Pose
 - **Música e efeitos:** Sintetizados pelo projeto

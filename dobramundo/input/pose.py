@@ -113,18 +113,24 @@ class AxisMapper:
     Não usa câmera nem MediaPipe: recebe os pontos já detectados (testável sem webcam).
     """
 
-    CALIBRATION_SAMPLES = 40  # leituras com o ponto visível (cerca de 2 s)
+    CALIBRATION_SECONDS = 2.0  # tempo parado e visível para definir o repouso
+    MIN_SAMPLES = 15  # e pelo menos estas leituras (câmeras lentas levam mais tempo)
+    DEFAULT_READING_S = 0.05  # intervalo suposto quando a leitura não informa o tempo
     SMOOTHING = 0.35  # 0..1: quanto maior, mais rápido responde
     LOST_DECAY = 0.85  # sem o ponto, os eixos voltam ao centro aos poucos
 
-    def __init__(self, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
+    def __init__(
+        self, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+    ) -> None:
         self.segment = segment
         self.sensitivity = sensitivity
         self.dead_scale = dead_scale
+        self.invert_y = invert_y  # câmera vista de cima ou de cabeça para baixo: subir vira descer
         self.reset()
 
     def reset(self) -> None:
         self.samples: List[Point] = []
+        self.sampled_time = 0.0
         self.base: Optional[Point] = None
         self.ax = 0.0
         self.ay = 0.0
@@ -135,13 +141,17 @@ class AxisMapper:
 
     @property
     def progress(self) -> float:
-        return 1.0 if self.calibrated else min(1.0, len(self.samples) / self.CALIBRATION_SAMPLES)
+        if self.calibrated:
+            return 1.0
+        return min(len(self.samples) / self.MIN_SAMPLES, self.sampled_time / self.CALIBRATION_SECONDS, 1.0)
 
-    def feed(self, point: Optional[Point]) -> None:
+    def feed(self, point: Optional[Point], elapsed: Optional[float] = None) -> None:
+        """Uma leitura da câmera; elapsed = segundos desde a leitura anterior."""
         if not self.calibrated:
             if point is not None:
                 self.samples.append(point)
-                if len(self.samples) >= self.CALIBRATION_SAMPLES:
+                self.sampled_time += self.DEFAULT_READING_S if elapsed is None else elapsed
+                if self.progress >= 1.0:
                     # mediana: uma leitura ruim durante a calibração não desloca o repouso
                     self.base = (median([p[0] for p in self.samples]), median([p[1] for p in self.samples]))
             return
@@ -153,6 +163,8 @@ class AxisMapper:
         dead = seg.dead * self.dead_scale
         target_x = shape(point[0] - self.base[0], dead, max(dead * 2, seg.range_x / self.sensitivity))
         target_y = shape(self.base[1] - point[1], dead, max(dead * 2, seg.range_y / self.sensitivity))
+        if self.invert_y:
+            target_y = -target_y
         self.ax += (target_x - self.ax) * self.SMOOTHING
         self.ay += (target_y - self.ay) * self.SMOOTHING
 
@@ -283,16 +295,19 @@ class BodyControl:
     liga e desliga é o InputHub (os testes usam uma fonte falsa com essa forma).
     """
 
-    def __init__(self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
+    def __init__(
+        self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+    ) -> None:
         self.source = source
         self.segment = segment
-        self.mapper = AxisMapper(segment, sensitivity, dead_scale)
+        self.mapper = AxisMapper(segment, sensitivity, dead_scale, invert_y)
         self.preview: Optional[bytes] = None
         self.visible = False
         self.missing_time = 0.0  # segundos sem ver o segmento (pausa automática)
         self.seen_time = 0.0  # segundos seguidos vendo o segmento (retomada)
         self.landmarks: Optional[List[Landmark]] = None
         self._seq = -1
+        self._since_reading = 0.0
         self._frames = 0
 
     @property
@@ -315,6 +330,7 @@ class BodyControl:
         self.mapper.reset()
 
     def poll(self, dt: float) -> None:
+        self._since_reading += dt
         """Consome a leitura nova da câmera, se houver (chamado a cada quadro)."""
         seq, landmarks, preview = self.source.snapshot()
         if seq != 0 and seq != self._seq:
@@ -324,7 +340,8 @@ class BodyControl:
             self.preview = preview
             point = segment_point(landmarks, self.segment)
             self.visible = point is not None
-            self.mapper.feed(point)
+            self.mapper.feed(point, self._since_reading)
+            self._since_reading = 0.0
         if self.receiving:
             if self.visible:
                 self.seen_time += dt

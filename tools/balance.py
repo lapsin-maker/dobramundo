@@ -53,7 +53,7 @@ def simulate(mode: str, share: float, seed: int, biome: str = "amazonia"):
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--coleta", type=float, default=0.4, help="fração dos resíduos que a criança pega")
-    parser.add_argument("--voos", type=int, default=6)
+    parser.add_argument("--voos", type=int, default=10)
     args = parser.parse_args()
     village = sum(sum(u.cost.values()) for u in VILLAGE_UPGRADES)
     parts = sum(sum(c.values()) for p in PLANE_PARTS for c in p.level_costs)

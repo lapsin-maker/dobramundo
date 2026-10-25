@@ -79,9 +79,11 @@ class App:
         self.view.high_contrast = self.options.alto_contraste
         stats = plane_stats(self.profile.pecas)
         if self.profile.controle != self.input.segment_key:
-            self.input.set_segment(self.profile.controle, self.options.sensibilidade, stats.dead_zone)
+            self.input.set_segment(
+                self.profile.controle, self.options.sensibilidade, stats.dead_zone, self.options.inverter_vertical
+            )
         else:
-            self.input.configure(self.options.sensibilidade, stats.dead_zone)
+            self.input.configure(self.options.sensibilidade, stats.dead_zone, self.options.inverter_vertical)
 
     def plane_look(self) -> PlaneLook:
         p = self.profile

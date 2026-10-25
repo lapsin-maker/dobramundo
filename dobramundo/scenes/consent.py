@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pygame
 
 from .. import config as C
@@ -31,6 +33,7 @@ class ConsentScene(Scene):
 
     def accept(self) -> None:
         self.app.profile.consentimento = True
+        self.app.profile.consentimento_em = datetime.now().isoformat(timespec="minutes")
         self.app.save()
         self.app.go(self.next_scene)
 

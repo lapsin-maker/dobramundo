@@ -86,11 +86,11 @@ class Button:
         elif self.label:
             if self.icon is None and self.swatch is None:
                 if self.sublabel:
-                    text.blit(screen, self.label, (rect.centerx, rect.centery - 12), self.size, color, True, "center")
+                    text.blit(screen, self.label, (rect.centerx, rect.centery - 10), self.size, color, True, "center")
                     text.blit(
                         screen,
                         self.sublabel,
-                        (rect.centerx, rect.centery + 16),
+                        (rect.centerx, rect.centery + 13),
                         T.SIZES["small"],
                         T.MUTED,
                         anchor="center",
@@ -100,9 +100,9 @@ class Button:
             else:
                 left = content_left if self.swatch is None else rect.left + rect.height + 2
                 if self.sublabel:
-                    text.blit(screen, self.label, (left, rect.centery - 12), self.size, color, True, "midleft")
+                    text.blit(screen, self.label, (left, rect.centery - 10), self.size, color, True, "midleft")
                     text.blit(
-                        screen, self.sublabel, (left, rect.centery + 14), T.SIZES["small"], T.MUTED, anchor="midleft"
+                        screen, self.sublabel, (left, rect.centery + 12), T.SIZES["small"], T.MUTED, anchor="midleft"
                     )
                 else:
                     text.blit(screen, self.label, (left, rect.centery), self.size, color, True, "midleft")

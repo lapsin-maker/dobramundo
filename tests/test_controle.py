@@ -10,6 +10,9 @@ from dobramundo.input.hub import AUTO_PAUSE_S, InputHub
 from dobramundo.input.pose import SEGMENTS, AxisMapper, BodyControl, segment_point
 from dobramundo.ui.widgets import Button, Menu
 
+# leituras suficientes para calibrar (2 s a 30 leituras por segundo, com folga)
+CAL_READINGS = 70
+
 
 def landmarks(points: dict, visibility: float = 0.9):
     data = [(0.5, 0.5, 0.0)] * 33
@@ -55,14 +58,14 @@ def test_tronco_precisa_de_dois_pontos():
 
 def calibrated(segment: str = "tronco_pe") -> AxisMapper:
     mapper = AxisMapper(SEGMENTS[segment])
-    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+    for _ in range(CAL_READINGS):
         mapper.feed((0.5, 0.5))
     return mapper
 
 
 def test_calibracao_usa_a_mediana():
     mapper = AxisMapper(SEGMENTS["cabeca"])
-    for i in range(AxisMapper.CALIBRATION_SAMPLES):
+    for i in range(CAL_READINGS):
         mapper.feed((0.9, 0.9) if i == 3 else (0.5, 0.4))
     assert mapper.base == (0.5, 0.4) and mapper.progress == 1.0
 
@@ -91,7 +94,7 @@ def test_presenca_e_pausa_automatica():
     source = FakeSource()
     hub.source_factory = lambda: source
     hub.set_segment("mao_direita")
-    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+    for _ in range(CAL_READINGS):
         source.show(landmarks({16: (0.5, 0.5)}))
         hub.update(1 / 30)
     assert hub.body_ready and not hub.out_of_area()
@@ -110,7 +113,7 @@ def test_cursor_corporal_cobre_a_tela():
     source = FakeSource()
     hub.source_factory = lambda: source
     hub.set_segment("cabeca")
-    for _ in range(AxisMapper.CALIBRATION_SAMPLES):
+    for _ in range(CAL_READINGS):
         source.show(landmarks({0: (0.5, 0.5), 7: (0.5, 0.5), 8: (0.5, 0.5)}))
         hub.update(1 / 30)
     for _ in range(40):
@@ -164,3 +167,21 @@ def test_botao_desabilitado_nao_aciona():
         menu.update(0.05, (50, 30), 1.0)
     menu.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(50, 30)))
     assert hits == []
+
+
+def test_calibracao_espera_dois_segundos_reais():
+    mapper = AxisMapper(SEGMENTS["tronco_pe"])
+    for _ in range(30):
+        mapper.feed((0.5, 0.5), 0.02)  # câmera rápida: 30 leituras em 0,6 s
+    assert not mapper.calibrated
+    for _ in range(80):
+        mapper.feed((0.5, 0.5), 0.02)
+    assert mapper.calibrated
+
+
+def test_inverter_subir_e_descer():
+    mapper = calibrated()
+    mapper.invert_y = True
+    for _ in range(40):
+        mapper.feed((0.5, 0.3))
+    assert mapper.axes()[1] < -0.9

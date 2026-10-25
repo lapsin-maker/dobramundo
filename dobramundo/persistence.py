@@ -51,12 +51,14 @@ class Options:
     tela_cheia: bool = False
     permanencia: float = 1.2  # segundos parado sobre um botão para selecioná-lo
     sensibilidade: float = 1.0  # alcance do movimento corporal (maior = movimento menor basta)
+    inverter_vertical: bool = False  # câmera vista de cima (chão, mesa): subir e descer trocados
 
 
 @dataclass
 class Profile:
     versao: int = SCHEMA_VERSION
     consentimento: bool = False  # supervisor leu o aviso de uso e privacidade
+    consentimento_em: str = ""  # data e hora (ISO) da confirmação do supervisor
     abertura_vista: bool = False
     modo: str = "normal"
     controle: str = "teclado"

@@ -177,6 +177,9 @@ class FlightScene(Scene):
                     self.banners.append(Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6))
                 else:
                     self.banners.append(Banner(f"Estrela {data}!", "", T.SUN, 2.2, stars=int(data)))
+            elif name == "mission":
+                audio.play("sfx_compra")
+                self.banners.append(Banner("Meta cumprida!", data.text(data.target), T.SUN, 2.4))
             elif name == "complete":
                 audio.play("sfx_fim_fase")
                 self.banners.append(Banner(f"{self.biome.city} solarpunk!", "A cidade se transformou.", T.SUN, 3.0))
@@ -224,6 +227,7 @@ class FlightScene(Scene):
         text.blit(
             screen, f"{mode}   {run.score} pts", (box.right - 16, 75), T.SIZES["small"], T.MUTED, True, "topright"
         )
+        self.draw_mission(screen)
         # vidas e power-ups
         status = pygame.Rect(C.WIDTH - 250, 10, 240, 96)
         T.panel(screen, status, T.PAPER, T.NAVY, 235, 16, 3)
@@ -245,6 +249,17 @@ class FlightScene(Scene):
             T.TEAL if timers else T.MUTED,
             True,
         )
+
+    def draw_mission(self, screen: pygame.Surface) -> None:
+        """Meta curta atual, logo abaixo do painel da transformação."""
+        mission = self.run.missions.text
+        if not mission:
+            return
+        width = self.text.font(T.SIZES["body"], True).size(mission)[0] + 70
+        box = pygame.Rect(10, 112, width, 40)
+        T.panel(screen, box, T.PAPER, T.TEAL, 235, 12, 3)
+        star(screen, (box.left + 22, box.centery), 11, True, T.TEAL)
+        self.text.blit(screen, mission, (box.left + 42, box.centery), T.SIZES["body"], T.INK, True, "midleft")
 
     @staticmethod
     def draw_life(screen: pygame.Surface, center, alive: bool) -> None:

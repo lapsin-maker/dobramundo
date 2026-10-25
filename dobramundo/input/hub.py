@@ -44,7 +44,7 @@ class InputHub:
         self.source_factory = lambda: PoseCameraSource(find_pose_model())
 
     # --------------------------------------------------------- corpo
-    def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
+    def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False) -> None:
         """Troca o segmento de controle (cada troca calibra de novo).
 
         A câmera é uma só e continua aberta entre trocas de segmento: só o mapeamento
@@ -61,12 +61,13 @@ class InputHub:
         if self.source is None:
             self.source = self.source_factory()
             self.source.start()
-        self.body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale)
+        self.body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y)
 
-    def configure(self, sensitivity: float, dead_scale: float) -> None:
+    def configure(self, sensitivity: float, dead_scale: float, invert_y: bool = False) -> None:
         if self.body is not None:
             self.body.mapper.sensitivity = sensitivity
             self.body.mapper.dead_scale = dead_scale
+            self.body.mapper.invert_y = invert_y
 
     def stop_camera(self) -> None:
         """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""

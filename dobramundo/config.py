@@ -58,8 +58,9 @@ REPAIR_RESTORATION = 2.0  # reparo com vidas cheias
 NORMAL_TRASH_EVERY = 4  # Normal: 1 resíduo a cada 4 do Difícil
 NORMAL_TRASH_POINTS = 65  # pontos fixos por resíduo no Normal
 NORMAL_SPEED_FACTOR = 0.5  # Normal: metade da velocidade-base
-# Cada coleta do Normal (4x mais rara, metade da distância por segundo) rende 8x mais.
-NORMAL_RESTORATION_PER_TRASH = RESTORATION_PER_TRASH * NORMAL_TRASH_EVERY / NORMAL_SPEED_FACTOR
+# Cada coleta do Normal é mais rara (1 em 4, à metade da velocidade) e rende bem mais:
+# calibrado para a fase durar o mesmo que no Difícil (ver tools/balance.py).
+NORMAL_RESTORATION_PER_TRASH = 2.24
 HARD_TRASH_POINTS = 15  # Difícil: 15 x combo por resíduo
 COMBO_WINDOW_S = 2.2
 COMBO_STEP = 4  # a cada 4 coletas seguidas o combo sobe
