@@ -713,8 +713,10 @@ class WorldView:
                 self.accessible_canvas = pygame.Surface((C.WIDTH, C.HEIGHT)).convert()
             self._draw_run(self.accessible_canvas, run, look)
             self.viewport = viewport(self.contrast_scale, self.player_rect.center, self.player_rect.size)
-            pygame.transform.smoothscale(self.accessible_canvas.subsurface(self.viewport),
-                                         screen.get_size(), screen)
+            # A ampliação mantém contornos nítidos e evita filtrar o quadro inteiro
+            # outra vez; o fundo já recebeu a suavização de alto contraste.
+            pygame.transform.scale(self.accessible_canvas.subsurface(self.viewport),
+                                   screen.get_size(), screen)
         else:
             self.viewport = pygame.Rect(0, 0, C.WIDTH, C.HEIGHT)
             self._draw_run(screen, run, look)
