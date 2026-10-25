@@ -157,7 +157,7 @@ def build_manifest(generate: bool = True) -> dict:
     }
     if generate:
         payload = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
-        (OUTPUT / "manifest.json").write_text(payload, encoding="utf-8")
+        (OUTPUT / "asset_catalog.json").write_text(payload, encoding="utf-8")
     return manifest
 
 

@@ -12,7 +12,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "assets"
-MANIFEST = ASSET_ROOT / "watercolor_prepared" / "manifest.json"
+MANIFEST = ASSET_ROOT / "watercolor_prepared" / "asset_catalog.json"
 
 
 def sha256(path: Path) -> str:
