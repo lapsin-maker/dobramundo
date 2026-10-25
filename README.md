@@ -4,6 +4,10 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
+## Prévia: mundo em aquarela
+
+Seis paisagens ilustradas de Manaus e Petrolina, vila com obras visíveis, piloto neutro com olhos e dispositivos assistivos personalizáveis, hangar renovado e HUD simplificado. O primeiro acesso leva da personalização à vila; a história fica disponível em Opções. Veja [a implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts dos oito fundos gerados por IA](assets/watercolor/generation.json).
+
 ## Novidades da versão 1.4
 
 - **Papel e aquarela:** a direção de arte segue a logo. Os sprites recebem um filtro de papel (`tools/stylize.py`), com sombreamento em degraus, contorno de tinta azul-marinho e grão de papel, e os cartões das telas têm sombra e textura de papel. As fontes Fredoka, Nunito e Patrick Hand são embutidas no jogo, sob licença OFL.

@@ -57,6 +57,8 @@ class Options:
     controle_posicao: bool = True  # o corpo indica onde o avião fica (não: indica a velocidade)
     momento_foco: bool = True  # câmera lenta guiada perto de uma batida
     efeitos_fortes: bool = True  # clarões e tremor de tela (desligar para sensibilidade sensorial)
+    reduzir_movimento: bool = False  # fundos estáticos e menos movimento decorativo
+    abertura_automatica: bool = False  # avança sozinha a história opcional
     centralizar_sozinho: bool = True  # cabeça e mãos: posição neutra automática, refeita após ausência
     # Calibração do chão (projeção + webcam): onde a câmera vê os 4 alvos projetados
     # (superior esquerdo, superior direito, inferior direito, inferior esquerdo), 0..1.

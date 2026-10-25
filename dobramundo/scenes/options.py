@@ -191,8 +191,16 @@ class OptionsScene(Scene):
             o.efeitos_fortes,
             lambda: self.flip("efeitos_fortes"),
         )
-        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
-        buttons.append(self.button((340, 570, 300, 64), "Ver a abertura", self.intro, key="abertura"))
+        buttons.append(self.button((24, 570, 190, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
+        buttons.append(self.button((220, 570, 220, 64), "Ver a abertura", self.intro, key="abertura"))
+        toggle(
+            446, 570, "movimento", "Movimento reduzido", o.reduzir_movimento,
+            lambda: self.flip("reduzir_movimento"), 310,
+        )
+        toggle(
+            762, 570, "auto_abertura", "Abertura automática", o.abertura_automatica,
+            lambda: self.flip("abertura_automatica"), 314,
+        )
         self.menu.set_buttons(buttons)
 
     # ------------------------------------------------------------ ações

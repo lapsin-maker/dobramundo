@@ -3,6 +3,7 @@ de papel com sombra e grão, e texto em cache."""
 
 from __future__ import annotations
 
+import math
 import random
 from typing import Dict, List, Optional, Tuple
 
@@ -203,6 +204,127 @@ def panel(
 
 
 _veils: Dict[tuple, pygame.Surface] = {}
+
+
+_watercolor_backdrops: Dict[Tuple[Tuple[int, int], str], pygame.Surface] = {}
+
+
+def watercolor_backdrop(screen: pygame.Surface, variant: str = "sky") -> None:
+    """Papel com lavagens amplas, pré-computado uma vez por tamanho e variante."""
+    size = screen.get_size()
+    key = (size, variant)
+    surface = _watercolor_backdrops.get(key)
+    if surface is None:
+        surface = pygame.Surface(size)
+        surface.fill(PAPER)
+        wash = pygame.Surface(size, pygame.SRCALPHA)
+        if variant == "warm":
+            colors = ((ORANGE, (0.04, 0.52, 0.32, 0.30)), (SUN, (0.48, 0.02, 0.30, 0.32)))
+        elif variant == "river":
+            colors = ((TEAL, (0.02, 0.48, 0.42, 0.24)), (NAVY, (0.63, 0.06, 0.36, 0.30)))
+        else:
+            colors = ((TEAL, (0.02, 0.48, 0.36, 0.24)), (SUN, (0.64, 0.05, 0.35, 0.28)))
+        for color, (x, y, w, h) in colors:
+            rect = pygame.Rect(int(size[0] * x), int(size[1] * y), int(size[0] * w), int(size[1] * h))
+            for inset, alpha in ((0, 14), (14, 12), (30, 9)):
+                pygame.draw.ellipse(wash, (*color, alpha), rect.inflate(-inset * 2, -inset * 2))
+        surface.blit(wash, (0, 0))
+        _watercolor_backdrops[key] = surface
+    screen.blit(surface, (0, 0))
+
+
+_icons: Dict[Tuple[str, int, Color], pygame.Surface] = {}
+
+
+def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surface:
+    """Ícone vetorial em papel, cacheado como Surface para uso em botões e cartões."""
+    key = (kind, int(size), color)
+    surface = _icons.get(key)
+    if surface is not None:
+        return surface
+    size = max(20, int(size))
+    surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    cx = cy = size // 2
+    r = size * 0.42
+    pygame.draw.circle(surface, (255, 255, 255, 240), (cx, cy), int(r))
+    pygame.draw.circle(surface, color, (cx, cy), int(r), max(2, size // 24))
+    s = size / 56.0
+
+    def points(values):
+        return [(int(cx + x * s), int(cy + y * s)) for x, y in values]
+
+    ink = color
+    if kind in {"paper", "collect"}:
+        pygame.draw.polygon(surface, (255, 255, 255), points([(-15, -12), (15, -12), (15, 12), (-15, 12)]))
+        pygame.draw.polygon(surface, ink, points([(-15, -12), (15, -12), (15, 12), (-15, 12)]), 3)
+        pygame.draw.line(surface, TEAL, points([(-12, -4)])[0], points([(12, -4)])[0], 2)
+        pygame.draw.line(surface, ORANGE, points([(-12, 3)])[0], points([(8, 3)])[0], 2)
+    elif kind in {"dodge", "desviar", "next"}:
+        pygame.draw.polygon(surface, ink, points([(-17, -6), (4, -6), (4, -15), (19, 0), (4, 15), (4, 6), (-17, 6)]))
+    elif kind in {"portal", "gate"}:
+        pygame.draw.arc(
+            surface,
+            ink,
+            pygame.Rect(cx - int(17 * s), cy - int(17 * s), int(34 * s), int(34 * s)),
+            math.pi,
+            2 * math.pi,
+            max(3, int(5 * s)),
+        )
+        pygame.draw.line(surface, ink, points([(-17, 0)])[0], points([(-17, 15)])[0], max(3, int(5*s)))
+        pygame.draw.line(surface, ink, points([(17, 0)])[0], points([(17, 15)])[0], max(3, int(5*s)))
+        pygame.draw.line(surface, TEAL, points([(-17, 14)])[0], points([(17, 14)])[0], max(2, int(3*s)))
+    elif kind in {"powerup", "shield", "repair"}:
+        pygame.draw.polygon(surface, ink, points([(0, -18), (16, -11), (13, 7), (0, 18), (-13, 7), (-16, -11)]))
+        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 9)])[0], max(2, int(3*s)))
+        if kind == "repair":
+            pygame.draw.line(surface, (255, 255, 255), points([(-8, 0)])[0], points([(8, 0)])[0], max(2, int(3*s)))
+    elif kind in {"stabilizer", "keel", "rudder", "part"}:
+        pygame.draw.polygon(surface, ink, points([(-18, 9), (0, -13), (18, 9), (0, 4)]))
+        pygame.draw.line(surface, (255, 255, 255), points([(0, -10)])[0], points([(0, 8)])[0], max(2, int(3*s)))
+        if kind == "rudder":
+            pygame.draw.polygon(surface, ORANGE, points([(0, 5), (12, -14), (13, 8)]))
+    elif kind in {"star", "reward"}:
+        star_pts = []
+        for i in range(10):
+            angle = -math.pi / 2 + i * math.pi / 5
+            radius = (17 if i % 2 == 0 else 8) * s
+            star_pts.append((int(cx + math.cos(angle) * radius), int(cy + math.sin(angle) * radius)))
+        pygame.draw.polygon(surface, SUN, star_pts)
+        pygame.draw.polygon(surface, ink, star_pts, max(2, size // 28))
+    elif kind == "palette":
+        pygame.draw.ellipse(
+            surface,
+            ink,
+            pygame.Rect(cx - int(17 * s), cy - int(15 * s), int(34 * s), int(30 * s)),
+            max(2, int(3 * s)),
+        )
+        for ox, oy, shade in ((-8, -5, ORANGE), (3, -8, TEAL), (9, 3, SUN), (-4, 8, GREEN)):
+            pygame.draw.circle(surface, shade, (cx + int(ox*s), cy + int(oy*s)), max(2, int(4*s)))
+    elif kind == "pattern":
+        rect = pygame.Rect(cx - int(15 * s), cy - int(15 * s), int(30 * s), int(30 * s))
+        pygame.draw.rect(surface, ink, rect, max(2, int(3 * s)), border_radius=max(2, int(5 * s)))
+        for row in range(3):
+            for col in range(3):
+                if (row + col) % 2 == 0:
+                    tile = pygame.Rect(
+                        rect.left + int((4 + col * 9) * s),
+                        rect.top + int((4 + row * 9) * s),
+                        max(2, int(5 * s)),
+                        max(2, int(5 * s)),
+                    )
+                    pygame.draw.rect(surface, TEAL if row == 1 else ORANGE, tile)
+    elif kind in {"village", "home"}:
+        pygame.draw.polygon(
+            surface,
+            ink,
+            points([(-18, -2), (0, -17), (18, -2), (14, -2), (14, 15), (-14, 15), (-14, -2)]),
+        )
+        pygame.draw.rect(surface, PAPER, pygame.Rect(cx - int(4*s), cy + int(2*s), int(8*s), int(13*s)))
+    else:
+        pygame.draw.polygon(surface, ink, points([(-17, 0), (14, -12), (7, 0), (14, 12)]))
+        pygame.draw.line(surface, PAPER, points([(-3, 0)])[0], points([(2, -1)])[0], max(2, int(2*s)))
+    _icons[key] = surface
+    return surface
 
 
 def veil(screen: pygame.Surface, color: Color = (10, 18, 40), alpha: int = 150) -> None:

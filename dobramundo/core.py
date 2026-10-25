@@ -32,7 +32,7 @@ from .ui.theme import Text
 
 
 def first_scene(app):
-    """Abertura (1ª vez) -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
+    """Piloto (1ª vez) -> aviso ao supervisor -> calibração corporal -> vila."""
     from .scenes import make_scene
 
     scene = make_scene(app, "vila")
@@ -40,8 +40,6 @@ def first_scene(app):
         scene = make_scene(app, "calibracao", return_to=scene)
     if not app.profile.consentimento:
         scene = make_scene(app, "aviso", scene)
-    if not app.profile.abertura_vista:  # a história; depois fica em Opções > "Ver a abertura"
-        scene = make_scene(app, "abertura", scene)
     if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
         scene = make_scene(app, "piloto", first_time=True, return_to=scene)
     return scene
@@ -85,6 +83,7 @@ class GameCore:
     def apply_options(self) -> None:
         self.audio.apply(self.options)
         self.view.high_contrast = self.options.alto_contraste
+        self.view.reduce_motion = self.options.reduzir_movimento
         stats = plane_stats(self.profile.pecas)
         o = self.options
         self.input.position_control = o.controle_posicao
@@ -123,10 +122,12 @@ class GameCore:
             self.backdrop_world = world
         if restoration is not None and abs(world.restoration - restoration) > 0.5:
             world.set_restoration(restoration)
-        world.advance(dt, 90.0 * dt)
-        self.backdrop_time += dt
+        motion_dt = 0.0 if self.options.reduzir_movimento else dt
+        world.advance(motion_dt, 90.0 * motion_dt)
+        self.backdrop_time += motion_dt
         self.view.mode = self.profile.modo
-        self.view.background(screen, world, math.sin(self.backdrop_time * 0.2) * 60.0)
+        camera = 0.0 if self.options.reduzir_movimento else math.sin(self.backdrop_time * 0.2) * 60.0
+        self.view.background(screen, world, camera)
 
     # ------------------------------------------------------------- cenas
     def go(self, scene) -> None:

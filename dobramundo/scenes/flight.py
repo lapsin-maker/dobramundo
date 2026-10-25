@@ -100,7 +100,7 @@ class FlightScene(Scene):
         if not self.paused:
             self.menu.set_buttons([])
             return
-        rects = row(pygame.Rect(C.WIDTH // 2 - 390, 400, 780, 76), 3)
+        rects = row(pygame.Rect(C.WIDTH // 2 - 390, 500, 780, 70), 3)
         buttons = [
             self.button(rects[0], texts.UI["continuar"], self.resume),
             self.button(rects[1], "Recalibrar", self.recalibrate, enabled=self.app.input.uses_body),
@@ -193,7 +193,7 @@ class FlightScene(Scene):
                 audio.play("sfx_escudo_fim")
             elif name == "hit":
                 audio.play("sfx_colisao")
-                if self.app.options.efeitos_fortes:
+                if self.app.options.efeitos_fortes and not self.app.options.reduzir_movimento:
                     self.shake = C.HIT_SHAKE_S
             elif name in FOCUS_SOUNDS:
                 audio.play(FOCUS_SOUNDS[name])
@@ -206,7 +206,7 @@ class FlightScene(Scene):
                 self.banners.append(Banner(texts.STAGE_NAMES[int(data)], texts.STAGE_MESSAGES[int(data)], T.SUN, 3.4))
             elif name == "star":
                 audio.play("sfx_estrela")
-                self.flash = 0.6 if self.app.options.efeitos_fortes else 0.0
+                self.flash = 0.6 if self.app.options.efeitos_fortes and not self.app.options.reduzir_movimento else 0.0
                 if data == 2 and not parts_ok(self.biome.required_parts, self.run.parts):
                     need = ", ".join(PART_BY_KEY[k].name for k in self.biome.required_parts)
                     self.banners.append(Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6))
@@ -224,7 +224,7 @@ class FlightScene(Scene):
     def draw(self, screen: pygame.Surface) -> None:
         view = self.app.view
         view.draw_run(screen, self.run, self.look)
-        strong = self.app.options.efeitos_fortes
+        strong = self.app.options.efeitos_fortes and not self.app.options.reduzir_movimento
         if self.shake > 0:
             # tremor só do cenário (o HUD fica parado e legível)
             amount = 9.0 * self.shake / C.HIT_SHAKE_S
@@ -245,53 +245,47 @@ class FlightScene(Scene):
         run = self.run
         text = self.text
         accent = self.biome.stages[run.stage].accent
-        box = pygame.Rect(10, 10, 500, 84)
-        T.panel(screen, box, T.PAPER, T.NAVY, 225, 16, 3)
-        text.blit(screen, f"{self.biome.city}: {texts.STAGE_NAMES[run.stage]}", (24, 14), T.SIZES["body"], T.NAVY, True)
-        text.blit(screen, f"{int(run.restoration)}%", (box.right - 14, 14), T.SIZES["body"], T.INK, True, "topright")
-        bar = pygame.Rect(24, 42, box.width - 28, 14)
-        pygame.draw.rect(screen, (210, 202, 186), bar, border_radius=8)
+        box = pygame.Rect(18, 14, 444, 70)
+        T.panel(screen, box, T.PAPER, T.NAVY, 238, 16, 2)
+        text.blit(
+            screen,
+            f"{self.biome.city} · {texts.STAGE_NAMES[run.stage]}",
+            (32, 19),
+            T.SIZES["body"],
+            T.NAVY,
+            True,
+        )
+        text.blit(screen, f"{int(run.restoration)}%", (box.right - 14, 19), T.SIZES["body"], T.INK, True, "topright")
+        bar = pygame.Rect(32, 52, box.width - 30, 14)
+        pygame.draw.rect(screen, (220, 213, 195), bar, border_radius=8)
         fill = bar.copy()
         fill.width = int(bar.width * run.restoration / 100.0)
         pygame.draw.rect(screen, lerp_color(accent, T.GREEN, 0.3), fill, border_radius=8)
         for limit in STAR_THRESHOLDS:
             x = bar.left + int(bar.width * limit / 100.0) - (8 if limit >= 100 else 0)
             star(
-                screen, (x, bar.centery), 12, run.restoration >= limit - 1e-6 and (limit < 100 or run.stars >= 3), T.SUN
+                screen, (x, bar.centery), 11, run.restoration >= limit - 1e-6 and (limit < 100 or run.stars >= 3), T.SUN
             )
-        # recursos do voo
-        x = 24
-        for waste in WASTE_TYPES:
-            pygame.draw.circle(screen, waste.color, (x + 8, 70), 8)
-            pygame.draw.circle(screen, T.INK, (x + 8, 70), 8, 2)
-            rect = text.blit(screen, str(run.resources.get(waste.key, 0)), (x + 20, 60), T.SIZES["body"], T.INK, True)
-            x = rect.right + 14
-        mode = "Normal" if run.mode == "normal" else f"Difícil  combo x{run.combo}"
-        text.blit(
-            screen, f"{mode}   {run.score} pts", (box.right - 14, 62), T.SIZES["small"], T.MUTED, True, "topright"
-        )
         self.draw_mission(screen)
-        # vidas e power-ups
-        status = pygame.Rect(C.WIDTH - 230, 10, 220, 84)
-        T.panel(screen, status, T.PAPER, T.NAVY, 225, 16, 3)
-        text.blit(screen, texts.UI["vidas"], (status.left + 14, 14), T.SIZES["body"], T.NAVY, True)
+        status = pygame.Rect(C.WIDTH - 164, 14, 146, 70)
+        T.panel(screen, status, T.PAPER, T.NAVY, 238, 16, 2)
         for i in range(C.MAX_LIVES):
-            self.draw_life(screen, (status.left + 94 + i * 40, 26), i < run.lives)
-        timers = []
-        if run.shield_timer > 0:
-            timers.append(f"Escudo {math.ceil(run.shield_timer)}s")
-        if run.magnet_timer > 0:
-            timers.append(f"Ímã {math.ceil(run.magnet_timer)}s")
-        if run.invincible:
-            timers.append("demonstração")
-        text.blit(
-            screen,
-            "   ".join(timers) or "P: pausa",
-            (status.left + 14, 56),
-            T.SIZES["body"],
-            T.TEAL if timers else T.MUTED,
-            True,
-        )
+            self.draw_life(screen, (status.left + 32 + i * 41, 48), i < run.lives)
+        if run.shield_timer > 0 or run.magnet_timer > 0:
+            active = "shield" if run.shield_timer > 0 else "powerup"
+            screen.blit(T.icon_surface(active, 30, T.TEAL), (status.left + 56, status.bottom + 4))
+            seconds = math.ceil(max(run.shield_timer, run.magnet_timer))
+            text.blit(screen, f"{seconds}s", (status.left + 92, status.bottom + 7), T.SIZES["small"], T.TEAL, True)
+        elif run.invincible:
+            text.blit(
+                screen,
+                "DEMO",
+                status.midbottom + pygame.Vector2(0, 4),
+                T.SIZES["small"],
+                T.MUTED,
+                True,
+                "midtop",
+            )
 
     def draw_focus(self, screen: pygame.Surface) -> None:
         """Seta do momento de foco junto do avião, pedido em letras grandes e tempo que resta."""
@@ -313,7 +307,7 @@ class FlightScene(Scene):
             )
             return
         dx, dy = ARROW_VECTORS[focus.direction]
-        pulse = 1.0 + 0.08 * math.sin(self.time * 16.0)
+        pulse = 1.0 if self.app.options.reduzir_movimento else 1.0 + 0.08 * math.sin(self.time * 16.0)
         self.draw_arrow(screen, (sx + dx * 130, sy + dy * 110), (dx, dy), 62 * pulse)
         prompt = texts.FOCUS_PROMPTS[focus.direction]
         width = max(340, self.text.font(T.SIZES["hero"], True).size(prompt)[0] + 60)
@@ -351,15 +345,31 @@ class FlightScene(Scene):
         pygame.draw.polygon(screen, T.NAVY, points, 5)
 
     def draw_mission(self, screen: pygame.Surface) -> None:
-        """Meta curta atual, logo abaixo do painel da transformação."""
-        mission = self.run.missions.text
-        if not mission:
+        """Meta pictográfica com texto auxiliar; mantém a instrução completa disponível."""
+        mission = self.run.missions.current
+        if mission is None:
             return
-        width = self.text.font(T.SIZES["body"], True).size(mission)[0] + 70
-        box = pygame.Rect(10, 100, width, 38)
-        T.panel(screen, box, T.PAPER, T.TEAL, 225, 12, 3)
-        star(screen, (box.left + 22, box.centery), 11, True, T.TEAL)
-        self.text.blit(screen, mission, (box.left + 42, box.centery), T.SIZES["body"], T.INK, True, "midleft")
+        width = 365
+        box = pygame.Rect(18, 94, width, 58)
+        T.panel(screen, box, T.PAPER, T.TEAL, 240, 15, 2)
+        waste = next((item for item in WASTE_TYPES if item.key == mission.waste), None)
+        icon = self.app.assets.sprite("waste_sprites", waste.sprite) if waste else None
+        if icon is None:
+            kind = {"desviar": "dodge", "portal": "portal", "powerup": "powerup"}.get(mission.kind, "collect")
+            icon = T.icon_surface(kind, 44, T.TEAL)
+        else:
+            icon = self.scaled(icon, (44, 44), ("mission", mission.waste))
+        screen.blit(icon, icon.get_rect(center=(box.left + 34, box.centery)))
+        self.text.blit(
+            screen,
+            f"{self.run.missions.progress}/{mission.target}",
+            (box.left + 66, box.top + 6),
+            T.SIZES["label"],
+            T.NAVY,
+            True,
+        )
+        instruction = mission.text(0).split(" (")[0]
+        self.text.blit(screen, instruction, (box.left + 68, box.top + 34), T.SIZES["small"], T.INK, True)
 
     @staticmethod
     def draw_life(screen: pygame.Surface, center, alive: bool) -> None:
@@ -419,7 +429,7 @@ class FlightScene(Scene):
 
     def draw_pause(self, screen: pygame.Surface) -> None:
         T.veil(screen, (10, 18, 40), 170)
-        card = pygame.Rect(C.WIDTH // 2 - 420, 150, 840, 350)
+        card = pygame.Rect(C.WIDTH // 2 - 420, 82, 840, 520)
         T.panel(screen, card, T.PAPER, T.NAVY, 250, 22, 4)
         if self.auto_paused:
             title = "Pausa automática"
@@ -431,10 +441,40 @@ class FlightScene(Scene):
         else:
             title = texts.UI["pausado"]
             sub = "O voo está pausado. Respire, alongue-se e continue quando quiser."
-        self.text.blit(screen, title, (card.centerx, card.top + 40), T.SIZES["hero"], T.NAVY, True, "midtop")
+        self.text.blit(screen, title, (card.centerx, card.top + 28), T.SIZES["hero"], T.NAVY, True, "midtop")
         self.text.paragraph(
-            screen, sub, pygame.Rect(card.left + 60, card.top + 120, card.width - 120, 80), T.SIZES["label"], T.INK
+            screen, sub, pygame.Rect(card.left + 60, card.top + 100, card.width - 120, 76), T.SIZES["label"], T.INK
         )
         tip = texts.TIPS[int(self.time // 6) % len(texts.TIPS)]
-        self.text.blit(screen, tip, (card.centerx, card.top + 206), T.SIZES["body"], T.MUTED, anchor="midtop")
+        self.text.blit(screen, tip, (card.centerx, card.top + 200), T.SIZES["body"], T.MUTED, anchor="midtop")
+        self.draw_pause_rewards(screen, card)
         self.draw_menu(screen)
+
+    def draw_pause_rewards(self, screen: pygame.Surface, card: pygame.Rect) -> None:
+        """Recursos e pontos saem do HUD em voo e ficam disponíveis na pausa."""
+        x = card.left + 62
+        y = card.top + 290
+        for waste in WASTE_TYPES:
+            icon = self.app.assets.sprite("waste_sprites", waste.sprite)
+            if icon is not None:
+                screen.blit(self.scaled(icon, (30, 30), ("pause_waste", waste.key)), (x, y))
+            else:
+                pygame.draw.circle(screen, waste.color, (x + 14, y + 14), 11)
+            self.text.blit(
+                screen,
+                str(self.run.resources.get(waste.key, 0)),
+                (x + 34, y + 3),
+                T.SIZES["body"],
+                T.INK,
+                True,
+            )
+            x += 132
+        self.text.blit(
+            screen,
+            f"{self.run.score} pontos",
+            (card.right - 58, y + 3),
+            T.SIZES["body"],
+            T.NAVY,
+            True,
+            "topright",
+        )

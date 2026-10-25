@@ -79,9 +79,26 @@ class IntroScene(Scene):
         self.layer: Optional[pygame.Surface] = None
         self.mask: Optional[pygame.Surface] = None
         self.trail: List[Tuple[float, float]] = []
+        self._button_page = -1
+        self._manual_page = 0
 
     def build(self) -> None:
-        self.menu.set_buttons([self.button((C.WIDTH - 190, 20, 170, 56), "Pular", self.finish, key="pular")])
+        page = self.page()[0]
+        last_page = page >= len(PAGES) - 1
+        self.menu.set_buttons(
+            [
+                self.button(
+                    (C.WIDTH - 338, 18, 158, 52),
+                    "Concluir" if last_page else "Próxima",
+                    self.advance_page,
+                    key="proxima",
+                    size=T.SIZES["body"],
+                    icon=T.icon_surface("next", 28, T.NAVY),
+                ),
+                self.button((C.WIDTH - 170, 18, 146, 52), "Pular", self.finish, key="pular", size=T.SIZES["body"]),
+            ]
+        )
+        self._button_page = page
 
     def finish(self) -> None:
         self.app.profile.abertura_vista = True
@@ -94,21 +111,50 @@ class IntroScene(Scene):
     def back(self) -> None:
         self.finish()
 
-    def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN) and event.dict.get("key") not in (
-            pygame.K_LEFT,
-            pygame.K_RIGHT,
-            pygame.K_UP,
-            pygame.K_DOWN,
-        ):
+    def advance_page(self) -> None:
+        if self._manual_page >= len(PAGES) - 1:
             self.finish()
+            return
+        self._manual_page += 1
+        self.time = sum(PAGES[: self._manual_page]) + 0.001
+        self.build()
+
+    def previous_page(self) -> None:
+        if self._manual_page > 0:
+            self._manual_page -= 1
+            self.time = sum(PAGES[: self._manual_page]) + 0.001
+            self.build()
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_RIGHT, pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
+                self.advance_page()
+                return
+            if event.key == pygame.K_LEFT:
+                self.previous_page()
+                return
+            if event.key == pygame.K_ESCAPE:
+                self.finish()
+                return
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.menu.handle_event(event):
+                self.app.audio.play("sfx_selecao")
+            else:
+                self.advance_page()
             return
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        if self.time >= sum(PAGES) + 0.8:
+        automatic = self.app.options.abertura_automatica
+        if not automatic:
+            turn_allowance = TURN_S if self._manual_page < len(PAGES) - 1 else 0.0
+            max_time = sum(PAGES[: self._manual_page + 1]) - turn_allowance - 0.001
+            self.time = min(self.time, max_time)
+        elif self.time >= sum(PAGES) + 0.8:
             self.finish()
+        if self.page()[0] != self._button_page:
+            self.build()
 
     # ------------------------------------------------------------ páginas
     def page(self) -> Tuple[int, float, float]:
@@ -195,7 +241,8 @@ class IntroScene(Scene):
 
     def draw(self, screen: pygame.Surface) -> None:
         page, t, turn = self.page()
-        elapsed_total = self.time
+        reduced_motion = self.app.options.reduzir_movimento
+        elapsed_total = 0.0 if reduced_motion else self.time
         # fundo: a cidade poluída até a última página, em que ela ganha cor
         if page == 3:
             restoration = lerp(5.0, 95.0, smoothstep((t - 1.0) / 3.2))
@@ -267,9 +314,10 @@ class IntroScene(Scene):
                 width = int(lerp(260, 60, u)) // 4 * 4
                 img = self.scaled(plane, (width, width), ("abertura_aviao", width))
                 screen.blit(img, img.get_rect(center=(int(x), int(y))))
-            paper.sparkles(
-                screen, pygame.Rect(0, 80, C.WIDTH, 400), elapsed_total, clamp((t - 1.5) / 2.0, 0.0, 1.0), T.SUN
-            )
+            if not reduced_motion:
+                paper.sparkles(
+                    screen, pygame.Rect(0, 80, C.WIDTH, 400), elapsed_total, clamp((t - 1.5) / 2.0, 0.0, 1.0), T.SUN
+                )
             self.caption(screen, texts.INTRO_CAPTIONS[4] if t > 2.4 else texts.INTRO_CAPTIONS[3])
             if t > 2.6:
                 logo = self.app.assets.sprite("ui", "logo")

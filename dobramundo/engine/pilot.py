@@ -1,14 +1,9 @@
-"""Piloto em camadas, montado sobre o avião.
+"""Renderer 2D do piloto e encaixe no avião.
 
-assets/pilot_layers/<vista>__<camada>.png, geradas por tools/build_assets.py:
-    skin, shirt          tons de cinza; recebem a cor escolhida (multiplicação)
-    base                 calça, tênis, olhos (cor fixa)
-    hair_<estilo>        cinza; recebe a cor do cabelo
-    glasses_<estilo>, acc_<estilo>, hearing, chair     cor fixa
-Cada camada opcional guarda só os pixels visíveis na cena completa, então a
-ordem de desenho (base -> opcionais) já resolve o que fica na frente.
-anchors.json: por vista e avião, a caixa [x0, y0, x1, y1] (em pixels do sprite
-"__none") onde o piloto senta; y0 negativo = o piloto passa do topo do sprite.
+O personagem agora usa formas de papel procedurais; anchors.json continua vindo
+de assets/pilot_layers e mantém a posição por modelo de avião. As PNGs legadas
+seguem disponíveis para compatibilidade de conteúdo/build, mas não são necessárias
+para renderizar o piloto novo.
 """
 
 from __future__ import annotations
@@ -17,9 +12,10 @@ from typing import Optional, Tuple
 
 import pygame
 
-from ..content.pilot import ACCESSORIES, GLASSES, HAIR_COLORS, SHIRT_COLORS, SKIN_TONES, find_option, normalize_pilot
+from ..content.pilot import normalize_pilot
 from .assets import Assets
 from .cache import BoundedCache
+from .paper_pilot import draw_pilot
 
 FOLDER = "pilot_layers"
 INK = (29, 36, 51)
@@ -55,41 +51,13 @@ class PilotRenderer:
         return self.assets.folder(FOLDER).get(f"{view}__{name}")
 
     def compose(self, view: str, look: dict) -> Optional[pygame.Surface]:
-        """Piloto completo da vista, com as cores escolhidas (em cache por aparência)."""
+        """Piloto 2D de papel, independente das antigas camadas low-poly."""
         look = normalize_pilot(look)
         key = (view, tuple(sorted(look.items())))
         cached = self.cache.get(key)
         if cached is not None:
             return cached
-        hijab = look["cabelo"] == "hijab"
-        skin = (self.layer(view, "skin_hijab") if hijab else None) or self.layer(view, "skin")
-        if skin is None:
-            return None
-        canvas = pygame.Surface(skin.get_size(), pygame.SRCALPHA)
-        wheelchair = look["cadeira"] == "sim"
-        hair_color = find_option(HAIR_COLORS, look["cor_cabelo"]).color
-        parts = [
-            (skin, find_option(SKIN_TONES, look["pele"]).color),
-            (self.layer(view, "base"), None),
-            (self.layer(view, "shirt"), find_option(SHIRT_COLORS, look["roupa"]).color),
-        ]
-        if hijab:
-            parts.append((self.layer(view, "hijab"), hair_color))  # a "cor do cabelo" vira a cor do lenço
-        elif look["cabelo"] != "raspado":
-            parts.append((self.layer(view, f"hair_{look['cabelo']}"), hair_color))
-        if look["aparelho"] == "sim":
-            parts.append((self.layer(view, "hearing"), None))
-        if find_option(GLASSES, look["oculos"]).key != "nenhum":
-            parts.append((self.layer(view, f"glasses_{look['oculos']}"), None))
-        if find_option(ACCESSORIES, look["acessorio"]).key != "nenhum":
-            parts.append((self.layer(view, f"acc_{look['acessorio']}"), None))
-        if wheelchair:
-            parts.append((self.layer(view, "chair"), None))
-        for surface, color in parts:
-            if surface is None:
-                continue
-            canvas.blit(tinted(surface, color) if color is not None else surface, (0, 0))
-        canvas = ink_outline(canvas)
+        canvas = draw_pilot(view, look)
         self.cache[key] = canvas
         return canvas
 

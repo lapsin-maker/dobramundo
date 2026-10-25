@@ -54,6 +54,19 @@ def test_perfil_ida_e_volta(data_dir):
     assert loaded.estrelas == {"amazonia": 2} and loaded.opcoes.alto_contraste
 
 
+def test_opcoes_novas_migram_e_persistem(data_dir):
+    # Saves anteriores não têm essas chaves; os defaults mantêm o comportamento atual.
+    old = Profile.from_dict({"opcoes": {"alto_contraste": True}})
+    assert not old.opcoes.reduzir_movimento
+    assert not old.opcoes.abertura_automatica
+
+    old.opcoes.reduzir_movimento = True
+    old.opcoes.abertura_automatica = True
+    loaded = Profile.from_dict(old.to_dict())
+    assert loaded.opcoes.reduzir_movimento
+    assert loaded.opcoes.abertura_automatica
+
+
 def test_perfil_corrompido_ou_invalido_vira_padrao(data_dir):
     profile_path().write_text("{nao e json", encoding="utf-8")
     assert load_profile().recursos == Profile().recursos

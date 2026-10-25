@@ -71,15 +71,25 @@ def test_alto_contraste_e_espelhamento_desenham(app):
     assert app.to_logical((0, 0)) == (0, C.HEIGHT - 1)
 
 
+def test_movimento_reduzido_aplica_no_view_e_fixa_o_fundo(app):
+    app.options.reduzir_movimento = True
+    app.apply_options()
+    assert app.view.reduce_motion
+    before = app.backdrop_time
+    app.backdrop(app.canvas, 1 / 60)
+    assert app.backdrop_time == before
+
+
 def test_inicio_passa_pelo_aviso_na_primeira_vez(app):
     app.profile.consentimento = False
     app.profile.piloto_montado = True
-    intro = first_scene(app)
-    assert isinstance(intro, IntroScene) and isinstance(intro.next_scene, ConsentScene)
+    consent = first_scene(app)
+    assert isinstance(consent, ConsentScene)
+    assert isinstance(consent.next_scene, VillageScene)
 
 
 def test_a_primeira_tela_e_montar_o_piloto(app):
-    """Piloto (1ª vez) -> abertura -> aviso -> vila: a criança monta o personagem da história."""
+    """Piloto (1ª vez) -> aviso -> vila; a história fica opcional nas opções."""
     from dobramundo.scenes.pilot import PilotScene
 
     app.profile.consentimento = False
@@ -87,11 +97,18 @@ def test_a_primeira_tela_e_montar_o_piloto(app):
     app.profile.abertura_vista = False
     first = first_scene(app)
     assert isinstance(first, PilotScene) and first.first_time
-    assert isinstance(first.return_to, IntroScene)
-    assert isinstance(first.return_to.next_scene, ConsentScene)
+    assert isinstance(first.return_to, ConsentScene)
+    assert isinstance(first.return_to.next_scene, VillageScene)
     first.finish()
     assert app.profile.piloto_montado
     assert app.next_scene is first.return_to
+
+
+def test_historia_nao_bloqueia_primeiro_uso(app):
+    app.profile.piloto_montado = True
+    app.profile.consentimento = True
+    app.profile.abertura_vista = False
+    assert isinstance(first_scene(app), VillageScene)
 
 
 def test_comprar_melhoria_da_vila_desconta_recursos(app):

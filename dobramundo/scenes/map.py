@@ -13,6 +13,7 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..content.biomes import BIOME_MAP_COLORS, BIOME_ORDER, BIOMES, LOCKED_BIOMES
+from ..content.progress import PLANE_PARTS
 from ..ui import theme as T
 from ..ui.widgets import star
 from .base import Scene
@@ -167,11 +168,11 @@ def brazil_map() -> pygame.Surface:
 
 
 MODE_CARDS = (
-    ("normal", "Normal", "Mais calmo", T.GREEN, 1),
-    ("dificil", "Difícil", "Mais rápido + combo", T.ORANGE, 3),
+    ("normal", "Normal", "Ritmo calmo", T.GREEN, 1),
+    ("dificil", "Difícil", "Ritmo rápido", T.ORANGE, 3),
 )
-MODE_TOP = 122  # cartões de dificuldade no alto da coluna: a primeira escolha
-CITY_TOP = 246
+MODE_TOP = 92
+CITY_RECTS = (pygame.Rect(635, 260, 440, 100), pygame.Rect(635, 420, 440, 100))
 
 
 class MapScene(Scene):
@@ -182,34 +183,29 @@ class MapScene(Scene):
         for i, (mode, label, sub, color, _) in enumerate(MODE_CARDS):
             buttons.append(
                 self.button(
-                    (640 + i * 215, MODE_TOP, 205, 108),
+                    (640 + i * 225, MODE_TOP, 165, 100),
                     label,
                     (lambda m=mode: self.set_mode(m)),
                     sublabel=sub if profile.modo != mode else "Escolhido",
                     selected=profile.modo == mode,
                     color=color,
-                    size=T.SIZES["title"],
+                    size=T.SIZES["label"],
                     key=f"modo_{mode}",
-                    align="top",
                 )
             )
         for i, key in enumerate(BIOME_ORDER):
-            biome = BIOMES[key]
             unlocked = profile.unlocked(key)
-            stars = profile.estrelas.get(key, 0)
-            sub = f"{biome.name}   •   {stars}/3 estrelas" if unlocked else "Ganhe 1 estrela na fase anterior"
             buttons.append(
                 self.button(
-                    (640, CITY_TOP + i * 98, 420, 88),
-                    biome.city,
+                    CITY_RECTS[i],
+                    "",
                     (lambda k=key: self.start(k)),
-                    sublabel=sub,
                     enabled=unlocked,
                     key=key,
                     color=BIOME_MAP_COLORS[key],
                 )
             )
-        buttons.append(self.button((640, 560, 420, 70), texts.UI["voltar"], lambda: self.goto("vila")))
+        buttons.append(self.button((40, 560, 210, 66), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         self.menu.set_buttons(buttons)
 
     def set_mode(self, mode: str) -> None:
@@ -237,29 +233,76 @@ class MapScene(Scene):
             self.text.blit(screen, biome.city, (x + 18, y - 14), T.SIZES["label"], T.NAVY_DARK, True)
             for i in range(3):
                 star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
-        self.title(screen, "Mapa dos biomas", "Escolha a cidade do próximo voo")
-        self.text.blit(screen, "Como você quer voar?", (642, 82), T.SIZES["label"], T.WHITE, True)
-        legend_y = 446
-        T.panel(screen, pygame.Rect(640, legend_y, 420, 104), T.PAPER, T.NAVY, 235, 16, 2)
-        self.text.blit(screen, "Em breve:", (656, legend_y + 8), T.SIZES["body"], T.MUTED, True)
+        self.title(screen, "Mapa dos biomas", "Escolha o destino e o ritmo do voo")
+        self.text.blit(screen, "Ritmo", (642, 68), T.SIZES["small"], T.WHITE, True)
+        self.menu.draw(screen, self.text, self.app.options.permanencia)
+        for key_city in BIOME_ORDER:
+            biome = BIOMES[key_city]
+            button = next(b for b in self.menu.buttons if b.key == key_city)
+            rect = button.rect
+            sprite_name = "amazonia_2" if key_city == "amazonia" else "caatinga_2"
+            art = self.app.assets.sprite("watercolor", sprite_name)
+            if art is not None:
+                image = self.scaled(art, (156, 88), ("map-card", sprite_name))
+                screen.blit(image, image.get_rect(midleft=(rect.left + 8, rect.centery)))
+            else:
+                pygame.draw.rect(
+                    screen,
+                    BIOME_MAP_COLORS[key_city],
+                    pygame.Rect(rect.left + 12, rect.top + 14, 140, 72),
+                    border_radius=14,
+                )
+            color = T.NAVY if button.enabled else T.MUTED
+            self.text.blit(
+                screen, biome.city, (rect.left + 178, rect.top + 14), T.SIZES["label"], color, True, "topleft"
+            )
+            self.text.blit(
+                screen, biome.name, (rect.left + 178, rect.top + 52), T.SIZES["small"], color, anchor="topleft"
+            )
+            for star_index in range(3):
+                star(
+                    screen,
+                    (rect.right - 92 + star_index * 25, rect.top + 27),
+                    10,
+                    star_index < self.app.profile.estrelas.get(key_city, 0),
+                )
+            if not button.enabled:
+                self.text.paragraph(
+                    screen,
+                    "Ganhe 1 estrela na fase anterior",
+                    pygame.Rect(rect.left + 178, rect.top + 74, rect.width - 190, 38),
+                    T.SIZES["small"],
+                    T.RED,
+                    spacing=1.05,
+                    bold=True,
+                )
+            elif biome.required_parts:
+                part_names = {part.key: part.name for part in PLANE_PARTS}
+                requirement = ", ".join(
+                    f"{part_names.get(part, part)} {level}" for part, level in biome.required_parts.items()
+                )
+                self.text.paragraph(
+                    screen,
+                    f"3ª estrela: {requirement}",
+                    pygame.Rect(rect.left + 178, rect.top + 74, rect.width - 190, 38),
+                    T.SIZES["small"],
+                    T.MUTED,
+                    spacing=1.05,
+                )
+        # Os biomas futuros ficam em duas colunas dentro de um painel legível.
+        legend = pygame.Rect(635, 530, 440, 94)
+        T.panel(screen, legend, T.PAPER, T.NAVY, 242, 14, 2)
+        self.text.blit(screen, "Outros biomas", (650, 536), T.SIZES["small"], T.NAVY, True)
         for i, locked in enumerate(LOCKED_BIOMES):
-            cx = 666 + (i % 2) * 200
-            cy = legend_y + 46 + (i // 2) * 34
-            pygame.draw.circle(screen, locked.color, (cx, cy), 10)
-            self.text.blit(screen, locked.name, (cx + 18, cy - 12), T.SIZES["body"], T.INK)
-        self.draw_menu(screen)
+            col, row = i % 2, i // 2
+            cx = 654 + col * 210
+            cy = 563 + row * 29
+            pygame.draw.circle(screen, locked.color, (cx, cy + 8), 7)
+            self.text.blit(screen, locked.name, (cx + 14, cy), T.SIZES["small"], T.INK, True)
         for mode, _, _, color, arrows in MODE_CARDS:
             button = next(b for b in self.menu.buttons if b.key == f"modo_{mode}")
             for k in range(arrows):  # setas de velocidade: 1 no Normal, 3 no Difícil
                 x = button.rect.centerx - arrows * 11 + k * 22
-                y = button.rect.bottom - 26
+                y = button.rect.bottom - 18
                 pygame.draw.polygon(screen, color, [(x, y - 10), (x + 14, y), (x, y + 10)])
-        for button in self.menu.buttons:
-            if button.key in BIOMES and button.enabled:
-                for i in range(3):
-                    star(
-                        screen,
-                        (button.rect.right - 80 + i * 26, button.rect.top + 22),
-                        10,
-                        i < self.app.profile.estrelas.get(button.key, 0),
-                    )
+        self.menu.draw_pointer(screen, self.app.options.permanencia, self.app.input.body_pointer() is not None)

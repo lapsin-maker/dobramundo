@@ -49,6 +49,9 @@ class Scene:
         self.time = 0.0
         self.last_dt = 1.0 / C.FPS  # dt do último quadro (o cenário de fundo anda com ele)
         self.toast = Toast()
+        # Cache de fundo aquarelado usado pela vila e pelo painel de melhorias.
+        self.watercolor_backgrounds = {}
+        self.watercolor_mix: Optional[pygame.Surface] = None
         self.menu.on_focus = lambda: app.audio.play("sfx_foco", 0.5)  # tique suave ao mirar um botão
 
     # ----------------------------------------------------------- ciclo

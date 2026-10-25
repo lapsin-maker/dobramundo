@@ -9,7 +9,7 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..content.items import WASTE_TYPES
-from ..content.progress import PART_BY_KEY, parts_ok
+from ..content.progress import PART_BY_KEY, VILLAGE_UPGRADES, missing
 from ..game.run import FlightRun
 from ..ui import theme as T
 from ..ui.widgets import row, star
@@ -78,69 +78,156 @@ class ResultScene(Scene):
 
     def draw(self, screen: pygame.Surface) -> None:
         run = self.run
-        self.app.backdrop(screen, self.last_dt, run.biome.key, min(100.0, run.restoration))
-        T.veil(screen, (10, 18, 40), 120)
-        card = pygame.Rect(C.WIDTH // 2 - 440, 40, 880, 490)
-        T.panel(screen, card, T.PAPER, T.NAVY, 248, 24, 4)
+        T.watercolor_backdrop(screen, "river" if run.biome.river else "warm")
+        card = pygame.Rect(34, 18, C.WIDTH - 68, 520)
+        T.panel(screen, card, T.PAPER, T.NAVY, 250, 24, 3)
         if run.complete:
-            title = f"{run.biome.city} virou cidade solarpunk!"
+            title = f"{run.biome.city} floresceu!"
         elif run.game_over:
-            title = "O avião precisa de reparos"
+            title = "Seu avião precisa de reparos"
         else:
-            title = texts.UI["fim_de_fase"]
-        self.text.blit(screen, title, (card.centerx, card.top + 22), T.SIZES["title"], T.NAVY, True, "midtop")
-        # estrelas surgem uma a uma
-        shown = min(run.stars, int(self.time / 0.5))
+            title = "Bom voo!"
+        self.text.blit(
+            screen,
+            title,
+            (card.centerx, card.top + 12),
+            T.SIZES["title"],
+            T.NAVY,
+            True,
+            "midtop",
+        )
+        shown = min(run.stars, int(self.time / 0.42))
         for i in range(3):
-            star(screen, (card.centerx - 110 + i * 110, card.top + 128), 44, i < shown)
-        if run.complete and run.stars < 3 and not parts_ok(run.biome.required_parts, run.parts):
-            need = ", ".join(PART_BY_KEY[k].name for k in run.biome.required_parts)
+            star(screen, (card.centerx - 82 + i * 82, card.top + 89), 32, i < shown)
+        if self.summary["new_stars"]:
             self.text.blit(
                 screen,
-                f"Para a 3ª estrela aqui, instale no avião: {need}",
-                (card.centerx, card.top + 182),
+                "Nova conquista!",
+                (card.centerx, card.top + 126),
                 T.SIZES["body"],
-                T.RED,
+                T.ORANGE,
                 True,
                 "midtop",
             )
-        elif self.summary["new_stars"]:
-            self.text.blit(
-                screen, "Nova conquista!", (card.centerx, card.top + 182), T.SIZES["body"], T.ORANGE, True, "midtop"
-            )
         self.text.blit(
             screen,
-            f"Transformação: {int(run.restoration)}%   Pontos: {run.score}"
-            + ("   (recorde!)" if self.summary["new_record"] else ""),
-            (card.centerx, card.top + 216),
-            T.SIZES["label"],
+            f"Cidade transformada {int(run.restoration)}%   ·   +{run.score} pontos"
+            + ("   ·   recorde!" if self.summary["new_record"] else ""),
+            (card.centerx, card.top + 153),
+            T.SIZES["body"],
             T.INK,
             True,
             "midtop",
         )
         movement = movement_line(run)
         if movement:
-            self.text.blit(screen, movement, (card.centerx, card.top + 250), T.SIZES["small"], T.TEAL, True, "midtop")
-        self.text.blit(
-            screen, "Recursos para a vila", (card.centerx, card.top + 274), T.SIZES["body"], T.MUTED, True, "midtop"
-        )
-        cells = row(pygame.Rect(card.left + 60, card.top + 302, card.width - 120, 70), 4, 16)
+            self.text.blit(
+                screen,
+                movement,
+                (card.centerx, card.top + 178),
+                T.SIZES["small"],
+                T.TEAL,
+                True,
+                "midtop",
+            )
+        self.text.blit(screen, "Recursos para a vila", (card.left + 38, card.top + 213), T.SIZES["body"], T.NAVY, True)
+        cells = row(pygame.Rect(card.left + 32, card.top + 242, card.width - 64, 66), 4, 12)
         for waste, rect in zip(WASTE_TYPES, cells):
-            T.panel(screen, rect, T.PAPER, waste.color, 255, 14, 4)
+            T.panel(screen, rect, T.PAPER, waste.color, 250, 14, 2)
             icon = self.app.assets.sprite("waste_sprites", waste.sprite)
             if icon is not None:
-                screen.blit(self.scaled(icon, (52, 52)), (rect.left + 10, rect.top + 9))
+                screen.blit(self.scaled(icon, (48, 48), ("result_waste", waste.key)), (rect.left + 8, rect.top + 9))
             self.text.blit(
                 screen,
                 f"+{run.resources.get(waste.key, 0)}",
-                (rect.left + 76, rect.top + 8),
+                (rect.left + 62, rect.top + 6),
                 T.SIZES["label"],
                 T.INK,
                 True,
             )
-            self.text.blit(screen, waste.name, (rect.left + 76, rect.top + 40), T.SIZES["small"], T.MUTED)
-        self.text.blit(screen, "Você sabia?", (card.left + 60, card.top + 388), T.SIZES["body"], T.TEAL, True)
+            self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 39), T.SIZES["small"], T.MUTED)
+        self.draw_next_build(screen, pygame.Rect(card.left + 32, card.top + 322, 468, 92))
+        self.draw_missing_parts(screen, pygame.Rect(card.left + 520, card.top + 322, card.width - 552, 92))
+        self.text.blit(screen, "Curiosidade", (card.left + 38, card.top + 425), T.SIZES["small"], T.TEAL, True)
         self.text.paragraph(
-            screen, self.fact, pygame.Rect(card.left + 60, card.top + 414, card.width - 120, 70), T.SIZES["body"], T.INK
+            screen,
+            self.fact,
+            pygame.Rect(card.left + 38, card.top + 448, card.width - 76, 58),
+            T.SIZES["small"],
+            T.INK,
+            spacing=1.1,
         )
         self.draw_menu(screen)
+
+    def draw_next_build(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
+        profile = self.app.profile
+        next_build = next((item for item in VILLAGE_UPGRADES if item.key not in profile.vila), None)
+        T.panel(screen, rect, T.PAPER, T.TEAL, 245, 16, 2)
+        screen.blit(T.icon_surface("village", 48, T.TEAL), (rect.left + 10, rect.top + 21))
+        if next_build is None:
+            self.text.blit(screen, "Vila completa!", (rect.left + 68, rect.top + 12), T.SIZES["body"], T.NAVY, True)
+            self.text.blit(
+                screen,
+                "Todos os espaços ganharam vida.",
+                (rect.left + 68, rect.top + 48),
+                T.SIZES["small"],
+                T.MUTED,
+            )
+            return
+        icon = self.app.assets.sprite("biome_sprites", next_build.sprite)
+        if icon is None:
+            icon = self.app.assets.sprite("era_final_sprites", next_build.sprite)
+        if icon is not None:
+            screen.blit(self.scaled(icon, (62, 62), ("next_build", next_build.key)), (rect.left + 62, rect.top + 15))
+        self.text.blit(
+            screen,
+            f"Próxima obra · {next_build.name}",
+            (rect.left + 132, rect.top + 10),
+            T.SIZES["body"],
+            T.NAVY,
+            True,
+        )
+        shortfall = missing(profile.recursos, next_build.cost)
+        if not shortfall:
+            status = "Pronta para construir!"
+            color = T.GREEN
+        else:
+            names = {waste.key: waste.name.lower() for waste in WASTE_TYPES}
+            details = " · ".join(f"{amount} de {names.get(key, key)}" for key, amount in shortfall.items())
+            status = f"Faltam {details}"
+            color = T.ORANGE
+        self.text.blit(screen, status, (rect.left + 132, rect.top + 48), T.SIZES["small"], color, True)
+
+    def draw_missing_parts(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
+        T.panel(screen, rect, T.PAPER, T.NAVY, 245, 16, 2)
+        required = self.run.biome.required_parts
+        self.text.blit(
+            screen,
+            "Peças para a 3ª estrela",
+            (rect.left + 14, rect.top + 8),
+            T.SIZES["small"],
+            T.NAVY,
+            True,
+        )
+        if not required:
+            self.text.blit(
+                screen,
+                "Nenhuma peça necessária",
+                (rect.left + 14, rect.top + 42),
+                T.SIZES["small"],
+                T.GREEN,
+            )
+            return
+        keys = list(required)
+        each = (rect.width - 24) // len(keys)
+        for index, key in enumerate(keys):
+            level = required[key]
+            owned = self.run.parts.get(key, 0)
+            x = rect.left + 12 + index * each
+            icon_kind = {"estabilizador": "stabilizer", "leme": "rudder", "quilha": "keel"}.get(key, "part")
+            color = T.GREEN if owned >= level else T.ORANGE
+            screen.blit(T.icon_surface(icon_kind, 38, color), (x, rect.top + 39))
+            label = PART_BY_KEY[key].name
+            self.text.blit(screen, label, (x + 44, rect.top + 42), T.SIZES["small"], T.INK, True)
+            status = "Instalado" if owned >= level else f"Falta nível {level}"
+            self.text.blit(screen, status, (x + 44, rect.top + 65), 14, color, True)

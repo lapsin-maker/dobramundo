@@ -24,9 +24,11 @@ from ..util import Color, clamp, haze_at, lerp_color, rgb, smoothstep
 from .assets import Assets
 from .cache import BoundedCache
 from .ground import GroundRenderer
+from .paper_items import PaperItems
 from .plane_skin import PlaneSkin
 from .sky import SkyRenderer
 from .sprites import SpriteCache, fog_level, project
+from .watercolor import WatercolorWorld
 
 RIVER_NEGRO = rgb("2a1a10")  # águas escuras do Rio Negro
 RIVER_ENCOUNTER = rgb("b08452")
@@ -83,6 +85,8 @@ class WorldView:
         self.sky = SkyRenderer(assets)
         self.ground = GroundRenderer(assets)
         self.skin = PlaneSkin(assets)
+        self.watercolor = WatercolorWorld(assets)
+        self.paper_items = PaperItems()
         self.scenery = assets.scenery
         self.waste = assets.folder("waste_sprites")
         self.powerups = assets.folder("powerup_sprites")
@@ -97,6 +101,7 @@ class WorldView:
         self.elapsed = 0.0
         self.mode = "normal"
         self.high_contrast = False
+        self.reduce_motion = False
         self.show_hitboxes = False
         self.warm_queue: Optional[Iterator] = None
 
@@ -109,6 +114,8 @@ class WorldView:
 
     def warm_tasks(self) -> Iterator:
         """Preparo incremental (mip dos sprites e silhuetas) para a partida não engasgar."""
+        if self.biome and self.watercolor.load(self.biome.key):
+            return
         for name in ("back", "front", "green", "city"):
             yield lambda n=name: self.sky.skyline_base(n)
         yield from self.ground.warm_tasks()
@@ -151,8 +158,9 @@ class WorldView:
             task()
 
     def update(self, dt: float) -> None:
-        self.elapsed += dt
-        self.sky.update_decor(dt)
+        if not self.reduce_motion:
+            self.elapsed += dt
+            self.sky.update_decor(dt)
 
     # ------------------------------------------------------------ primitivas
     def blit_world(
@@ -442,6 +450,11 @@ class WorldView:
         screen.blit(scaled, (int((x2 + x3) / 2 - size[0] / 2), int(y_far)))
 
     def draw_entity(self, screen: pygame.Surface, world: World, entity: Entity) -> None:
+        if self.watercolor.load(world.biome.key):
+            self.paper_items.draw(screen, entity, self.cam, self.high_contrast)
+            if self.show_hitboxes:
+                pygame.draw.rect(screen, rgb("ff1744"), self.hitbox_rect(entity_hitbox(entity)), 2)
+            return
         hc = self.high_contrast
         if entity.kind == "waste":
             self.halo(screen, world, entity, 46.0)
@@ -526,9 +539,9 @@ class WorldView:
             C.PLANE_WIDTH * (1.1 - player.y / 800),
             int(clamp(150 - player.y * 0.5, 40, 150)),
         )
-        if run.invulnerable_timer > 0 and int(self.elapsed * 14) % 2:
+        if not self.reduce_motion and run.invulnerable_timer > 0 and int(self.elapsed * 14) % 2:
             return  # pisca depois de uma colisão
-        bob = math.sin(self.elapsed * 3.0) * 3.0
+        bob = 0 if self.reduce_motion else math.sin(self.elapsed * 3.0) * 3.0
         sx, sy, scale = project(player.x, player.y + bob, C.PLAYER_Z, self.cam)
         width = max(8, int(C.PLANE_WIDTH * scale))
         sprite = self.skin.surface(look.plane, "flight", look.color, look.pattern, look.pilot)
@@ -568,7 +581,7 @@ class WorldView:
         else:
             # papel tremulando no ar e nariz que sobe ou desce com a velocidade vertical
             # (em degraus, para reaproveitar as imagens giradas prontas)
-            flutter = C.PAPER_FLUTTER_DEG * math.sin(self.elapsed * 7.0)
+            flutter = 0 if self.reduce_motion else C.PAPER_FLUTTER_DEG * math.sin(self.elapsed * 7.0)
             pitch = clamp(player.vy / C.MAX_VERTICAL_SPEED, -1.0, 1.0)
             height = max(4, int(height * (1.0 + round(pitch * C.PITCH_STRETCH * 25) / 25)))
             base = self.cache.get(sprite, ("plane", look_key), (width, height))
@@ -643,6 +656,11 @@ class WorldView:
         self.world = world
         self.cam = cam
         self.set_biome(world.biome)
+        if self.watercolor.draw(screen, world, cam, self.reduce_motion):
+            self.cache.fog_color = (231, 232, 217)
+            if self.high_contrast:
+                self.desaturate(screen)
+            return
         a, b, t = world.visual_stage_pair()
         top = lerp_color(a.sky_top, b.sky_top, t)
         horizon = lerp_color(a.sky_horizon, b.sky_horizon, t)
@@ -680,7 +698,7 @@ class WorldView:
         self.draw_player(screen, run, look)
         for entity in ahead:
             self.draw_entity(screen, world, entity)
-        for beam in run.beams:  # respingo de aquarela na cor do resíduo coletado
+        for beam in ([] if self.reduce_motion else run.beams):  # respingo opcional
             x, y, scale = project(beam.x, 90.0, max(C.NEAR_CLIP_Z, beam.z), self.cam)
             self.splash(screen, (x, y), beam.color, clamp(1.0 - beam.ttl / 0.55, 0.0, 1.0), scale)
         for text in run.floating:
