@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-25",
+  "branch": "codex/aquarela-mundo-e-piloto",
+  "pytest": {
+    "passed": 365,
+    "seconds": 87.94
+  },
+  "ruff": "passed",
+  "diff_check": "passed",
+  "source": {
+    "status": "ok",
+    "flights": {
+      "amazonia": {
+        "quadros": 1200,
+        "transformacao": 74.0,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 8,
+          "metal": 0,
+          "vidro": 0
+        },
+        "pontos": 130,
+        "media_ms": 10.24,
+        "p95_ms": 16.18
+      },
+      "caatinga": {
+        "quadros": 1200,
+        "transformacao": 74.0,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 4,
+          "vidro": 4
+        },
+        "pontos": 130,
+        "media_ms": 7.18,
+        "p95_ms": 10.31
+      }
+    },
+    "camera_detector": "ok",
+    "physical_camera_opened": false
+  },
+  "capture": {
+    "seconds_per_city": 12,
+    "frames": 240,
+    "fps": 20,
+    "renderer": "Pygame SDL dummy"
+  },
+  "art_png_count": 28,
+  "physical_projection_tested": false,
+  "windows_bundle": {
+    "status": "ok",
+    "frozen": true,
+    "exit_code": 0,
+    "flights": {
+      "amazonia": {
+        "quadros": 1200,
+        "transformacao": 72.8,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 0,
+          "plastico": 4,
+          "metal": 0,
+          "vidro": 0
+        },
+        "pontos": 65,
+        "media_ms": 7.46,
+        "p95_ms": 9.77
+      },
+      "caatinga": {
+        "quadros": 1200,
+        "transformacao": 74.0,
+        "estrelas": 2,
+        "estagio": 2,
+        "recursos": {
+          "papel": 4,
+          "plastico": 0,
+          "metal": 4,
+          "vidro": 0
+        },
+        "pontos": 130,
+        "media_ms": 5.29,
+        "p95_ms": 6.96
+      }
+    },
+    "camera_detector": "ok",
+    "physical_camera_opened": false,
+    "asset_hashes_identical": true,
+    "png_count": 28,
+    "pyinstaller": "6.22.3"
+  }
+}

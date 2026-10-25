@@ -1,18 +1,21 @@
 Dobramundo — direção de arte papel e aquarela
 
-Oito fundos de cenário produzidos com a ferramenta integrada de geração de
-imagens por IA, em 25/10/2026, a partir do conceito visual aprovado pelo projeto.
-Prompts finais e identificadores das saídas: generation.json nesta pasta.
+Fundos e atlases produzidos com a ferramenta integrada de geração de imagens
+por IA, em 25/10/2026, a partir do conceito visual aprovado pelo projeto.
+Prompts e identificadores: generation.json (primeiros fundos),
+generation-sprint2.json (mundos, terrenos, objetos, aviões e base do piloto),
+generation-pilot-sprint2.json (cabelos e complementos do piloto).
 
 Manaus e Petrolina: indústria, despertar ecológico e cidade solarpunk.
-Vila: estado inicial e estado restaurado. São interpretações ilustradas dos
+Vila: estados inicial poluído, intermediário e solarpunk. São interpretações dos
 locais, não mapas, levantamentos arquitetônicos ou registros documentais.
 
 Os fundos integram o pacote Dobramundo, disponibilizado com a licença CC BY 4.0
 do projeto (LICENSE na raiz). Crédito do projeto: Dobramundo, Liga de Psiquiatria
 e Neurociências — CENSUPEG, 3ª ExerGame JAM LARVA/UDESC, 2026.
 
-Avatares, fichas coletáveis, obstáculos, obras e ícones novos são desenhados
-por código Python/Pygame nos módulos engine/paper_pilot.py, paper_items.py,
-village_art.py e ui/theme.py. A lógica de colisão e o controle corporal seguem
-independentes das ilustrações.
+O motor Python/Pygame recorta os atlases, combina camadas, aplica as escolhas
+de cor/estampa, projeta água/solo e aproxima as margens. Papel, cabelo e pele
+mantêm o pigmento da arte. Há desenhos procedurais de reserva quando faltam
+assets e pictogramas nativos. Nenhuma geração ou chamada de rede ocorre no jogo.
+A lógica de colisão e o controle corporal seguem independentes das ilustrações.

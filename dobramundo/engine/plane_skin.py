@@ -13,9 +13,10 @@ from typing import Dict, List, Optional, Tuple
 import pygame
 
 from .. import config as C
-from ..content.planes import color_value
+from ..content.planes import PLANE_KEYS, color_value
 from .assets import Assets
 from .cache import BoundedCache
+from .painted_planes import PaintedPlanes
 from .pilot import PilotRenderer
 
 FOLDERS = {
@@ -28,6 +29,7 @@ class PlaneSkin:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         self.pilots = PilotRenderer(assets)
+        self.painted_planes = PaintedPlanes(assets)
         self.patterns: Dict[str, pygame.Surface] = {}
         for key, surface in assets.folder("plane_patterns").items():
             size = (C.PATTERN_TEXTURE_SIZE, C.PATTERN_TEXTURE_SIZE)
@@ -38,6 +40,9 @@ class PlaneSkin:
         self.thumbs: Dict[tuple, pygame.Surface] = {}
 
     def base(self, plane: str, view: str) -> Optional[pygame.Surface]:
+        watercolor = self.painted_planes.base(plane, view)
+        if watercolor is not None:
+            return watercolor
         return self.assets.folder(FOLDERS[view][0]).get(f"{plane}__none")
 
     # ---------------------------------------------------------------- padrões
@@ -82,6 +87,9 @@ class PlaneSkin:
 
     # --------------------------------------------------------------- avião
     def painted(self, plane: str, view: str, color_key: str, pattern: str) -> Optional[pygame.Surface]:
+        watercolor = self.painted_planes.painted(plane, view, color_key, pattern, self.assets)
+        if watercolor is not None:
+            return watercolor
         base = self.base(plane, view)
         color = color_value(color_key)
         if base is None or (color is None and pattern == "liso"):
@@ -114,7 +122,10 @@ class PlaneSkin:
                 return None
             result = painted
             if pilot:
-                result = self.pilots.mount(painted, plane, view, pilot)
+                if self.painted_planes.base(plane, view) is not None:
+                    result = self.painted_planes.mount_pilot(painted, self.pilots, plane, view, pilot)
+                else:
+                    result = self.pilots.mount(painted, plane, view, pilot)
             self.cache[key] = result
         return result
 
@@ -124,4 +135,7 @@ class PlaneSkin:
         return f"{plane}@{color_key}+{pattern}#{pilot_key}"
 
     def models(self) -> List[str]:
+        watercolor = [key for key in PLANE_KEYS if self.painted_planes.base(key, "flight") is not None]
+        if len(watercolor) == len(PLANE_KEYS):
+            return watercolor
         return sorted(k.split("__")[0] for k in self.assets.folder("plane_sprites") if k.endswith("__none"))

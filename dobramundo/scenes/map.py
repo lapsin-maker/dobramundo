@@ -214,7 +214,22 @@ class MapScene(Scene):
         self.build()
 
     def start(self, key: str) -> None:
-        self.fly(key)
+        from . import make_scene
+
+        flight = make_scene(self.app, "voo", key)
+        if not self.app.profile.tutorial_visto:
+            tutorial = make_scene(
+                self.app,
+                "tutorial",
+                next_scene=flight,
+                return_to=make_scene(self.app, "mapa"),
+            )
+            flight = tutorial
+        body = self.app.input.body
+        if body is not None and body.error is None and not body.calibrated:
+            flight = make_scene(self.app, "calibracao", return_to=flight)
+        self.app.save()
+        self.app.go(flight)
 
     def draw(self, screen: pygame.Surface) -> None:
         focused = self.menu.focused

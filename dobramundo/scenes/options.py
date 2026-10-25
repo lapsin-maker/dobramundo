@@ -191,15 +191,16 @@ class OptionsScene(Scene):
             o.efeitos_fortes,
             lambda: self.flip("efeitos_fortes"),
         )
-        buttons.append(self.button((24, 570, 190, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
-        buttons.append(self.button((220, 570, 220, 64), "Ver a abertura", self.intro, key="abertura"))
+        buttons.append(self.button((24, 570, 132, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
+        buttons.append(self.button((164, 570, 154, 64), "Ver história", self.intro, key="abertura"))
+        buttons.append(self.button((326, 570, 164, 64), "Rever treino", self.replay_tutorial, key="treino"))
         toggle(
-            446, 570, "movimento", "Movimento reduzido", o.reduzir_movimento,
-            lambda: self.flip("reduzir_movimento"), 310,
+            498, 570, "movimento", "Movimento reduzido", o.reduzir_movimento,
+            lambda: self.flip("reduzir_movimento"), 282,
         )
         toggle(
-            762, 570, "auto_abertura", "Abertura automática", o.abertura_automatica,
-            lambda: self.flip("abertura_automatica"), 314,
+            788, 570, "auto_abertura", "Abertura automática", o.abertura_automatica,
+            lambda: self.flip("abertura_automatica"), 288,
         )
         self.menu.set_buttons(buttons)
 
@@ -246,6 +247,10 @@ class OptionsScene(Scene):
 
     def intro(self) -> None:
         self.goto("abertura")
+
+    def replay_tutorial(self) -> None:
+        return_to = make_scene(self.app, "opcoes")
+        self.goto("tutorial", next_scene=return_to, return_to=make_scene(self.app, "opcoes"))
 
     def draw(self, screen: pygame.Surface) -> None:
         self.app.backdrop(screen, self.last_dt, None, 50.0)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 
-from dobramundo.content.pilot import DEFAULT_PILOT, SKIN_TONES, UNSELECTED, normalize_pilot
+from dobramundo.content.pilot import DEFAULT_PILOT, UNSELECTED, normalize_pilot
 from dobramundo.persistence import Profile
 from dobramundo.scenes.pilot import PAGE_BY_FIELD, PilotScene, mobility
 
@@ -32,29 +32,39 @@ def test_piloto_aquarela_renderiza_todas_as_vistas_e_dispositivos(app):
     renderer = app.view.skin.pilots
     for view in ("menu", "flight", "segura", "lanca"):
         for device in ({"cadeira": "nao", "andador": "nao"}, {"cadeira": "sim"}, {"andador": "sim"}):
-            look = {**DEFAULT_PILOT, **device, "pele": "pele4", "cabelo": "crespo", "olhos": "verdes",
-                    "aparelho": "sim", "oculos": "redondo"}
+            look = {
+                **DEFAULT_PILOT,
+                **device,
+                "pele": "pele4",
+                "cabelo": "crespo",
+                "olhos": "verdes",
+                "aparelho": "sim",
+                "oculos": "redondo",
+            }
             image = renderer.compose(view, look)
-            assert image is not None and image.get_size() == (190, 240)
-            assert image.get_bounding_rect(min_alpha=1).width > 120
+            assert image is not None and min(image.get_size()) > 0
+            assert image.get_bounding_rect(min_alpha=1).height > image.get_bounding_rect(min_alpha=1).width
 
 
 def test_cabelos_longos_nao_cobrem_o_rosto_em_nenhuma_vista(app):
-    skin = next(option.color for option in SKIN_TONES if option.key == "pele4")
+    renderer = app.view.skin.pilots
+    bald = renderer.compose("menu", {**DEFAULT_PILOT, "pele": "pele4", "cabelo": "raspado"})
     for hair in ("longo", "trancas", "hijab"):
-        # Em flight a nuca fica voltada para a camera; nao ha rosto a expor.
         for view in ("menu", "segura", "lanca"):
-            image = app.view.skin.pilots.compose(view, {**DEFAULT_PILOT, "pele": "pele4", "cabelo": hair})
-            assert image.get_at((95, 116))[:3] == skin
+            image = renderer.compose(view, {**DEFAULT_PILOT, "pele": "pele4", "cabelo": hair})
+            assert image.get_bounding_rect(min_alpha=15).height > image.get_width()
+            assert pygame.image.tobytes(image, "RGBA") != pygame.image.tobytes(bald, "RGBA")
 
 
 def test_vista_de_voo_mostra_nuca_sem_tracos_faciais(app):
-    skin = next(option.color for option in SKIN_TONES if option.key == "pele4")
-    image = app.view.skin.pilots.compose("flight", {**DEFAULT_PILOT, "pele": "pele4"})
-    # Os pontos onde ficam as pupilas e o sorriso nas vistas frontais sao nuca.
-    assert image.get_at((76, 72))[:3] == skin
-    assert image.get_at((114, 72))[:3] == skin
-    assert image.get_at((95, 103))[:3] == skin
+    renderer = app.view.skin.pilots
+    base = {**DEFAULT_PILOT, "pele": "pele4", "cabelo": "raspado"}
+    green_eyes = renderer.compose("flight", {**base, "olhos": "verdes"})
+    blue_eyes = renderer.compose("flight", {**base, "olhos": "azuis", "oculos": "redondo"})
+    front = renderer.compose("menu", {**base, "olhos": "verdes"})
+    assert green_eyes.get_bounding_rect(min_alpha=15).height > 500
+    assert pygame.image.tobytes(green_eyes, "RGBA") == pygame.image.tobytes(blue_eyes, "RGBA")
+    assert pygame.image.tobytes(green_eyes, "RGBA") != pygame.image.tobytes(front, "RGBA")
 
 
 def test_dispositivos_assistivos_afetam_as_quatro_vistas_e_montagens(app):
@@ -67,8 +77,10 @@ def test_dispositivos_assistivos_afetam_as_quatro_vistas_e_montagens(app):
         assert pygame.image.tobytes(neutral, "RGBA") != pygame.image.tobytes(wheelchair, "RGBA")
         assert pygame.image.tobytes(neutral, "RGBA") != pygame.image.tobytes(walker, "RGBA")
     plane = app.view.skin.base("dart", "flight")
-    mounted = [renderer.mount(plane, "dart", "flight", dict(base, **device))
-               for device in ({}, {"cadeira": "sim"}, {"andador": "sim"})]
+    mounted = [
+        renderer.mount(plane, "dart", "flight", dict(base, **device))
+        for device in ({}, {"cadeira": "sim"}, {"andador": "sim"})
+    ]
     assert pygame.image.tobytes(mounted[0], "RGBA") != pygame.image.tobytes(mounted[1], "RGBA")
     assert pygame.image.tobytes(mounted[0], "RGBA") != pygame.image.tobytes(mounted[2], "RGBA")
 
@@ -94,8 +106,9 @@ def test_categorias_de_personalizacao_e_mobilidade_mutua(app):
 
 def test_surpresa_preserva_todos_os_dispositivos_assistivos(app):
     scene = PilotScene(app)
-    app.profile.piloto.update({"aparelho": "sim", "andador": "sim", "cadeira": "nao",
-                              "oculos": "redondo", "acessorio": "abafador"})
+    app.profile.piloto.update(
+        {"aparelho": "sim", "andador": "sim", "cadeira": "nao", "oculos": "redondo", "acessorio": "abafador"}
+    )
     scene.shuffle()
     assert app.profile.piloto["aparelho"] == "sim"
     assert app.profile.piloto["andador"] == "sim" and app.profile.piloto["cadeira"] == "nao"

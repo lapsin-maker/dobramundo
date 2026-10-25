@@ -114,7 +114,13 @@ class WorldView:
 
     def warm_tasks(self) -> Iterator:
         """Preparo incremental (mip dos sprites e silhuetas) para a partida não engasgar."""
-        if self.biome and self.watercolor.load(self.biome.key):
+        if self.biome and self.watercolor.load(self.biome.key) and self.watercolor.route.ready(self.biome.key):
+            route = self.watercolor.route
+            if route.ground is not None:
+                yield from route.ground.warm_tasks()
+            for index, sprite in enumerate(route.load(self.biome.key)):
+                key = ("painted-bank", self.biome.key, index)
+                yield lambda s=sprite, k=key: route.cache.warm(s, k, (False, True))
             return
         for name in ("back", "front", "green", "city"):
             yield lambda n=name: self.sky.skyline_base(n)
@@ -217,7 +223,9 @@ class WorldView:
         surf = self.shadows.get(key)
         if surf is None:
             surf = pygame.Surface((w, h), pygame.SRCALPHA)
-            pygame.draw.ellipse(surf, (0, 0, 0, alpha // 4 * 4), surf.get_rect())
+            for layer in range(6):
+                rect = surf.get_rect().inflate(-w * layer // 15, -h * layer // 15)
+                pygame.draw.ellipse(surf, (28, 45, 52, round(alpha * (layer + 1) * 0.065)), rect)
             self.shadows[key] = surf
         screen.blit(surf, surf.get_rect(center=(int(sx), int(sy))))
 

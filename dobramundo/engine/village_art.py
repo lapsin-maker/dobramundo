@@ -20,6 +20,18 @@ SUN = (246, 195, 59)
 CORAL = (238, 122, 58)
 BLUE = (62, 128, 191)
 
+# Ordem fixa do atlas 4x2 entregue em assets/watercolor/village_props.png.
+VILLAGE_PROP_ORDER = (
+    "ponto_troca",
+    "horta",
+    "paineis",
+    "compostor",
+    "cisterna",
+    "bicicletario",
+    "telhado_verde",
+    "turbina",
+)
+
 
 def _shape(surface, points, fill, width=5):
     pygame.draw.polygon(surface, INK, points, width=width + 2)
@@ -123,12 +135,36 @@ def _draw_prop(surface, key):
         pygame.draw.line(surface, INK, (77, 143), (132, 143), 7)
 
 
+@lru_cache(maxsize=32)
+def _atlas_village_prop(atlas: pygame.Surface, key: str) -> pygame.Surface | None:
+    """Recorta e conserva uma célula RGBA do atlas aquarelado."""
+    if key not in VILLAGE_PROP_ORDER:
+        return None
+    col = VILLAGE_PROP_ORDER.index(key) % 4
+    row = VILLAGE_PROP_ORDER.index(key) // 4
+    left = col * atlas.get_width() // 4
+    right = (col + 1) * atlas.get_width() // 4
+    top = row * atlas.get_height() // 2
+    bottom = (row + 1) * atlas.get_height() // 2
+    rect = pygame.Rect(left, top, right - left, bottom - top)
+    return atlas.subsurface(rect).copy()
+
+
 @lru_cache(maxsize=16)
-def village_prop(key: str) -> pygame.Surface:
-    """Superfície RGBA canônica de uma melhoria, compartilhada e cacheada."""
+def _fallback_village_prop(key: str) -> pygame.Surface:
+    """Compatibilidade enquanto o atlas não está instalado."""
     surface = pygame.Surface((220, 160), pygame.SRCALPHA)
     _draw_prop(surface, key)
     return surface
+
+
+def village_prop(key: str, atlas: pygame.Surface | None = None) -> pygame.Surface:
+    """Arte cacheada da obra: atlas ilustrado, com fallback procedural local."""
+    if atlas is not None:
+        cropped = _atlas_village_prop(atlas, key)
+        if cropped is not None:
+            return cropped
+    return _fallback_village_prop(key)
 
 
 @lru_cache(maxsize=8)

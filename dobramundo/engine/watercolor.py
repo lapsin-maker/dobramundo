@@ -14,20 +14,20 @@ import pygame
 from .. import config as C
 from ..util import clamp, smoothstep
 from .assets import Assets, display_format
-from .sprites import project
+from .painted_route import PaintedRoute
 
 
 class WatercolorWorld:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
+        self.route = PaintedRoute(assets)
         self.backdrops: dict[str, tuple] = {}
         self.composite_key = None
         self.composite = None
-        self.highlight = display_format(pygame.Surface((C.WIDTH, C.HEIGHT), pygame.SRCALPHA), True)
 
     def load(self, biome: str) -> tuple:
         if biome not in self.backdrops:
-            images = self.assets.folder("watercolor")
+            images = self.assets.folder("watercolor", tuple(f"{biome}_{stage}" for stage in range(3)))
             layers = [images.get(f"{biome}_{stage}") for stage in range(3)]
             self.backdrops[biome] = (
                 tuple(display_format(pygame.transform.smoothscale(image, (C.WIDTH + 32, C.HEIGHT)))
@@ -73,27 +73,13 @@ class WatercolorWorld:
         painted = self.backdrop(world.biome.key, world.visual)
         if painted is None:
             return False
-        shift = 0 if reduce_motion else int(clamp(cam * 0.045, -14, 14))
+        drift = math.sin(world.distance / 1200) * 8
+        shift = 0 if reduce_motion else int(clamp(cam * 0.045 + drift, -14, 14))
         screen.blit(painted, (-16 - shift, 0))
-        if not reduce_motion:
-            self.flow(screen, world, cam)
-        return True
-
-    def flow(self, screen, world, cam: float) -> None:
-        """Marcas suaves do chão movem-se na mesma perspectiva e velocidade dos itens."""
-        overlay = self.highlight
-        overlay.fill((0, 0, 0, 0))
-        river = world.biome.key == "amazonia"
-        for index in range(44):
-            z = 90 + (index * 73.0 - world.distance) % 2250
-            x = math.sin(index * 2.399) * 520
-            sx, sy, scale = project(x, 0, z, cam)
-            if sy < C.HORIZON_Y + 35 or sy > C.HEIGHT + 15:
-                continue
-            extent = max(3, int((14 + index % 4 * 9) * scale))
-            color = (255, 249, 223, 42) if river else (180, 133, 74, 30)
-            width = max(1, min(3, int(scale * 1.2)))
-            points = [(int(sx - extent), int(sy)), (int(sx), int(sy + 2 * scale)),
-                      (int(sx + extent), int(sy))]
-            pygame.draw.lines(overlay, color, False, points, width)
-        screen.blit(overlay, (0, 0))
+        # A pintura guarda apenas o horizonte distante. O percurso inteiro avança
+        # em coordenadas de mundo, mesmo com efeitos decorativos reduzidos.
+        fog = (226, 220, 191) if world.biome.key == "amazonia" else (240, 222, 185)
+        if self.route.draw(screen, world, cam, reduce_motion, fog):
+            return True
+        # Sem o pacote móvel, o chamador usa todo o cenário procedural móvel.
+        return False

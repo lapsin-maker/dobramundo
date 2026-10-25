@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import math
+
 import pygame
 
 from .. import config as C
 from ..content import texts
 from ..content.items import WASTE_TYPES
+from ..content.pilot import DEFAULT_PILOT, normalize_pilot
 from ..content.progress import MAX_PART_LEVEL, PLANE_PARTS, VILLAGE_UPGRADES, can_afford, plane_stats
 from ..engine.village_art import village_prop
 from ..ui import theme as T
 from .base import Scene
-from .village import draw_village
+from .village import SLOTS, draw_village
 
 PAGE_SIZE = 4
 CARD_RECTS = (
@@ -23,12 +26,23 @@ CARD_RECTS = (
 
 
 class UpgradesScene(Scene):
-    def __init__(self, app, tab: str = "vila") -> None:
+    REVEAL_BEFORE_SECONDS = 0.45
+    REVEAL_MATERIALS_SECONDS = 0.85
+    REVEAL_BUILD_SECONDS = 1.05
+
+    def __init__(self, app, tab: str = "vila", initial_key: str | None = None) -> None:
         super().__init__(app)
         self.tab = tab
         self.page = 0
-        self.selected_key: str | None = None
+        valid_keys = {item.key for item in VILLAGE_UPGRADES}
+        self.selected_key = initial_key if initial_key in valid_keys else None
         self.reveal_key: str | None = None
+        self.reveal_before: pygame.Surface | None = None
+        self.reveal_after: pygame.Surface | None = None
+        self.reveal_static_before: pygame.Surface | None = None
+        self.reveal_static_after: pygame.Surface | None = None
+        self.reveal_cost: dict = {}
+        self.reveal_elapsed = 0.0
 
     def build(self) -> None:
         profile = self.app.profile
@@ -131,6 +145,11 @@ class UpgradesScene(Scene):
                     )
                 )
         self.menu.set_buttons(buttons)
+        if self.selected_key is not None:
+            for index, button in enumerate(self.menu.buttons):
+                if button.key == "confirmar":
+                    self.menu.focus = index
+                    break
 
     def set_tab(self, tab: str) -> None:
         self.tab = tab
@@ -155,7 +174,63 @@ class UpgradesScene(Scene):
 
     def end_reveal(self) -> None:
         self.reveal_key = None
+        self.reveal_before = None
+        self.reveal_after = None
+        self.reveal_static_before = None
+        self.reveal_static_after = None
+        self.reveal_cost = {}
+        self.reveal_elapsed = 0.0
         self.build()
+
+    def update(self, dt: float) -> None:
+        super().update(dt)
+        if self.reveal_key is not None and not self.app.options.reduzir_movimento:
+            self.reveal_elapsed = min(
+                self.REVEAL_BEFORE_SECONDS + self.REVEAL_MATERIALS_SECONDS + self.REVEAL_BUILD_SECONDS,
+                self.reveal_elapsed + dt,
+            )
+
+    def _capture_village(self, key: str = "") -> pygame.Surface:
+        surface = pygame.Surface((C.WIDTH, C.HEIGHT), pygame.SRCALPHA)
+        draw_village(self, surface, key)
+        return surface
+
+    def _start_reveal(self, upgrade, before: pygame.Surface) -> None:
+        self.reveal_key = upgrade.key
+        self.reveal_before = before
+        self.reveal_cost = dict(upgrade.cost)
+        self.reveal_elapsed = (
+            self.REVEAL_BEFORE_SECONDS + self.REVEAL_MATERIALS_SECONDS + self.REVEAL_BUILD_SECONDS
+            if self.app.options.reduzir_movimento
+            else 0.0
+        )
+        self.reveal_after = self._capture_village(upgrade.key)
+        x, base_y, height = SLOTS.get(upgrade.key, upgrade.slot)
+        crop_width, crop_height = 360, 225
+        center_y = base_y - height // 2
+        crop_rect = pygame.Rect(0, 0, crop_width, crop_height)
+        crop_rect.center = (x, center_y)
+        crop_rect.clamp_ip(pygame.Rect(0, 0, C.WIDTH, C.HEIGHT))
+        self.reveal_static_before = before.subsurface(crop_rect).copy()
+        self.reveal_static_after = self.reveal_after.subsurface(crop_rect).copy()
+        self.selected_key = None
+        self.build()
+
+    def _commit_village_purchase(self, upgrade) -> bool:
+        if upgrade.key in self.app.profile.vila:
+            self.clear_selection()
+            return False
+        if not can_afford(self.app.profile.recursos, upgrade.cost):
+            self.pay(upgrade.cost)
+            return False
+        before = self._capture_village()
+        if not self.pay(upgrade.cost):
+            return False
+        self.app.profile.vila.append(upgrade.key)
+        self.app.profile.normalize()
+        self.app.save()
+        self._start_reveal(upgrade, before)
+        return True
 
     def say(self, text: str) -> None:
         self.toast.show(text)
@@ -176,26 +251,11 @@ class UpgradesScene(Scene):
         if upgrade is None or key in self.app.profile.vila:
             self.clear_selection()
             return
-        if not self.pay(upgrade.cost):
-            return
-        self.app.profile.vila.append(upgrade.key)
-        self.app.profile.normalize()
-        self.app.save()
-        self.selected_key = None
-        self.reveal_key = upgrade.key
-        self.say(f"{upgrade.name} construída!")
-        self.build()
+        self._commit_village_purchase(upgrade)
 
     # Compatibilidade para chamadas de domínio já usadas por outros fluxos/testes.
     def buy_village(self, upgrade) -> None:
-        if upgrade.key in self.app.profile.vila or not self.pay(upgrade.cost):
-            return
-        self.app.profile.vila.append(upgrade.key)
-        self.app.profile.normalize()
-        self.app.save()
-        self.selected_key = None
-        self.say(f"{upgrade.name} construída!")
-        self.build()
+        self._commit_village_purchase(upgrade)
 
     def buy_part(self, part) -> None:
         level = self.app.profile.pecas.get(part.key, 0)
@@ -236,53 +296,187 @@ class UpgradesScene(Scene):
     def _draw_village_list(self, screen: pygame.Surface) -> None:
         profile = self.app.profile
         start = self.page * PAGE_SIZE
+        atlas = self.app.assets.sprite("watercolor", "village_props")
         for i, upgrade in enumerate(VILLAGE_UPGRADES[start : start + PAGE_SIZE]):
             rect = CARD_RECTS[i]
-            sprite = village_prop(upgrade.key)
-            img = self.scaled(sprite, (130, 72), ("upgrade", upgrade.key))
-            screen.blit(img, img.get_rect(midleft=(rect.left + 20, rect.centery + 6)))
-            self.text.paragraph(
-                screen,
-                upgrade.description,
-                pygame.Rect(rect.left + 170, rect.top + 38, rect.width - 190, 44),
-                T.SIZES["small"],
-                T.INK,
-            )
+            sprite = village_prop(upgrade.key, atlas)
+            img = self.scaled(sprite, (150, 96), ("upgrade", upgrade.key))
+            screen.blit(img, img.get_rect(midleft=(rect.left + 8, rect.centery + 4)))
             if upgrade.key not in profile.vila:
                 self._draw_cost_icons(screen, upgrade.cost, (rect.left + 170, rect.top + 88))
 
     def _draw_selected(self, screen: pygame.Surface, upgrade) -> None:
-        rect = pygame.Rect(180, 145, 740, 355)
+        slot_x = SLOTS.get(upgrade.key, upgrade.slot)[0]
+        panel_left = 350 if slot_x < C.WIDTH // 2 else 20
+        rect = pygame.Rect(panel_left, 108, 740, 300)
         T.panel(screen, rect, T.PAPER, T.NAVY, 250, 22, 4)
-        sprite = village_prop(upgrade.key)
+        sprite = village_prop(upgrade.key, self.app.assets.sprite("watercolor", "village_props"))
         img = self.scaled(sprite, (250, 210), ("upgrade-preview", upgrade.key))
         screen.blit(img, img.get_rect(center=(rect.left + 160, rect.centery)))
         self.text.blit(
-            screen, upgrade.name, (rect.left + 310, rect.top + 35), T.SIZES["title"], T.NAVY, True, "midleft"
+            screen, upgrade.name, (rect.left + 310, rect.top + 20), T.SIZES["title"], T.NAVY, True, "midleft"
         )
         self.text.paragraph(
-            screen, upgrade.description, pygame.Rect(rect.left + 310, rect.top + 92, 380, 82), T.SIZES["body"], T.INK
+            screen, upgrade.description, pygame.Rect(rect.left + 310, rect.top + 68, 380, 65), T.SIZES["body"], T.INK
         )
         self.text.blit(
             screen,
             "Materiais necessários",
-            (rect.left + 310, rect.top + 194),
+            (rect.left + 310, rect.top + 150),
             T.SIZES["label"],
             T.NAVY,
             True,
             "midleft",
         )
-        self._draw_cost_icons(screen, upgrade.cost, (rect.left + 310, rect.top + 245))
+        self._draw_cost_icons(screen, upgrade.cost, (rect.left + 310, rect.top + 205))
+
+    def _draw_flying_materials(self, screen: pygame.Surface, progress: float) -> None:
+        upgrade = next((item for item in VILLAGE_UPGRADES if item.key == self.reveal_key), None)
+        if upgrade is None:
+            return
+        x, base_y, height = SLOTS.get(upgrade.key, upgrade.slot)
+        target = pygame.Vector2(x, base_y - height * 0.52)
+        index_by_key = {waste.key: index for index, waste in enumerate(WASTE_TYPES)}
+        for waste in WASTE_TYPES:
+            if not self.reveal_cost.get(waste.key):
+                continue
+            index = index_by_key[waste.key]
+            start = pygame.Vector2(748 + index * 86, 100)
+            p1 = pygame.Vector2(start.x, 220)
+            p2 = pygame.Vector2(target.x, 230)
+            u = max(0.0, min(1.0, progress))
+            one = start.lerp(p1, u)
+            two = p1.lerp(p2, u)
+            three = p2.lerp(target, u)
+            left = one.lerp(two, u)
+            right = two.lerp(three, u)
+            point = left.lerp(right, u)
+            icon = self.app.assets.sprite(
+                "waste_sprites", next((item.sprite for item in WASTE_TYPES if item.key == waste.key), "")
+            )
+            if icon is not None:
+                image = self.scaled(icon, (48, 48), ("village-material-flight", waste.key))
+                screen.blit(image, image.get_rect(center=(round(point.x), round(point.y))))
+
+    def _draw_community_reaction(self, screen: pygame.Surface, key: str, progress: float) -> None:
+        x, base_y, height = SLOTS.get(key, next(item.slot for item in VILLAGE_UPGRADES if item.key == key))
+        bob = 0 if self.app.options.reduzir_movimento else round(2 * math.sin(self.time * 7))
+        looks = (
+            {**DEFAULT_PILOT, "pele": "pele2", "cabelo": "cacheado", "cor_cabelo": "castanho", "roupa": "verde"},
+            {
+                **DEFAULT_PILOT,
+                "pele": "pele5",
+                "cabelo": "crespo",
+                "cor_cabelo": "preto",
+                "roupa": "amarela",
+                "cadeira": "sim",
+            },
+            {
+                **DEFAULT_PILOT,
+                "pele": "pele3",
+                "cabelo": "trancas",
+                "cor_cabelo": "ruivo",
+                "roupa": "azul",
+                "aparelho": "sim",
+            },
+        )
+        offsets = (-58, 58)
+        for i, (look, dx) in enumerate(zip(looks, offsets)):
+            if progress < (i + 1) / len(looks):
+                continue
+            neighbor_x = max(38, min(C.WIDTH - 38, x + dx))
+            pilot = self.app.view.skin.pilots.compose("menu", normalize_pilot(look))
+            if pilot is None:
+                continue
+            image = self.scaled(pilot, (62, 76), ("village-neighbor", i))
+            ground_y = base_y - max(32, height * 0.43)
+            screen.blit(image, image.get_rect(midbottom=(neighbor_x, ground_y + bob)))
+            bubble = pygame.Rect(neighbor_x - 20, ground_y - 51 + bob, 40, 34)
+            pygame.draw.ellipse(screen, T.PAPER, bubble)
+            pygame.draw.ellipse(screen, T.NAVY, bubble, 2)
+            pygame.draw.polygon(
+                screen,
+                T.PAPER,
+                (
+                    (bubble.left + 25, bubble.bottom - 2),
+                    (bubble.left + 31, bubble.bottom + 6),
+                    (bubble.left + 30, bubble.bottom - 3),
+                ),
+            )
+            if i == 0:
+                cx, cy = bubble.centerx, bubble.centery - 1
+                pygame.draw.circle(screen, T.ORANGE, (cx - 5, cy - 3), 6)
+                pygame.draw.circle(screen, T.ORANGE, (cx + 5, cy - 3), 6)
+                pygame.draw.polygon(
+                    screen,
+                    T.ORANGE,
+                    ((cx - 11, cy), (cx + 11, cy), (cx, cy + 12)),
+                )
+            else:
+                pygame.draw.ellipse(screen, T.GREEN, (bubble.centerx - 6, bubble.centery - 10, 12, 20))
+                pygame.draw.line(
+                    screen,
+                    T.NAVY,
+                    (bubble.centerx, bubble.centery + 6),
+                    (bubble.centerx, bubble.centery - 7),
+                    2,
+                )
 
     def draw(self, screen: pygame.Surface) -> None:
         if self.reveal_key is not None:
-            draw_village(self, screen, self.reveal_key)
-            reveal_panel = pygame.Rect(16, 12, 570, 100)
+            before = self.reveal_before
+            after = self.reveal_after
+            if self.app.options.reduzir_movimento:
+                screen.fill(T.PAPER)
+                panel = pygame.Rect(74, 95, C.WIDTH - 148, 405)
+                T.panel(screen, panel, T.PAPER, T.NAVY, 248, 20, 3)
+                self.text.blit(
+                    screen,
+                    "Veja a mudança na vila",
+                    (panel.centerx, panel.top + 16),
+                    T.SIZES["title"],
+                    T.NAVY,
+                    True,
+                    "midtop",
+                )
+                for image, x, label, color in (
+                    (self.reveal_static_before, panel.left + 35, "ANTES", T.MUTED),
+                    (self.reveal_static_after, panel.left + panel.width // 2 + 15, "AGORA", T.GREEN),
+                ):
+                    self.text.blit(screen, label, (x, panel.top + 63), T.SIZES["label"], color, True)
+                    if image is not None:
+                        thumb = self.scaled(image, (410, 260), ("reveal-static", label, self.reveal_key))
+                        thumb_rect = thumb.get_rect(topleft=(x, panel.top + 100))
+                        T.panel(screen, thumb_rect.inflate(10, 10), T.PAPER, T.NAVY, 245, 10, 2)
+                        screen.blit(thumb, thumb_rect)
+                self.resource_bar(screen, right=C.WIDTH - 25, top=18)
+                self.draw_menu(screen)
+                return
+            before_end = self.REVEAL_BEFORE_SECONDS
+            material_end = before_end + self.REVEAL_MATERIALS_SECONDS
+            if before is not None:
+                screen.blit(before, (0, 0))
+            if self.reveal_elapsed < before_end:
+                caption = "Sua vila antes da obra"
+            elif self.reveal_elapsed < material_end:
+                self._draw_flying_materials(
+                    screen,
+                    (self.reveal_elapsed - before_end) / self.REVEAL_MATERIALS_SECONDS,
+                )
+                caption = "Os materiais chegam"
+            else:
+                blend = max(0.0, min(1.0, (self.reveal_elapsed - material_end) / self.REVEAL_BUILD_SECONDS))
+                eased = blend * blend * (3 - 2 * blend)
+                if after is not None:
+                    after.set_alpha(round(255 * eased))
+                    screen.blit(after, (0, 0))
+                    after.set_alpha(255)
+                if blend > 0:
+                    self._draw_community_reaction(screen, self.reveal_key, min(1.0, blend * 1.6))
+                caption = "A vila ganhou uma nova obra!"
+            reveal_panel = pygame.Rect(16, 12, 570, 82)
             T.panel(screen, reveal_panel, T.PAPER, T.NAVY, 248, 18, 3)
-            self.text.blit(screen, "A vila ganhou uma nova obra!", (32, 22), T.SIZES["title"], T.NAVY, True)
-            self.text.blit(
-                screen, "Veja o destaque no lugar onde foi construída.", (32, 67), T.SIZES["small"], T.INK, True
-            )
+            self.text.blit(screen, caption, (32, 24), T.SIZES["title"], T.NAVY, True)
             self.resource_bar(screen, right=C.WIDTH - 25, top=18)
             self.draw_menu(screen)
             return

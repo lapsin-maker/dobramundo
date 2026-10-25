@@ -38,17 +38,22 @@ PAGES: Tuple[Tuple[str, str, List[Option]], ...] = (
     ("oculos", "Óculos", GLASSES),
     ("acessorio", "Acessório", ACCESSORIES),
     ("aparelho", "Audição", HEARING_AID),
-    ("mobilidade", "Mobilidade", [
-        Option("livre", "Sem dispositivo"),
-        Option("cadeira", "Cadeira de rodas"),
-        Option("andador", "Andador"),
-    ]),
+    (
+        "mobilidade",
+        "Mobilidade",
+        [
+            Option("livre", "Sem dispositivo"),
+            Option("cadeira", "Cadeira de rodas"),
+            Option("andador", "Andador"),
+        ],
+    ),
 )
 PAGE_BY_FIELD = {field: (label, options) for field, label, options in PAGES}
 MOBILITY_KEYS = ("livre", "cadeira", "andador")
+NAV_LABELS = {"cor_cabelo": "Tom", "acessorio": "Acess.", "mobilidade": "Apoio"}
 GREETINGS = ("Oi! Esse é você?", "Que legal!", "Pronto para voar?", "Uau, ficou ótimo!")
-PREVIEW = pygame.Rect(24, 146, 286, 390)
-CHOICES = pygame.Rect(326, 146, 750, 390)
+PREVIEW = pygame.Rect(24, 146, 300, 390)
+CHOICES = pygame.Rect(340, 146, 736, 390)
 
 
 def mobility(look: dict) -> str:
@@ -169,26 +174,50 @@ class PilotScene(Scene):
         nav_x, nav_y, nav_w, nav_h, gap = 24, 82, 112, 50, 5
         for index, (field, label, _options) in enumerate(PAGES):
             rect = (nav_x + index * (nav_w + gap), nav_y, nav_w, nav_h)
-            buttons.append(self.button(rect, label, lambda f=field: self.select_page(f),
-                                       color=T.TEAL if field == self.page else T.NAVY,
-                                       selected=field == self.page, size=T.SIZES["small"], key=f"page:{field}"))
+            buttons.append(
+                self.button(
+                    rect,
+                    NAV_LABELS.get(field, label),
+                    lambda f=field: self.select_page(f),
+                    color=T.TEAL if field == self.page else T.NAVY,
+                    selected=field == self.page,
+                    size=T.SIZES["small"],
+                    icon=_icon(field, _options[0], size=28),
+                    key=f"page:{field}",
+                )
+            )
 
         _label, options = PAGE_BY_FIELD[self.page]
         selected = mobility(look) if self.page == "mobilidade" else look[self.page]
         rects = grid(CHOICES, len(options), 3, gap=8, row_height=68)
         for option, rect in zip(options, rects):
             option_value = option.key
-            buttons.append(self.button(
-                rect, option.label, lambda f=self.page, v=option_value: self.choose(f, v),
-                icon=_icon(self.page, option), selected=selected == option_value,
-                size=T.SIZES["small"], key=f"option:{self.page}:{option_value}",
-            ))
-        buttons.append(self.button((24, 558, 260, 62), "Surpresa!", self.shuffle,
-                                   key="surpresa", color=T.TEAL, size=T.SIZES["label"]))
-        buttons.append(self.button((816, 558, 260, 62),
-                                   "Pronto!" if self.first_time else texts.UI["voltar"], self.finish,
-                                   key="pronto", color=T.ORANGE if self.first_time else T.NAVY,
-                                   size=T.SIZES["label"]))
+            buttons.append(
+                self.button(
+                    rect,
+                    option.label,
+                    lambda f=self.page, v=option_value: self.choose(f, v),
+                    icon=_icon(self.page, option),
+                    selected=selected == option_value,
+                    size=T.SIZES["small"],
+                    key=f"option:{self.page}:{option_value}",
+                )
+            )
+        buttons.append(
+            self.button(
+                (24, 558, 260, 62), "Surpresa!", self.shuffle, key="surpresa", color=T.TEAL, size=T.SIZES["label"]
+            )
+        )
+        buttons.append(
+            self.button(
+                (816, 558, 260, 62),
+                "Pronto!" if self.first_time else texts.UI["voltar"],
+                self.finish,
+                key="pronto",
+                color=T.ORANGE if self.first_time else T.NAVY,
+                size=T.SIZES["label"],
+            )
+        )
         self.menu.set_buttons(buttons)
 
     def select_page(self, field: str) -> None:
@@ -273,23 +302,22 @@ class PilotScene(Scene):
         self.title(screen, texts.UI["piloto"], subtitle)
 
         T.panel(screen, PREVIEW, T.PAPER, T.NAVY, 245, 22, 3)
-        self.text.blit(screen, PAGE_BY_FIELD[self.page][0], (PREVIEW.centerx, PREVIEW.top + 17),
-                       T.SIZES["label"], T.NAVY, True, "midtop")
         stage = pygame.Rect(PREVIEW.left + 28, PREVIEW.bottom - 59, PREVIEW.width - 56, 28)
         pygame.draw.ellipse(screen, paper.INK, stage.inflate(5, 4))
         pygame.draw.ellipse(screen, rgb("dfe9f5"), stage)
         pilot = app.view.skin.pilots.compose("menu", app.profile.piloto)
         if pilot is not None:
             look_key = tuple(sorted(app.profile.piloto.items()))
-            img = self.scaled(pilot, (214, 292), ("paper_pilot_preview", look_key))
+            max_w, max_h = 250, 316
+            factor = min(max_w / pilot.get_width(), max_h / pilot.get_height())
+            size = (round(pilot.get_width() * factor), round(pilot.get_height() * factor))
+            img = self.scaled(pilot, size, ("paper_pilot_preview", look_key, size))
             bob = int(math.sin(self.time * 2.0) * 2)
-            screen.blit(img, img.get_rect(midbottom=(PREVIEW.centerx, stage.top + 12 + bob)))
+            screen.blit(img, img.get_rect(midbottom=(PREVIEW.centerx, stage.top + 3 + bob)))
 
         T.panel(screen, CHOICES, (250, 246, 233), T.NAVY, 225, 20, 2)
-        self.text.blit(screen, "Toque, mire ou pise numa opção", (CHOICES.centerx, CHOICES.top - 20),
-                       T.SIZES["small"], T.NAVY, True, "midbottom")
-        greeting = GREETINGS[min(len(GREETINGS) - 1, self.changes // 3)]
-        bubble = pygame.Rect(PREVIEW.left + 16, PREVIEW.top + 52, PREVIEW.width - 32, 30)
-        T.panel(screen, bubble, (255, 255, 255), T.NAVY, 245, 12, 2)
-        self.text.blit(screen, greeting, bubble.center, T.SIZES["small"], T.MUTED, anchor="center", hand=True)
+        instruction = f"{PAGE_BY_FIELD[self.page][0]}: toque em uma opção"
+        self.text.blit(
+            screen, instruction, (CHOICES.centerx, CHOICES.top - 20), T.SIZES["small"], T.NAVY, True, "midbottom"
+        )
         self.draw_menu(screen)

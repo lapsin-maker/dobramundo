@@ -1,9 +1,8 @@
-"""Renderer 2D do piloto e encaixe no avião.
+"""Renderiza o piloto em aquarela e o encaixa no avião.
 
-O personagem agora usa formas de papel procedurais; anchors.json continua vindo
-de assets/pilot_layers e mantém a posição por modelo de avião. As PNGs legadas
-seguem disponíveis para compatibilidade de conteúdo/build, mas não são necessárias
-para renderizar o piloto novo.
+As poses pintadas e os atlases modulares de cabelo/dispositivos são opcionais;
+o desenho procedural de papel segue como fallback. ``anchors.json`` mantém o
+posicionamento por modelo de avião, e as PNGs legadas seguem para compatibilidade.
 """
 
 from __future__ import annotations
@@ -15,11 +14,12 @@ import pygame
 from ..content.pilot import normalize_pilot
 from .assets import Assets
 from .cache import BoundedCache
+from .painted_pilot import PaintedPilot
 from .paper_pilot import draw_pilot
 
 FOLDER = "pilot_layers"
 INK = (29, 36, 51)
-MIN_PILOT_SHARE = 0.27  # altura mínima do piloto em relação ao sprite do avião
+MIN_PILOT_SHARE = 0.32  # leitura do piloto acima da escala do avião durante o voo
 
 
 def tinted(layer: pygame.Surface, color) -> pygame.Surface:
@@ -45,19 +45,22 @@ class PilotRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         self.anchors = assets.json(FOLDER, "anchors.json") or {}
+        self.painted = PaintedPilot(assets)
         self.cache = BoundedCache(32)  # piloto montado por vista e aparência
 
     def layer(self, view: str, name: str) -> Optional[pygame.Surface]:
         return self.assets.folder(FOLDER).get(f"{view}__{name}")
 
-    def compose(self, view: str, look: dict) -> Optional[pygame.Surface]:
+    def compose(self, view: str, look: dict, pose: Optional[str] = None) -> Optional[pygame.Surface]:
         """Piloto 2D de papel, independente das antigas camadas low-poly."""
         look = normalize_pilot(look)
-        key = (view, tuple(sorted(look.items())))
+        key = (view, pose, tuple(sorted(look.items())))
         cached = self.cache.get(key)
         if cached is not None:
             return cached
-        canvas = draw_pilot(view, look)
+        canvas = self.painted.compose(view, look, pose=pose)
+        if canvas is None:
+            canvas = draw_pilot(view, look)
         self.cache[key] = canvas
         return canvas
 
@@ -65,13 +68,21 @@ class PilotRenderer:
         box = self.anchors.get(view, {}).get(plane)
         return tuple(box) if box and len(box) == 4 else None  # type: ignore[return-value]
 
-    def mount(self, plane_surface: pygame.Surface, plane: str, view: str, look: dict) -> pygame.Surface:
+    def mount(
+        self,
+        plane_surface: pygame.Surface,
+        plane: str,
+        view: str,
+        look: dict,
+        *,
+        pilot_pose: Optional[str] = None,
+    ) -> pygame.Surface:
         """Avião + piloto. Sem camadas geradas, devolve o avião como está.
 
         O corpo do piloto (caixa "body" do anchors.json, sem cabelo nem cadeira) é
         escalado para a altura da caixa do avião e alinhado pelo centro da base.
         """
-        pilot = self.compose(view, look)
+        pilot = self.compose(view, look, pose=pilot_pose)
         box = self.anchor(plane, view)
         body = self.anchors.get("body", {}).get(view)
         if pilot is None or box is None or not body:

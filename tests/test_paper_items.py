@@ -68,8 +68,8 @@ def test_gate_deixa_vazio_o_vano_e_tower_cobre_a_altura_util():
 
     tower_screen = pygame.Surface((1100, 650), pygame.SRCALPHA)
     items.draw(tower_screen, _obstacle("tower", width=100), cam=0.0)
-    assert tower_screen.get_at((510, 280)).a > 0
-    assert tower_screen.get_at((510, 330)).a > 0
+    assert tower_screen.get_at((550, 280)).a > 0
+    assert tower_screen.get_at((550, 330)).a > 0
 
 
 def test_era_solar_usa_palette_diferente_e_cache_de_escala_tem_limite():

@@ -20,15 +20,15 @@ def test_each_city_has_three_distinct_complete_stages(biome, display):
     assert painter.backdrop(biome, 88) is stages[2]
 
 
-def test_reduced_motion_stops_parallax_and_flow_but_keeps_progress(display):
+def test_reduced_motion_keeps_essential_forward_navigation(display):
     painter = WatercolorWorld(Assets())
     world = World(BIOMES["amazonia"])
     world.set_restoration(12)
-    assert painter.draw(display, world, -100, True)
+    assert painter.draw(display, world, 0, True)
     original = pygame.image.tostring(display, "RGB")
     world.distance += 400
-    assert painter.draw(display, world, 100, True)
-    assert pygame.image.tostring(display, "RGB") == original
+    assert painter.draw(display, world, 0, True)
+    assert pygame.image.tostring(display, "RGB") != original
     world.set_restoration(88)
     painter.draw(display, world, 100, True)
     assert pygame.image.tostring(display, "RGB") != original
@@ -36,7 +36,7 @@ def test_reduced_motion_stops_parallax_and_flow_but_keeps_progress(display):
 
 def test_incomplete_art_pack_uses_entire_procedural_fallback(monkeypatch, display):
     assets = Assets()
-    monkeypatch.setattr(assets, "folder", lambda *_: {"amazonia_0": display})
+    monkeypatch.setattr(assets, "folder", lambda *_, **__: {"amazonia_0": display})
     painter = WatercolorWorld(assets)
     assert painter.backdrop("amazonia", 12) is None
 
@@ -48,3 +48,10 @@ def test_transition_never_mutates_source_art(display):
     for value in (34, 38, 44, 68, 72, 76):
         assert painter.backdrop("caatinga", value) is not None
     assert before == [(surface.get_alpha(), pygame.image.tostring(surface, "RGB")) for surface in layers]
+
+
+def test_missing_mobile_pack_requests_moving_procedural_fallback(display):
+    painter = WatercolorWorld(Assets())
+    painter.route.ground = None
+    world = World(BIOMES["amazonia"])
+    assert painter.draw(display, world, 0) is False

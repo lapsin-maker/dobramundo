@@ -9,7 +9,8 @@ import pygame
 from .. import config as C
 from ..content import texts
 from ..content.items import WASTE_TYPES
-from ..content.progress import PART_BY_KEY, VILLAGE_UPGRADES, missing
+from ..content.progress import PART_BY_KEY, VILLAGE_UPGRADES, can_afford, missing
+from ..engine.village_art import village_prop
 from ..game.run import FlightRun
 from ..ui import theme as T
 from ..ui.widgets import row, star
@@ -65,10 +66,31 @@ class ResultScene(Scene):
 
     def build(self) -> None:
         rects = row(pygame.Rect(C.WIDTH // 2 - 360, 548, 720, 76), 2)
+        next_build = next((item for item in VILLAGE_UPGRADES if item.key not in self.app.profile.vila), None)
+        has_materials = next_build is not None and can_afford(self.app.profile.recursos, next_build.cost)
+        if next_build is None:
+            village_label = "Voltar à vila"
+
+            def village_action() -> None:
+                self.goto("vila")
+
+        else:
+            village_label = "Construir na vila" if has_materials else "Ver próxima obra"
+
+            def village_action(key: str = next_build.key) -> None:
+                self.goto("melhorias", tab="vila", initial_key=key)
+
         self.menu.set_buttons(
             [
                 self.button(rects[0], texts.UI["tentar_de_novo"] if self.run.game_over else "Voar de novo", self.again),
-                self.button(rects[1], "Voltar à vila", lambda: self.goto("vila")),
+                self.button(
+                    rects[1],
+                    village_label,
+                    village_action,
+                    icon=T.icon_surface("village", 42, T.GREEN),
+                    color=T.GREEN,
+                    key="vila_proxima_obra",
+                ),
             ],
             keep_focus=False,
         )
@@ -174,11 +196,8 @@ class ResultScene(Scene):
                 T.MUTED,
             )
             return
-        icon = self.app.assets.sprite("biome_sprites", next_build.sprite)
-        if icon is None:
-            icon = self.app.assets.sprite("era_final_sprites", next_build.sprite)
-        if icon is not None:
-            screen.blit(self.scaled(icon, (62, 62), ("next_build", next_build.key)), (rect.left + 62, rect.top + 15))
+        icon = village_prop(next_build.key, self.app.assets.sprite("watercolor", "village_props"))
+        screen.blit(self.scaled(icon, (76, 76), ("next_build", next_build.key)), (rect.left + 48, rect.top + 8))
         self.text.blit(
             screen,
             f"Próxima obra · {next_build.name}",
@@ -189,14 +208,35 @@ class ResultScene(Scene):
         )
         shortfall = missing(profile.recursos, next_build.cost)
         if not shortfall:
-            status = "Pronta para construir!"
-            color = T.GREEN
-        else:
-            names = {waste.key: waste.name.lower() for waste in WASTE_TYPES}
-            details = " · ".join(f"{amount} de {names.get(key, key)}" for key, amount in shortfall.items())
-            status = f"Faltam {details}"
-            color = T.ORANGE
-        self.text.blit(screen, status, (rect.left + 132, rect.top + 48), T.SIZES["small"], color, True)
+            self.text.blit(
+                screen,
+                "Pronta para construir!",
+                (rect.left + 132, rect.top + 48),
+                T.SIZES["small"],
+                T.GREEN,
+                True,
+            )
+            return
+        self.text.blit(screen, "Materiais", (rect.left + 132, rect.top + 48), T.SIZES["small"], T.ORANGE, True)
+        x = rect.left + 226
+        for waste in WASTE_TYPES:
+            needed = next_build.cost.get(waste.key, 0)
+            if not needed:
+                continue
+            icon = self.app.assets.sprite("waste_sprites", waste.sprite)
+            if icon is not None:
+                screen.blit(self.scaled(icon, (24, 24), ("next-build-waste", waste.key)), (x, rect.top + 62))
+            have = profile.recursos.get(waste.key, 0)
+            color = T.GREEN if have >= needed else T.ORANGE
+            self.text.blit(
+                screen,
+                f"{have}/{needed}",
+                (x + 25, rect.top + 65),
+                15,
+                color,
+                True,
+            )
+            x += 78
 
     def draw_missing_parts(self, screen: pygame.Surface, rect: pygame.Rect) -> None:
         T.panel(screen, rect, T.PAPER, T.NAVY, 245, 16, 2)

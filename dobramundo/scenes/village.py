@@ -36,16 +36,15 @@ HOUSES = [
 ]
 # Onde cada melhoria aparece na vila: x, base y, altura (três núcleos e um largo central).
 SLOTS = {
-    # Meia-lua ao redor do largo, com o centro livre para o avião e para o
-    # personagem. Os oito pontos permanecem estáveis entre fundos e progresso.
-    "paineis": (625, 500, 90),
-    "turbina": (1000, 430, 90),
+    # Meia-lua em dois agrupamentos habitados; deixa o corredor do avião livre.
+    "paineis": (680, 500, 90),
+    "turbina": (1040, 430, 90),
     "telhado_verde": (100, 430, 90),
-    "horta": (475, 500, 72),
-    "compostor": (350, 490, 72),
-    "ponto_troca": (225, 465, 85),
-    "cisterna": (750, 490, 90),
-    "bicicletario": (875, 465, 68),
+    "horta": (450, 520, 72),
+    "compostor": (330, 500, 72),
+    "ponto_troca": (210, 470, 85),
+    "cisterna": (800, 500, 90),
+    "bicicletario": (920, 470, 68),
 }
 TREES = [
     (60, 350, 70, 1),
@@ -150,39 +149,58 @@ def draw_house(screen: pygame.Surface, x: int, base_y: int, height: int, index: 
         pygame.draw.line(screen, rgb("f5e6c6"), (x, body.top - height // 7), (x, body.top + height // 18), 2)
 
 
-def _watercolor_background(scene: Scene, progress: float) -> pygame.Surface | None:
-    """Fundos ilustrados em cache; a transição usa o mesmo enquadramento."""
+def _watercolor_background(scene: Scene, progress: float) -> tuple[tuple[pygame.Surface, int], ...] | None:
+    """Mistura os fundos pintados da vila em três estágios de transformação."""
     cache = scene.watercolor_backgrounds
     if not cache:
-        for name in ("village_start", "village_clean"):
+        for name in (
+            "village_start_v2",
+            "village_start",
+            "village_intermediate",
+            "village_final",
+            "village_clean",
+        ):
             source = scene.app.assets.sprite("watercolor", name)
             cache[name] = scene.scaled(source, (C.WIDTH, C.HEIGHT), ("watercolor", name)) if source else None
-    start, clean = cache["village_start"], cache["village_clean"]
-    if start is None and clean is None:
+    start = cache.get("village_start_v2") or cache.get("village_start")
+    intermediate = cache["village_intermediate"] or cache["village_clean"]
+    final = cache["village_final"] or cache["village_clean"] or intermediate
+    if start is None and intermediate is None and final is None:
         return None
-    if start is None:
-        return clean
-    if clean is None:
-        return start
-    # alpha é configurado no surface cacheado; nenhuma escala ou cópia por quadro.
-    clean.set_alpha(max(0, min(255, int(255 * progress))))
-    scene.watercolor_mix = clean
-    return start
+    start = start or intermediate or final
+    intermediate = intermediate or start
+    final = final or intermediate
+    # Se o fornecedor ainda não tiver entregue os três arquivos, repete o mais
+    # próximo disponível sem quebrar a vila; cada fundo continua no mesmo recorte.
+    for surface in {start, intermediate, final}:
+        surface.set_alpha(255)
+    stage = max(0.0, min(2.0, progress * 2))
+    if stage <= 1:
+        base, overlay, blend = start, intermediate, stage
+    else:
+        base, overlay, blend = intermediate, final, stage - 1
+    if base is overlay:
+        base.set_alpha(255)
+        scene.watercolor_mix = None
+        return ((base, 255),)
+    overlay.set_alpha(round(255 * blend))
+    scene.watercolor_mix = overlay
+    return ((base, 255), (overlay, round(255 * blend)))
 
 
 def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> None:
     """Diorama ilustrado e obras localizadas (também usado na tela de cuidado)."""
     app, t = scene.app, scene.time
     progress = village_progress(app.profile)
-    background = _watercolor_background(scene, progress)
-    illustrated = background is not None
-    if background is None:
+    background_layers = _watercolor_background(scene, progress)
+    illustrated = background_layers is not None
+    if background_layers is None:
         draw_ground(scene, screen, progress)
     else:
-        screen.blit(background, (0, 0))
-        mix = scene.watercolor_mix
-        if mix is not None and mix is not background:
-            screen.blit(mix, (0, 0))
+        for layer, alpha in background_layers:
+            layer.set_alpha(alpha)
+            screen.blit(layer, (0, 0))
+    prop_atlas = app.assets.sprite("watercolor", "village_props")
     scenery = app.assets.scenery
     owned = set(app.profile.vila)
     items = []  # (base y, tipo, dados): desenhados do fundo para a frente
@@ -196,7 +214,7 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
         if upgrade.key in owned:
             items.append((base_y, "sprite", (upgrade.sprite, x, base_y, height, upgrade.key)))
         elif upgrade.key == highlight:
-            items.append((base_y, "ghost", (x, base_y, height)))
+            items.append((base_y, "ghost", (upgrade.key, x, base_y, height)))
     if not illustrated:
         for x, y, height, seed in TREES:
             items.append((y, "tree", (x, y, height, seed)))
@@ -213,9 +231,9 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
         if kind == "sprite":
             name, x, base_y, height, key = data
             if key is not None:
-                sprite = village_prop(key)
-                prop_height = max(78, height)
-                prop_width = min(int(prop_height * 1.5), max(90, 2 * min(x, C.WIDTH - x) - 8))
+                sprite = village_prop(key, prop_atlas)
+                prop_height = max(112, int(height * 1.55))
+                prop_width = min(int(prop_height * 1.5), max(120, 2 * min(x, C.WIDTH - x) - 8))
                 img = scene.scaled(sprite, (prop_width, prop_height), ("village_prop", key, prop_width, prop_height))
             else:
                 sprite = scenery.get(name)
@@ -223,16 +241,28 @@ def draw_village(scene: Scene, screen: pygame.Surface, highlight: str = "") -> N
                     continue
                 img = scene.scaled(sprite, (height * 3, height))
             rect = img.get_rect(midbottom=(x, base_y))
-            paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 55)
+            if key is None or prop_atlas is None:
+                paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 55)
             screen.blit(img, rect)
             if key == highlight:
                 pygame.draw.rect(screen, T.SUN, rect.inflate(10, 10), 4, border_radius=12)
         elif kind == "ghost":
-            x, base_y, height = data
-            ghost = pygame.Rect(0, 0, height, height)
-            ghost.midbottom = (x, base_y)
-            pygame.draw.rect(screen, T.SUN, ghost, 3, border_radius=12)
-            scene.text.blit(screen, "?", ghost.center, T.SIZES["title"], T.SUN, True, "center")
+            key, x, base_y, height = data
+            if prop_atlas is not None:
+                sprite = village_prop(key, prop_atlas)
+                prop_height = max(112, int(height * 1.55))
+                prop_width = min(int(prop_height * 1.5), max(120, 2 * min(x, C.WIDTH - x) - 8))
+                img = scene.scaled(sprite, (prop_width, prop_height), ("village_prop_preview", key)).copy()
+                img.set_alpha(175)
+                rect = img.get_rect(midbottom=(x, base_y))
+                paper.shadow(screen, (x, base_y - 2), int(rect.width * 0.9), max(8, int(height * 0.16)), 42)
+                screen.blit(img, rect)
+                pygame.draw.rect(screen, T.SUN, rect.inflate(12, 12), 4, border_radius=12)
+            else:
+                ghost = pygame.Rect(0, 0, height, height)
+                ghost.midbottom = (x, base_y)
+                pygame.draw.rect(screen, T.SUN, ghost, 3, border_radius=12)
+                scene.text.blit(screen, "?", ghost.center, T.SIZES["title"], T.SUN, True, "center")
         elif kind == "house":
             _name, x, base_y, height, index = data
             draw_house(screen, x, base_y, height, index, progress)
@@ -326,11 +356,11 @@ class VillageScene(Scene):
         if plane is not None:
             key = ("vila", skin.look_key(profile.aviao, color, pattern, profile.piloto))
             backgrounds = self.watercolor_backgrounds
-            painted = backgrounds.get("village_start") is not None
-            plane_size = (180, 120) if painted else (250, 170)
+            painted = any(backgrounds.get(name) is not None for name in ("village_start_v2", "village_start"))
+            plane_size = (225, 150) if painted else (250, 170)
             img = self.scaled(plane, plane_size, key)
             bob = math.sin(self.time * 2.2) * 6
-            paper.shadow(screen, (SQUARE[0], SQUARE[1] + 3), 190 - int(bob * 3), 34, 60)
+            paper.shadow(screen, (SQUARE[0], SQUARE[1] + 3), int(img.get_width() * 0.88) - int(bob * 3), 34, 60)
             screen.blit(img, img.get_rect(center=(SQUARE[0], int((340 if painted else 330) + bob))))
         progress = village_progress(profile)
         # Cabeçalho sólido: título e progresso não se perdem sobre os detalhes do fundo.

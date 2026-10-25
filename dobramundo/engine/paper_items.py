@@ -1,7 +1,7 @@
-"""Resíduos, power-ups e obstáculos nativos em papel e aquarela.
+"""Resíduos, power-ups e obstáculos em papel, com fallback vetorial local.
 
-Os pictogramas canônicos são desenhados uma única vez; a perspectiva só pede
-reescalas cacheadas. Não usa assets, fontes, filtros externos ou animação.
+Atlas transparentes opcionais são recortados uma vez; a perspectiva só pede
+reescalas cacheadas. Não usa filtros externos nem animação.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import pygame
 from .. import config as C
 from ..content.items import POWERUP_COLORS, POWERUP_KINDS, WASTE_BY_KEY
 from ..game.entities import Entity
+from ..paths import find_asset_file
 from .cache import BoundedCache
 from .sprites import project
 
@@ -21,10 +22,8 @@ Color = Tuple[int, int, int]
 Size = Tuple[int, int]
 INK: Color = (18, 43, 88)
 PAPER: Color = (250, 245, 229)
-PAPER_DARK: Color = (232, 221, 195)
 TEAL: Color = (51, 151, 161)
 GREEN: Color = (74, 151, 101)
-OCHRE: Color = (188, 139, 75)
 CORAL: Color = (232, 105, 73)
 SUN: Color = (246, 195, 59)
 HC_INK: Color = (8, 20, 44)
@@ -131,61 +130,140 @@ def _paper_token(key: str, rim: Color) -> pygame.Surface:
     return surface
 
 
-def _arrow(surface: pygame.Surface, direction: str, color: Color = SUN, center=(80, 80), scale: float = 1.0) -> None:
-    cx, cy = center
-    if direction == "up":
-        pts = [(cx, cy - 38 * scale), (cx - 28 * scale, cy - 5 * scale), (cx - 12 * scale, cy - 5 * scale),
-               (cx - 12 * scale, cy + 31 * scale), (cx + 12 * scale, cy + 31 * scale),
-               (cx + 12 * scale, cy - 5 * scale), (cx + 28 * scale, cy - 5 * scale)]
-    elif direction == "down":
-        pts = [(cx, cy + 38 * scale), (cx - 28 * scale, cy + 5 * scale), (cx - 12 * scale, cy + 5 * scale),
-               (cx - 12 * scale, cy - 31 * scale), (cx + 12 * scale, cy - 31 * scale),
-               (cx + 12 * scale, cy + 5 * scale), (cx + 28 * scale, cy + 5 * scale)]
-    else:  # lateral: duas setas para deixar claro que o caminho é ao lado
-        pygame.draw.polygon(surface, INK, [(cx - 40, cy), (cx - 17, cy - 19), (cx - 17, cy - 8), (cx - 4, cy - 8),
-                                          (cx - 4, cy + 8), (cx - 17, cy + 8), (cx - 17, cy + 19)])
-        pygame.draw.polygon(surface, color, [(cx - 36, cy), (cx - 18, cy - 14), (cx - 18, cy - 5), (cx, cy - 5),
-                                             (cx, cy + 5), (cx - 18, cy + 5), (cx - 18, cy + 14)])
-        pygame.draw.polygon(surface, INK, [(cx + 40, cy), (cx + 17, cy - 19), (cx + 17, cy - 8), (cx + 4, cy - 8),
-                                          (cx + 4, cy + 8), (cx + 17, cy + 8), (cx + 17, cy + 19)])
-        pygame.draw.polygon(surface, color, [(cx + 36, cy), (cx + 18, cy - 14), (cx + 18, cy - 5), (cx, cy - 5),
-                                             (cx, cy + 5), (cx + 18, cy + 5), (cx + 18, cy + 14)])
-        return
-    pygame.draw.polygon(surface, INK, pts)
-    inner = [(cx + (x - cx) * 0.72, cy + (y - cy) * 0.72) for x, y in pts]
-    pygame.draw.polygon(surface, color, inner)
+def _atlas_cells(filename: str, columns: int, rows: int) -> Tuple[pygame.Surface, ...]:
+    """Recorta uma grade RGBA do diretório de assets, sem carregar nada por quadro."""
+    path = find_asset_file("watercolor", filename)
+    if path is None:
+        return ()
+    try:
+        atlas = pygame.image.load(str(path)).convert_alpha()
+    except (OSError, pygame.error):
+        return ()
+    width, height = atlas.get_size()
+    if width < columns * 24 or height < rows * 24:
+        return ()
+    alpha_count = pygame.mask.from_surface(atlas, 1).count()
+    if alpha_count == 0 or alpha_count == width * height:
+        return ()
+    cells = []
+    for row in range(rows):
+        top = row * height // rows
+        bottom = (row + 1) * height // rows
+        for col in range(columns):
+            left = col * width // columns
+            right = (col + 1) * width // columns
+            cells.append(atlas.subsurface((left, top, right - left, bottom - top)).copy())
+    return tuple(cells)
+
+
+def _obstacle_atlas_cells() -> Tuple[pygame.Surface, ...]:
+    """Recorta arte útil, sem cordas acima nem folhagem abaixo do vão do portal."""
+    path = find_asset_file("watercolor", "obstacles_refined.png")
+    if path is None:
+        return ()
+    try:
+        atlas = pygame.image.load(str(path)).convert_alpha()
+    except (OSError, pygame.error):
+        return ()
+    # Rects absolutos (x0, y0, x1, y1) no atlas 1536x1024. Para os portais,
+    # o limite inferior é a borda física da travessa; corda/vinha ficam de fora.
+    crops = (
+        (56, 297, 512, 472),  # low industrial: barreira e pés, sem névoa transparente
+        (548, 174, 1078, 270),  # gate industrial: vigas e suportes, sem cordas
+        (1258, 23, 1412, 480),  # torre industrial
+        (31, 655, 512, 953),  # low solar: canteiro até a base
+        (548, 646, 1145, 742),  # gate solar: travessa; corta folhas pendentes
+        (1223, 513, 1455, 977),  # torre solar
+    )
+    width, height = atlas.get_size()
+    if any(x1 > width or y1 > height or x1 <= x0 or y1 <= y0 for x0, y0, x1, y1 in crops):
+        return ()
+    try:
+        cells = tuple(atlas.subsurface((x0, y0, x1 - x0, y1 - y0)).copy() for x0, y0, x1, y1 in crops)
+    except ValueError:
+        return ()
+    return cells if _valid_atlas(cells, 6) else ()
+
+
+def _valid_atlas(cells: Tuple[pygame.Surface, ...], count: int) -> bool:
+    return len(cells) == count and all(cell.get_bounding_rect(min_alpha=1).size != (0, 0) for cell in cells)
+
+
+def _compose_atlas_token(base: pygame.Surface, art: pygame.Surface, powerup: bool) -> pygame.Surface:
+    """Aplica a arte recortada numa ficha: resíduo circular, benefício hexagonal."""
+    result = pygame.Surface((TOKEN_SIZE, TOKEN_SIZE), pygame.SRCALPHA)
+    center = (TOKEN_SIZE // 2, TOKEN_SIZE // 2)
+    if powerup:
+        points = [(48, 5), (84, 26), (84, 69), (48, 91), (12, 69), (12, 26)]
+        pygame.draw.polygon(result, INK, points)
+        pygame.draw.polygon(result, (104, 178, 181), [(48, 10), (79, 29), (79, 66), (48, 86), (17, 66), (17, 29)])
+        pygame.draw.polygon(result, PAPER, [(48, 16), (73, 32), (73, 63), (48, 80), (23, 63), (23, 32)])
+        size = (64, 64)
+    else:
+        result.blit(base, (0, 0))
+        size = (66, 66)
+    bounds = art.get_bounding_rect(min_alpha=16)
+    if bounds.size != (0, 0):
+        art = art.subsurface(bounds).copy()
+    icon = pygame.transform.smoothscale(art, size)
+    if not powerup:
+        clip = pygame.Surface(size, pygame.SRCALPHA)
+        pygame.draw.circle(clip, (255, 255, 255, 255), (size[0] // 2, size[1] // 2), size[0] // 2)
+        icon.blit(clip, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    result.blit(icon, icon.get_rect(center=center))
+    _paper_texture(result, 137 + art.get_width() * 17 + art.get_height(), 15)
+    return result
+
+
+def _silhouette_obstacle(kind: str, solar: bool) -> pygame.Surface:
+    """Fallback de suporte: peças estruturais com alpha, nunca placas preenchidas."""
+    surface = pygame.Surface(OBSTACLE_SIZE, pygame.SRCALPHA)
+    ink = INK
+    wood = (106, 116, 99) if solar else (141, 101, 62)
+    accent = (85, 171, 137) if solar else (201, 146, 83)
+    if kind == "low":
+        pygame.draw.line(surface, ink, (0, 159), (79, 0), 12)
+        pygame.draw.line(surface, ink, (159, 159), (81, 0), 12)
+        pygame.draw.line(surface, wood, (1, 158), (79, 1), 7)
+        pygame.draw.line(surface, wood, (158, 158), (81, 1), 7)
+        pygame.draw.line(surface, ink, (17, 91), (143, 91), 22)
+        pygame.draw.line(surface, accent, (18, 89), (142, 89), 14)
+        pygame.draw.line(surface, ink, (80, 28), (80, 20), 12)
+    elif kind == "gate":
+        pygame.draw.line(surface, ink, (15, 155), (15, 18), 16)
+        pygame.draw.line(surface, ink, (145, 155), (145, 18), 16)
+        pygame.draw.line(surface, ink, (15, 23), (145, 23), 20)
+        pygame.draw.line(surface, accent, (16, 20), (144, 20), 11)
+        for x in (15, 145):
+            pygame.draw.line(surface, wood, (x, 130), (x + (20 if x == 15 else -20), 154), 8)
+    else:
+        pygame.draw.line(surface, ink, (80, 8), (80, 155), 18)
+        pygame.draw.line(surface, accent, (80, 10), (80, 154), 11)
+        pygame.draw.line(surface, ink, (4, 90), (156, 90), 13)
+        pygame.draw.line(surface, wood, (5, 87), (155, 87), 7)
+        pygame.draw.line(surface, ink, (10, 130), (150, 130), 13)
+        pygame.draw.line(surface, wood, (11, 127), (149, 127), 7)
+        for y, width in ((36, 94), (70, 74), (104, 54), (138, 32)):
+            pygame.draw.line(surface, ink, (80 - width // 2, y), (80 + width // 2, y), 11)
+            pygame.draw.line(surface, wood, (80 - width // 2, y - 3), (80 + width // 2, y - 3), 5)
+    return surface
 
 
 def _obstacle_sprite(kind: str, solar: bool) -> pygame.Surface:
-    surface = pygame.Surface(OBSTACLE_SIZE, pygame.SRCALPHA)
-    fill = (75, 151, 111) if solar else OCHRE
-    shadow = (40, 108, 80) if solar else (137, 91, 47)
-    warn = CORAL if solar else SUN
-    surface.fill(fill)
-    # Broad paper wash on the main object; a warning strip remains in both eras.
-    pygame.draw.rect(surface, shadow, (0, 0, 160, 15))
-    for x in range(-4, 164, 30):
-        pygame.draw.polygon(surface, warn, [(x, 0), (x + 13, 0), (x - 2, 15), (x - 15, 15)])
-    pygame.draw.rect(surface, INK, (2, 2, 156, 156), 5)
-    if kind == "low":
-        pygame.draw.line(surface, shadow, (5, 55), (155, 55), 6)
-        pygame.draw.line(surface, shadow, (5, 105), (155, 105), 6)
-        for x in (12, 148):
-            pygame.draw.rect(surface, (PAPER_DARK if not solar else (188, 224, 190)), (x - 5, 24, 10, 119))
-            pygame.draw.rect(surface, INK, (x - 5, 24, 10, 119), 2)
-        _arrow(surface, "up", SUN if solar else (250, 228, 146), center=(80, 83), scale=0.72)
-    elif kind == "gate":
-        pygame.draw.line(surface, shadow, (4, 88), (156, 88), 10)
-        pygame.draw.line(surface, PAPER, (10, 92), (150, 92), 3)
-        _arrow(surface, "down", (255, 247, 216), center=(80, 81), scale=0.7)
-    else:  # tower
-        pygame.draw.rect(surface, shadow, (54, 15, 52, 140), border_radius=7)
-        pygame.draw.rect(surface, fill, (61, 18, 38, 136), border_radius=5)
-        pygame.draw.rect(surface, INK, (61, 18, 38, 136), 4, border_radius=5)
-        pygame.draw.line(surface, (PAPER_DARK if not solar else (192, 229, 199)), (69, 28), (69, 142), 5)
-        _arrow(surface, "side", warn, center=(80, 83), scale=0.8)
+    surface = _silhouette_obstacle(kind, solar)
     _paper_texture(surface, (sum(ord(ch) for ch in kind) + (97 if solar else 11)), 30)
     return surface
+
+
+def _obstacle_outline(source: pygame.Surface, warning: Color) -> pygame.Surface:
+    """Contorno de contraste pré-calculado, sem extrair máscaras durante o voo."""
+    outline = pygame.Surface(source.get_size(), pygame.SRCALPHA)
+    points = pygame.mask.from_surface(source, 16).outline()
+    if len(points) > 2:
+        thickness = max(4, min(12, min(source.get_size()) // 18))
+        pygame.draw.lines(outline, HC_INK, True, points, thickness)
+        pygame.draw.lines(outline, warning, True, points, max(2, thickness // 2))
+    return outline
 
 
 class PaperItems:
@@ -193,15 +271,35 @@ class PaperItems:
 
     def __init__(self, cache_limit: int = 192) -> None:
         self.canonical: Dict[Hashable, pygame.Surface] = {}
+        item_art = _atlas_cells("items_refined.png", 4, 2)
         for waste in WASTE_BY_KEY.values():
-            self.canonical[("waste", waste.key)] = _paper_token(waste.key, waste.color)
-        for kind in POWERUP_KINDS:
-            self.canonical[("powerup", kind)] = _paper_token(kind, POWERUP_COLORS[kind])
+            base = _paper_token(waste.key, waste.color)
+            if _valid_atlas(item_art[:7], 7) and len(item_art) == 8:
+                index = {"papel": 0, "plastico": 1, "metal": 2, "vidro": 3}[waste.key]
+                base = _compose_atlas_token(base, item_art[index], False)
+            self.canonical[("waste", waste.key)] = base
+        for offset, kind in enumerate(POWERUP_KINDS):
+            base = _paper_token(kind, POWERUP_COLORS[kind])
+            if _valid_atlas(item_art[:7], 7) and len(item_art) == 8:
+                base = _compose_atlas_token(base, item_art[4 + offset], True)
+            self.canonical[("powerup", kind)] = base
+        obstacle_art = _obstacle_atlas_cells()
         for kind in ("low", "gate", "tower"):
             for solar in (False, True):
-                self.canonical[("obstacle", kind, solar)] = _obstacle_sprite(kind, solar)
+                base = _obstacle_sprite(kind, solar)
+                if _valid_atlas(obstacle_art, 6):
+                    index = (3 if solar else 0) + ("low", "gate", "tower").index(kind)
+                    base = obstacle_art[index]
+                self.canonical[("obstacle", kind, solar)] = base
         self._scaled: BoundedCache = BoundedCache(cache_limit)
         self._shadows: BoundedCache = BoundedCache(64)
+        for kind in ("low", "gate", "tower"):
+            for solar in (False, True):
+                key = ("obstacle", kind, solar)
+                warning = CORAL if solar else SUN
+                self.canonical[("obstacle-outline", kind, solar)] = _obstacle_outline(
+                    self.canonical[key], warning
+                )
 
     def _scale(self, key: Hashable, size: Size) -> pygame.Surface:
         size = (max(1, int(size[0])), max(1, int(size[1])))
@@ -281,25 +379,10 @@ class PaperItems:
             return
         key = ("obstacle", kind, bool(entity.solar))
         if high_contrast:
-            warning = CORAL if entity.solar else SUN
-            pygame.draw.rect(screen, HC_INK, rect.inflate(8, 8), border_radius=5)
-            pygame.draw.rect(screen, warning, rect.inflate(4, 4), width=max(2, int(2 * scale)), border_radius=4)
+            outline_key = ("obstacle-outline", kind, bool(entity.solar))
+            screen.blit(self._scale(outline_key, (width, height)), rect.topleft)
         sprite = self._scale(key, (width, height))
         screen.blit(sprite, rect)
-
-        # Seta abaixo da travessa: mostra o espaço livre sem cobrir a hitbox do gate.
-        if kind == "gate":
-            arrow_h = max(7, min(40, int(30 * scale)))
-            arrow_w = max(7, int(22 * scale))
-            arrow_key = ("arrow", "down", bool(entity.solar))
-            arrow = self._scaled.get((arrow_key, (arrow_w, arrow_h)))
-            if arrow is None:
-                arrow_surface = pygame.Surface((48, 72), pygame.SRCALPHA)
-                _arrow(arrow_surface, "down", (255, 255, 255), (24, 36), 0.85)
-                self.canonical[arrow_key] = arrow_surface
-                arrow = self._scale(arrow_key, (arrow_w, arrow_h))
-            arrow_y = int(sy_bottom + 1)
-            screen.blit(arrow, (int(sx - arrow_w / 2), arrow_y))
 
     def draw(self, screen: pygame.Surface, entity: Entity, cam: float, high_contrast: bool = False) -> None:
         """Desenha entidade no centro projetado, sem alterar seu tipo ou hitbox.

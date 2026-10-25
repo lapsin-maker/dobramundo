@@ -53,9 +53,12 @@ def focus_vignette(size: Tuple[int, int], strong: bool) -> pygame.Surface:
 
 
 class Banner:
-    def __init__(self, title: str, subtitle: str = "", color=T.SUN, ttl: float = 2.6, stars: int = 0) -> None:
+    def __init__(
+        self, title: str, subtitle: str = "", color=T.SUN, ttl: float = 2.6, stars: int = 0, action: str = ""
+    ) -> None:
         self.title, self.subtitle, self.color, self.ttl, self.total = title, subtitle, color, ttl, ttl
         self.stars = stars  # estrelas desenhadas antes do título
+        self.action = action  # up, down, side, collect; pictograma contextual à lição
 
 
 class FlightScene(Scene):
@@ -199,7 +202,8 @@ class FlightScene(Scene):
                 audio.play(FOCUS_SOUNDS[name])
             elif name == "lesson":
                 title, subtitle = texts.LESSONS[str(data)]
-                self.banners.append(Banner(title, subtitle, T.WHITE, 2.6))
+                action = {"waste": "collect", "low": "up", "gate": "down", "tower": "side"}.get(str(data), "")
+                self.banners.append(Banner(title, subtitle, T.WHITE, 2.6, action=action))
             elif name == "stage":
                 audio.play("sfx_estagio")
                 audio.music(self.stage_music(int(data)))
@@ -209,12 +213,17 @@ class FlightScene(Scene):
                 self.flash = 0.6 if self.app.options.efeitos_fortes and not self.app.options.reduzir_movimento else 0.0
                 if data == 2 and not parts_ok(self.biome.required_parts, self.run.parts):
                     need = ", ".join(PART_BY_KEY[k].name for k in self.biome.required_parts)
-                    self.banners.append(Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6))
+                    self.banners.append(
+                        Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6, action="star")
+                    )
                 else:
                     self.banners.append(Banner(f"Estrela {data}!", "", T.SUN, 2.2, stars=int(data)))
             elif name == "mission":
                 audio.play("sfx_compra")
-                self.banners.append(Banner("Meta cumprida!", data.text(data.target), T.SUN, 2.4))
+                action = {"desviar": "side", "portal": "down", "coletar": "collect", "powerup": "collect"}.get(
+                    data.kind, "star"
+                )
+                self.banners.append(Banner("Meta cumprida!", data.text(data.target), T.SUN, 2.4, action=action))
             elif name == "complete":
                 audio.play("sfx_fim_fase")
                 self.banners.append(Banner(f"{self.biome.city} solarpunk!", "A cidade se transformou.", T.SUN, 3.0))
@@ -352,14 +361,22 @@ class FlightScene(Scene):
         width = 365
         box = pygame.Rect(18, 94, width, 58)
         T.panel(screen, box, T.PAPER, T.TEAL, 240, 15, 2)
-        waste = next((item for item in WASTE_TYPES if item.key == mission.waste), None)
-        icon = self.app.assets.sprite("waste_sprites", waste.sprite) if waste else None
-        if icon is None:
-            kind = {"desviar": "dodge", "portal": "portal", "powerup": "powerup"}.get(mission.kind, "collect")
-            icon = T.icon_surface(kind, 44, T.TEAL)
+        center = (box.left + 34, box.centery)
+        if mission.kind == "desviar":
+            self.draw_arrow(screen, (center[0] - 9, center[1]), (-1, 0), 17)
+            self.draw_arrow(screen, (center[0] + 9, center[1]), (1, 0), 17)
+        elif mission.kind == "portal":
+            self.draw_arrow(screen, center, (0, 1), 20)
+        elif mission.kind == "coletar":
+            waste = next((item for item in WASTE_TYPES if item.key == mission.waste), None)
+            icon = self.app.assets.sprite("waste_sprites", waste.sprite) if waste else None
+            if icon is not None:
+                icon = self.scaled(icon, (44, 44), ("mission", mission.waste))
+            else:
+                icon = T.icon_surface("paper", 44, T.TEAL)
+            screen.blit(icon, icon.get_rect(center=center))
         else:
-            icon = self.scaled(icon, (44, 44), ("mission", mission.waste))
-        screen.blit(icon, icon.get_rect(center=(box.left + 34, box.centery)))
+            screen.blit(T.icon_surface("powerup", 44, T.TEAL), (center[0] - 22, center[1] - 22))
         self.text.blit(
             screen,
             f"{self.run.missions.progress}/{mission.target}",
@@ -387,21 +404,54 @@ class FlightScene(Scene):
         if not self.banners or self.run.focus.state == "pending":
             return  # a seta do momento de foco fica sozinha na tela
         banner = self.banners[-1]
-        fade = min(1.0, banner.ttl / 0.4, (banner.total - banner.ttl) / 0.3 + 0.2)
-        title = self.text.render(banner.title, T.SIZES["title"], T.NAVY, True)
-        icons = banner.stars * 34
-        width = max(title.get_width() + icons, self.text.font(T.SIZES["body"]).size(banner.subtitle)[0]) + 60
-        rect = pygame.Rect(0, 0, width, 92 if banner.subtitle else 60)
-        rect.center = (C.WIDTH // 2, 168)
-        T.panel(screen, rect, T.PAPER, T.ORANGE, int(235 * fade), 18, 3)
-        left = rect.centerx - (title.get_width() + icons) // 2
-        for i in range(banner.stars):
-            star(screen, (left + 14 + i * 34, rect.top + 30), 14, True)
-        screen.blit(title, (left + icons, rect.top + 10))
+        reduced = self.app.options.reduzir_movimento
+        fade = 1.0 if reduced else min(1.0, banner.ttl / 0.4, (banner.total - banner.ttl) / 0.3 + 0.2)
+        # Faixa curta, junto à margem superior, sem cobrir o avião ou o corredor.
+        rect = pygame.Rect(C.WIDTH // 2 - 300, 160, 600, 54)
+        T.panel(screen, rect, T.PAPER, T.ORANGE, int(245 * fade), 15, 2)
+        icon_center = (rect.left + 31, rect.centery)
+        if banner.action in ("up", "down", "side"):
+            if banner.action == "side":
+                self.draw_arrow(screen, (icon_center[0] - 9, icon_center[1]), (-1, 0), 17)
+                self.draw_arrow(screen, (icon_center[0] + 9, icon_center[1]), (1, 0), 17)
+            else:
+                direction = (0, -1) if banner.action == "up" else (0, 1)
+                self.draw_arrow(screen, icon_center, direction, 20)
+        else:
+            icon_name = "paper" if banner.action == "collect" else "star"
+            screen.blit(T.icon_surface(icon_name, 42, T.TEAL), (icon_center[0] - 21, icon_center[1] - 21))
+        left = rect.left + 62
+        right = rect.right - 15
+        if banner.stars:
+            for index in range(min(3, banner.stars)):
+                star(screen, (left + 13 + index * 28, rect.centery), 11, True)
+            left += 92
+        title_font = self.text.font(T.SIZES["label"], True)
+        subtitle_font = self.text.font(T.SIZES["small"])
+        title_text = self._fit_banner_text(banner.title, title_font, right - left)
+        title_surface = self.text.render(title_text, T.SIZES["label"], T.NAVY, True)
         if banner.subtitle:
-            self.text.blit(
-                screen, banner.subtitle, (rect.centerx, rect.top + 56), T.SIZES["body"], T.INK, anchor="midtop"
-            )
+            title_y = rect.top + 4
+            subtitle_text = self._fit_banner_text(banner.subtitle, subtitle_font, right - left)
+            subtitle_y = rect.top + 30
+            subtitle_surface = self.text.render(subtitle_text, T.SIZES["small"], T.INK)
+        else:
+            title_y = rect.centery - title_surface.get_height() // 2
+            subtitle_surface = None
+        screen.blit(title_surface, (left, title_y))
+        if subtitle_surface is not None:
+            screen.blit(subtitle_surface, (left, subtitle_y))
+
+    @staticmethod
+    def _fit_banner_text(value: str, font: pygame.font.Font, max_width: int) -> str:
+        """Evita que textos de missão/cidade ultrapassem a faixa compacta."""
+        text = " ".join(value.split())
+        if font.size(text)[0] <= max_width:
+            return text
+        suffix = "…"
+        while text and font.size(text + suffix)[0] > max_width:
+            text = text[:-1]
+        return text.rstrip() + suffix
 
     def draw_camera(self, screen: pygame.Surface) -> None:
         """Miniatura para o supervisor e avisos de calibração ou de câmera."""

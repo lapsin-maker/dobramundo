@@ -4,9 +4,9 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
-## Prévia: mundo em aquarela
+## Prévia — sprint 2: aquarela em movimento
 
-Seis paisagens ilustradas de Manaus e Petrolina, vila com obras visíveis, piloto neutro com olhos e dispositivos assistivos personalizáveis, hangar renovado e HUD simplificado. O primeiro acesso leva da personalização à vila; a história fica disponível em Opções. Veja [a implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts dos oito fundos gerados por IA](assets/watercolor/generation.json).
+Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).
 
 ## Novidades da versão 1.4
 
@@ -91,13 +91,13 @@ Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a cria
 
 ### Primeira execução
 
-Na primeira execução, a criança passa pelo **Piloto**, pela **Abertura** e pelo **Aviso ao supervisor**, nesta ordem, e cada uma aparece só uma vez. Depois vem a **Calibração**, se o controle for corporal, e então a vila. A abertura pode ser revista em Opções ("Ver a abertura"), e o piloto muda pelo botão Piloto da vila.
+Na primeira execução, a criança começa com um **piloto neutro** e escolhe sua aparência. Depois vêm o **Aviso ao supervisor**, quando necessário, a **Calibração**, se o controle for corporal, e a **vila**. Na primeira decolagem pelo mapa, um treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. O treino pode ser pulado ou repetido em Opções. A história fica disponível em Opções ("Ver a abertura"), e o personagem pode ser modificado pelo botão Piloto da vila.
 
 A abertura é um livro ilustrado de quatro páginas: uma cidade cinzenta e cheia de fumaça; uma criança que encontra um jornal na rua; a dobradura do avião, passo a passo, sobre uma mesa de papel, com a legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo enquanto a cidade ganha cor.
 
 ### Resíduos e recursos
 
-Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Um halo pulsante marca tudo o que se pode pegar, e chevrons âmbar no chão marcam o que colide, em todos os estágios. Ao coletar, um respingo de aquarela na cor do resíduo marca o ponto.
+Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Resíduos têm moldura circular e objeto pintado; benefícios têm moldura hexagonal; obstáculos têm volume e silhueta próprios. Ao coletar, um respingo opcional de aquarela na cor do resíduo marca o ponto.
 
 ### Obstáculos
 
