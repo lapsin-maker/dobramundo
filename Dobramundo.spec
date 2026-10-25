@@ -21,18 +21,31 @@ for file in sorted((ROOT / "assets").rglob("*")):
     if file.is_file() and file.suffix.lower() in ASSET_EXTS:
         datas.append((str(file), str(Path("assets") / file.parent.relative_to(ROOT / "assets"))))
 
+# MediaPipe: o hook padrão não leva a biblioteca nativa do MediaPipe Tasks (mediapipe/tasks/c).
+binaries, hiddenimports = [], []
+try:
+    from PyInstaller.utils.hooks import collect_all
+
+    mp_datas, mp_binaries, mp_hidden = collect_all("mediapipe")
+    datas += mp_datas
+    binaries += mp_binaries
+    hiddenimports += mp_hidden
+except Exception:  # sem mediapipe instalado: o executável sai só com teclado e mouse
+    pass
+
 icon = str(ROOT / "assets" / "icon.ico") if (ROOT / "assets" / "icon.ico").is_file() else None
 
 a = Analysis(
     [str(ROOT / "run_dobramundo.py")],
     pathex=[str(ROOT)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "unittest", "pydoc", "pytest", "matplotlib", "PIL", "soundfile"],
+    # matplotlib e unittest ficam: o MediaPipe os importa ao carregar o detector de pose.
+    excludes=["tkinter", "pytest", "soundfile"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)
