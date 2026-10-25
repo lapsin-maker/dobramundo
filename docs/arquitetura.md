@@ -13,7 +13,7 @@ ui/ ............ tema, botões e seleção por permanência
 input/ ......... teclado, mouse e controle corporal (MediaPipe Pose)
 engine/ ........ desenho pseudo-3D: céu, chão, pista, objetos, avião, piloto
    |
-game/ .......... regras do voo: mundo, avião, vidas, pontos, estrelas, eventos
+game/ .......... regras do voo: mundo, avião, vidas, pontos, estrelas, momento de foco, eventos
    |
 content/ ....... dados do jogo: fases, aviões, pinturas, resíduos, melhorias, textos
    |
@@ -37,6 +37,29 @@ O `App` (em `app.py`) reúne os serviços que as cenas usam: o perfil, a tela l�
 7. `view.step_warm_up(ms)`: prepara sprites em fatias de tempo. São 6 ms nas telas de menu e 1,5 ms no voo (`idle_warm_up`).
 
 Ao sair, `shutdown()` para o controle corporal e o som e grava o perfil.
+
+### Quadro do voo
+
+Dentro do passo 5, `FlightScene.update` chama `FlightRun.update` com o comando do quadro. A ordem é esta:
+
+```
+InputHub.flight_command()          (ix, iy, alvo): teclado e corpo; alvo só no controle por posição
+  -> FlightRun.record_movement()   medida de movimento (só com controle corporal calibrado)
+  -> FlightRun.update(dt, ix, iy, alvo)
+       1. tempo real: real_dt = min(dt, MAX_DT); soma flight_time
+       2. FocusMoment.update(real_dt, comando, aonde o avião vai)
+            conta a janela da seta e o desvio guiado, detecta acerto ou erro
+       3. escala de tempo: dt = real_dt * focus.time_scale
+            1,0 normal; FOCUS_SLOW (0,12) com a seta; FOCUS_GUIDE_SLOW (0,45) no desvio guiado
+       4. escudo, ímã, invulnerabilidade, flash e combo, com o dt do mundo
+       5. avião: guide_point() com exact=True no desvio guiado;
+          senão Player.update (posição: steer_to; velocidade: vx e vy)
+       6. World.advance(dt, distância): trechos, objetos e abertura didática
+       7. announce_lessons, check_collisions, count_passes, missions.update
+  -> FlightScene.handle_run_events()   sons, banners, flash e tremor
+```
+
+Os relógios do momento de foco correm em tempo real (`real_dt`). Por isso a janela de 1,8 s ou 1,2 s dura o mesmo, por mais lento que o mundo esteja. Os demais sistemas do voo usam o `dt` do mundo, já escalado.
 
 ## 3. Máquina de cenas e fluxo de telas
 
@@ -87,6 +110,10 @@ ResultScene
 | `star` | número da estrela | Som `sfx_estrela`, flash e banner. Com 2 estrelas e sem as peças, avisa as peças que faltam |
 | `complete` | estrelas | Som `sfx_fim_fase` e banner "cidade solarpunk" |
 | `game_over` | estrelas | Som `sfx_game_over`. O voo termina e a cena vai para o resultado |
+| `lesson` | tipo da lição (`waste`, `low`, `gate`, `tower`) | Banner com a legenda de `texts.LESSONS` |
+| `foco` | direção pedida (`up`, `down`, `left`, `right`) | Som `sfx_desvio_alerta`. A seta e a barra são desenhadas em `FlightScene.draw_focus` |
+| `foco_ok` | direção | Som `sfx_desvio_ok`, legenda "Boa!" |
+| `foco_quase` | direção | Som `sfx_desvio_quase`, legenda "Quase!" |
 
 Ao fim do voo, `run.finished` vira verdadeiro (por game over ou por 3 segundos depois de 100%), e `FlightScene.update` abre o `ResultScene`. No resultado, `apply_run` leva recursos, pontos, estrelas e recorde ao perfil.
 
@@ -116,11 +143,11 @@ Em `WorldView.draw_track`, a pista também se purifica em forma de onda (`wave_z
 4. **Pista**: um polígono por trecho, do horizonte ao avião, com cor do estágio, neblina pela distância e variações: o rio da Amazônia (Rio Negro e encontro das águas), o piso drenante da Caatinga no estágio final e as faixas da pista.
 5. **Margens** (`WorldView.margins`): duas fileiras por lado em cada trecho. A fileira de fundo fica em `MID_ROW_X` (paralaxe 0,5), e a borda, em `MARGIN_X` (paralaxe 0,8, alternando de lado a cada trecho). A cada fileira, as peças cruzam o fade conforme a transformação do trecho.
 6. **Objetos atrás do avião** (`z >= PLAYER_Z`), em ordem de profundidade.
-7. **Avião** (`draw_player`): sombra, piscada depois de colisão, rotação pela inclinação, manobras, escudo e ímã.
+7. **Avião** (`draw_player`): sombra, piscada depois de colisão, rotação pela inclinação, tremular de papel (`PAPER_FLUTTER_DEG`), nariz para cima ao subir (`PITCH_STRETCH`), manobras, escudo e ímã.
 8. **Objetos à frente do avião**, com halos no solarpunk do Difícil e alertas de chão antes dos obstáculos que colidem.
 9. **Feixes de coleta** e **textos flutuantes** ("+65", "ESCUDO").
 
-`FlightScene.draw` desenha depois, por cima: o flash da colisão, o HUD, os banners, a miniatura da câmera e a tela de pausa. No alto contraste (`high_contrast`), tudo o que vem antes dos objetos é dessaturado (`desaturate`), e objetos e avião ganham contorno espesso.
+`FlightScene.draw` desenha depois, por cima: o flash da colisão, a seta e a barra do momento de foco (`draw_focus`, com `focus_vignette` escurecendo as bordas), o HUD, os banners, a miniatura da câmera e a tela de pausa. O tremor da colisão (`HIT_SHAKE_S`) desloca só o cenário; o HUD fica parado. No alto contraste (`high_contrast`), tudo o que vem antes dos objetos é dessaturado (`desaturate`), e objetos e avião ganham contorno espesso.
 
 A paralaxe usa `player.cam_x`, que segue `CAMERA_FOLLOW` (35%) do deslocamento lateral do avião. Cada camada anda uma fração diferente desse deslocamento (`SKY_SHIFT_PX`, `CLOUD_SHIFT_PX`, `FAR_SHIFT_PX`, `MID_PARALLAX`, `MARGIN_PARALLAX`).
 
@@ -176,6 +203,7 @@ O perfil fica num único JSON (`dobramundo_perfil.json`) e é modelado pela data
 - **Leitura:** `Profile.from_dict` lê campo a campo, só aceita valores do tipo esperado e ignora campos desconhecidos. Depois `normalize()` limita valores (volumes, permanência, sensibilidade, estrelas, recursos) e descarta opções que não existem mais (aviões, padrões, segmentos, melhorias). Se algo falhar, o resultado é o perfil padrão.
 - **Migração:** não há migração por versão. O campo `versao` é gravado, mas não é lido. Para uma mudança incompatível, é preciso aumentar `SCHEMA_VERSION`, criar o tratamento em `from_dict` e cobrir o caso em `tests/test_progress.py`.
 - **Importação do protótipo:** se não houver perfil, `import_legacy` lê `eco_runner_recorde.json` e `eco_runner_config.json` das pastas do protótipo (ver `legacy_data_dirs` em `paths.py`).
+- **Versão 1.2:** `voos_fase` e `historico` entram no perfil sem mudar `SCHEMA_VERSION` (continua 1). Campos ausentes em perfis antigos recebem o valor padrão.
 
 ## 10. Como adicionar um novo bioma
 
@@ -196,6 +224,14 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 8. **Colisões.** Rode `python tools/measure_obstacles.py`, que percorre `BIOMES` automaticamente, e ajuste `low`, `gate` e `tower` conforme a saída.
 9. **Testes.** `tests/test_assets.py` já testa todas as fases pelo nome (`parametrize` sobre `BIOMES`). Rode `python -m pytest` e `python -m dobramundo --self-test 240`. O self-test também percorre `BIOME_ORDER` automaticamente.
 
+## 11. Controle por posição, momento de foco e abertura didática
+
+**Controle por posição** (`input/hub.py`, `game/player.py`). `InputHub.flight_command` devolve o alvo do corpo (-1..1, 0 na postura calibrada) quando o controle corporal está calibrado, o modo é posição (`controle_posicao`, padrão) e nenhuma tecla de direção está apertada. Caso contrário, devolve a velocidade do teclado somada ao corpo. `Player.command_target` converte o alvo em um ponto da pista: o centro do eixo horizontal e, na vertical, `REST_ALTITUDE` como centro, com os limites `MIN_ALTITUDE` e `MAX_ALTITUDE`. `Player.steer_to` aproxima o avião desse ponto com `POSITION_RESPONSE` (1/s), limitado por `MAX_LATERAL_SPEED` e `MAX_VERTICAL_SPEED` vezes o fator do avião. `AxisMapper.hold_when_lost` (`input/pose.py`) mantém a última leitura quando a câmera perde o segmento, então o avião conserva o rumo. Esse flag é definido ao abrir a câmera e em `InputHub.configure`.
+
+**Momento de foco** (`game/focus.py`). `FocusMoment` tem três estados: `None` (voo normal), `"pending"` (a seta espera o movimento) e `"success"` ou `"miss"` (legenda de 0,8 s). `find_threat` escolhe o obstáculo cujo contato com o avião acontece em `FOCUS_IMPACT_S` (0,3 a 0,75 s de mundo), que bateria no ponto atual e no ponto para onde o avião vai (`intended_point`). `choose_escape` escolhe a direção do desvio, com a tabela `PREFERRED` por tipo de obstáculo. `moved_towards` mede se o comando andou pelo menos `FOCUS_STEP` (0,3, na escala de -1 a 1) a partir do comando que havia quando a seta apareceu. Acertar cria um desvio guiado (`guide_point`, com `exact=True` no `Player.update`) até o ponto seguro, e o obstáculo recebe `dodged`. Errar só deixa o tempo voltar ao normal. Intervalo de `FOCUS_COOLDOWN_S` (9 s), com `FOCUS_FIRST_S` (5 s) no início. A abertura didática ignora o intervalo (`entity.lesson`). Não abre com `invincible`, invulnerabilidade ou escudo. A opção `momento_foco` desliga o recurso.
+
+**Abertura didática** (`game/world.py`, `game/run.py`). `FlightRun` recebe `intro=True` quando o modo é Normal ou quando é o primeiro voo da fase (`Profile.voos_fase`). `World.plan_intro` converte os tempos de `INTRO_*` (em `config.py`) em posições da pista pela velocidade inicial. `intro_pattern` põe só resíduos até `INTRO_FIRST_WASTE_S`, e `spawn_lessons` põe cada obstáculo da lista `INTRO_LESSONS` na faixa do meio, com um resíduo na faixa certa. `in_intro` vale até `INTRO_END_S` (22 s). `announce_lessons` publica o evento `lesson` antes da chegada, e a cena mostra a legenda de `texts.LESSONS`.
+
 ## Pontos de atenção
 
 - Se o JSON do perfil estiver ilegível, `load_profile` guarda o arquivo como `dobramundo_perfil.corrompido.json` e recomeça com o perfil padrão (e a importação do protótipo).
@@ -211,3 +247,13 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - **Desenho da pista**: `WorldView.track_palette`, `draw_road`, `draw_lanes` e `curbs`; o chão usa `GroundRenderer.row_texture` e `queue_rows`. O estágio solarpunk se chama `solar` em todo o código (`solar_since`, `segment_solar`).
 - **FlightView** (Protocol em `engine/world_view.py`) documenta o que o desenho lê de um voo.
 - **Robustez**: perfil inválido ganha cópia `.corrompido.json`; falha ao salvar aparece na vila; avisos vão para `dobramundo.log` (`log.py`); o self-test reprova com `status: falhou` e código 1.
+
+## Mudanças da versão 1.2
+
+- **Controle por posição**: `Player.steer_to` e `Player.command_target`; `InputHub.flight_command` e `position_control`; `AxisMapper.hold_when_lost` (`input/pose.py`); opção `controle_posicao` no perfil e em Opções.
+- **Momento de foco**: `game/focus.py` (`FocusMoment`), constantes `FOCUS_*` em `config.py`, desenho em `FlightScene.draw_focus` e `focus_vignette`. Sons `sfx_desvio_alerta`, `sfx_desvio_ok` e `sfx_desvio_quase`, gerados por `tools/make_audio.py`. Eventos `foco`, `foco_ok` e `foco_quase`.
+- **Abertura didática**: `World.plan_intro`, `spawn_lessons` e `intro_pattern`; `FlightRun.announce_lessons`; textos em `texts.LESSONS`; constantes `INTRO_*`; `Profile.voos_fase` decide a abertura no Difícil.
+- **Sensação de voo**: `PAPER_FLUTTER_DEG` e `PITCH_STRETCH` em `WorldView.draw_player`; tremor da colisão com `HIT_SHAKE_S`.
+- **Opção "Efeitos fortes (clarão, tremor)"** (`efeitos_fortes`): controla o clarão da colisão e da estrela, o tremor e o tom do momento de foco.
+- **Medida de movimento e histórico**: `FlightRun.record_movement` e `FlightRun.summary`; `scenes/result.py` (`apply_run` e `movement_line`); `Profile.historico`, com até `HISTORY_LIMIT` (60) voos, gravado em `dobramundo_perfil.json`.
+- **Equilíbrio**: `tools/balance.py` e `test_fase_dura_alguns_minutos` marcam a decisão de coleta no próprio objeto (antes usavam `id()`, que se repete quando objetos são liberados, e coletavam bem menos que 4 de cada 10). Recalibrados `RESTORATION_PER_TRASH` (0,115), `RESTORATION_COMBO_BONUS` (0,013), `NORMAL_RESTORATION_PER_TRASH` (1,18) e `COST_SCALE` (12).
