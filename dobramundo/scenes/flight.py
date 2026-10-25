@@ -245,11 +245,11 @@ class FlightScene(Scene):
         run = self.run
         text = self.text
         accent = self.biome.stages[run.stage].accent
-        box = pygame.Rect(10, 10, 560, 96)
-        T.panel(screen, box, T.PAPER, T.NAVY, 235, 16, 3)
-        text.blit(screen, f"{self.biome.city}: {texts.STAGE_NAMES[run.stage]}", (26, 18), T.SIZES["body"], T.NAVY, True)
-        text.blit(screen, f"{int(run.restoration)}%", (box.right - 16, 18), T.SIZES["body"], T.INK, True, "topright")
-        bar = pygame.Rect(26, 48, box.width - 32, 16)
+        box = pygame.Rect(10, 10, 500, 84)
+        T.panel(screen, box, T.PAPER, T.NAVY, 225, 16, 3)
+        text.blit(screen, f"{self.biome.city}: {texts.STAGE_NAMES[run.stage]}", (24, 14), T.SIZES["body"], T.NAVY, True)
+        text.blit(screen, f"{int(run.restoration)}%", (box.right - 14, 14), T.SIZES["body"], T.INK, True, "topright")
+        bar = pygame.Rect(24, 42, box.width - 28, 14)
         pygame.draw.rect(screen, (210, 202, 186), bar, border_radius=8)
         fill = bar.copy()
         fill.width = int(bar.width * run.restoration / 100.0)
@@ -260,23 +260,23 @@ class FlightScene(Scene):
                 screen, (x, bar.centery), 12, run.restoration >= limit - 1e-6 and (limit < 100 or run.stars >= 3), T.SUN
             )
         # recursos do voo
-        x = 26
+        x = 24
         for waste in WASTE_TYPES:
-            pygame.draw.circle(screen, waste.color, (x + 9, 86), 9)
-            pygame.draw.circle(screen, T.INK, (x + 9, 86), 9, 2)
-            rect = text.blit(screen, str(run.resources.get(waste.key, 0)), (x + 22, 75), T.SIZES["body"], T.INK, True)
-            x = rect.right + 16
+            pygame.draw.circle(screen, waste.color, (x + 8, 70), 8)
+            pygame.draw.circle(screen, T.INK, (x + 8, 70), 8, 2)
+            rect = text.blit(screen, str(run.resources.get(waste.key, 0)), (x + 20, 60), T.SIZES["body"], T.INK, True)
+            x = rect.right + 14
         mode = "Normal" if run.mode == "normal" else f"Difícil  combo x{run.combo}"
         text.blit(
-            screen, f"{mode}   {run.score} pts", (box.right - 16, 75), T.SIZES["small"], T.MUTED, True, "topright"
+            screen, f"{mode}   {run.score} pts", (box.right - 14, 62), T.SIZES["small"], T.MUTED, True, "topright"
         )
         self.draw_mission(screen)
         # vidas e power-ups
-        status = pygame.Rect(C.WIDTH - 250, 10, 240, 96)
-        T.panel(screen, status, T.PAPER, T.NAVY, 235, 16, 3)
-        text.blit(screen, texts.UI["vidas"], (status.left + 16, 18), T.SIZES["body"], T.NAVY, True)
+        status = pygame.Rect(C.WIDTH - 230, 10, 220, 84)
+        T.panel(screen, status, T.PAPER, T.NAVY, 225, 16, 3)
+        text.blit(screen, texts.UI["vidas"], (status.left + 14, 14), T.SIZES["body"], T.NAVY, True)
         for i in range(C.MAX_LIVES):
-            self.draw_life(screen, (status.left + 104 + i * 42, 30), i < run.lives)
+            self.draw_life(screen, (status.left + 94 + i * 40, 26), i < run.lives)
         timers = []
         if run.shield_timer > 0:
             timers.append(f"Escudo {math.ceil(run.shield_timer)}s")
@@ -287,7 +287,7 @@ class FlightScene(Scene):
         text.blit(
             screen,
             "   ".join(timers) or "P: pausa",
-            (status.left + 16, 66),
+            (status.left + 14, 56),
             T.SIZES["body"],
             T.TEAL if timers else T.MUTED,
             True,
@@ -356,8 +356,8 @@ class FlightScene(Scene):
         if not mission:
             return
         width = self.text.font(T.SIZES["body"], True).size(mission)[0] + 70
-        box = pygame.Rect(10, 112, width, 40)
-        T.panel(screen, box, T.PAPER, T.TEAL, 235, 12, 3)
+        box = pygame.Rect(10, 100, width, 38)
+        T.panel(screen, box, T.PAPER, T.TEAL, 225, 12, 3)
         star(screen, (box.left + 22, box.centery), 11, True, T.TEAL)
         self.text.blit(screen, mission, (box.left + 42, box.centery), T.SIZES["body"], T.INK, True, "midleft")
 

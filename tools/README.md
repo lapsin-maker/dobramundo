@@ -4,7 +4,7 @@ Os scripts desta pasta criam os arquivos de `assets/` que o jogo carrega. O jogo
 
 A pasta tem duas partes:
 
-- **Geradores ativos** (`build_assets.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py`, `balance.py`, `build_cartridge.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
+- **Geradores ativos** (`build_assets.py`, `stylize.py`, `make_audio.py`, `make_logo.py`, `make_ground_textures.py`, `make_grass_texture.py`, `measure_obstacles.py`, `balance.py`, `build_cartridge.py` e o pacote `lowpoly/`). Rodam a partir do repositório.
 - **Legado** (`legado/`). Scripts do protótipo Eco Runner. Dependem de materiais externos que não estão no repositório (ver a seção própria).
 
 ## Ambiente
@@ -28,6 +28,10 @@ tools/lowpoly/  (modelos por código: kit, mesh, raster, models_*)
     +--> build_assets.py --pilot --> assets/pilot_layers/ (camadas e anchors.json)
                                      (depende de assets/plane_sprites e plane_menu, do legado)
 
+stylize.py ----------------------> filtro de papel e aquarela sobre os PNG de assets/ (sobrescreve;
+                                   o git guarda os originais). build_assets.py aplica o mesmo filtro
+                                   em cada sprite que gera
+
 make_audio.py -------------------> assets/audio/ (musica_*.ogg, sfx_*.ogg)
 make_logo.py  -------------------> assets/ui/logo.png, icone.png, assets/icon.ico, docs/logo.jpg
 make_grass_texture.py -----------> assets/ground/grass.png
@@ -44,7 +48,8 @@ build_cartridge.py --------------> build/cartucho/ e dist/dobramundo-<versão>.t
 
 | Ferramenta | O que gera | Comando | Dependências | Observações |
 |---|---|---|---|---|
-| `build_assets.py` | 48 sprites de fase e vila em `assets/biome_sprites/` (prefixos AM_, CA_ e VL_) e os 4 resíduos em `assets/waste_sprites/` | `python tools/build_assets.py [--only NOME ...] [--prefix AM_] [--sheet folha.png]` | numpy, Pillow | Renderiza os modelos registrados em `lowpoly/`. `--sheet` grava também uma folha de contato para conferência |
+| `build_assets.py` | 48 sprites de fase e vila em `assets/biome_sprites/` (prefixos AM_, CA_ e VL_) e os 4 resíduos em `assets/waste_sprites/` | `python tools/build_assets.py [--only NOME ...] [--prefix AM_] [--sheet folha.png]` | numpy, Pillow | Renderiza os modelos registrados em `lowpoly/` e aplica o filtro de `stylize.py` (`stylize_image`, com `params_for` por pasta) em cada sprite. `--sheet` grava também uma folha de contato para conferência |
+| `stylize.py` | Sobrescreve os PNG das pastas de `FOLDERS` em `assets/` (sprites de fases, vila, resíduos, power-ups e aviões) com o filtro de papel e aquarela | `python tools/stylize.py [--folders PASTA ...] [--only NOME ...] [--preview saida.png]` | numpy, Pillow | Degraus de claridade, contorno de tinta azul-marinho (`INK`), traço nas quebras internas e grão de papel. Os aviões (`LIGHT_INK_FOLDERS`: `plane_sprites` e `plane_menu`) têm traço mais fino e cinza-azulado. `--preview` grava antes e depois numa imagem, sem sobrescrever. O git guarda os originais |
 | `build_assets.py --pilot` | Camadas do piloto em `assets/pilot_layers/` (`<vista>__<camada>.png`) e `anchors.json` | `python tools/build_assets.py --pilot` | numpy, Pillow | O `anchors.json` é medido a partir de `assets/plane_sprites` e `assets/plane_menu` (sprites `__riding` e `__none`), que vêm do estúdio legado |
 | `make_audio.py` | 7 trilhas (`musica_vila`, `musica_amazonia_1` a `_3`, `musica_caatinga_1` a `_3`) e 15 efeitos (`sfx_*`) em `assets/audio/` | `python tools/make_audio.py [--out PASTA] [--only musica\|sfx]` | numpy; soundfile para gravar OGG | Síntese determinística (semente fixa). Sem soundfile, grava WAV de 16 bits com o mesmo nome |
 | `make_logo.py` | `assets/ui/logo.png` (900 px de largura, fundo transparente), `assets/ui/icone.png`, `assets/icon.ico` e `docs/logo.jpg` (logo sobre fundo branco para o README) | `python tools/make_logo.py ARTE.png [--out assets]` | numpy, Pillow | Recebe a arte original (o repositório traz `docs/logo_original.webp`). Remove o branco do papel por desmistura da cor |
@@ -62,7 +67,7 @@ Não é um script, e sim a biblioteca usada por `build_assets.py`:
 - `kit.py`: peças reutilizáveis (copas, folhas de palmeira, casas, painéis solares, janelas) e o registro `@model(nome, pasta, **render)`.
 - `models_amazonia.py` e `models_caatinga.py`: modelos das fases, nas pastas `biome_sprites`.
 - `models_common.py`: resíduos (`waste_sprites`) e melhorias da vila (`VL_`).
-- `pilot.py`: corpo neutro e itens opcionais do piloto, nas vistas `flight` e `menu`.
+- `pilot.py`: corpo com proporções de criança e itens do piloto, nas vistas `flight` e `menu`: cabelos (incluindo o lenço e o raspado), roupas, óculos, acessórios (boné, lenço, abafador, capacete, flor, tiara e coroa), aparelho auditivo e cadeira de rodas. Gera também `skin_hijab`, que substitui a pele quando o cabelo é o lenço. As cores de pele, cabelo e roupa não são gravadas aqui: o jogo as aplica em `content/pilot.py`. As camadas do piloto não passam pelo `stylize.py`.
 - `anchors.py`: mede, nos sprites com e sem piloto, onde o piloto senta em cada avião.
 
 Para incluir um novo modelo, registre-o com `@model` em um dos `models_*.py`. Para um novo módulo de modelos, importe-o em `build_assets.py`.
@@ -90,6 +95,7 @@ Os arquivos abaixo estão em `assets/`, mas nenhum script do repositório os ger
 - `assets/powerup_sprites/` (`shield`, `magnet` e `repair`).
 - `assets/era_final_fx/` (`halo_coletavel` e `alerta_chao`).
 - `assets/ground/meadow.png` e `assets/ground/paver_road.png`.
+- `assets/fonts/`: Fredoka, Nunito e Patrick Hand, do Google Fonts, sob a SIL Open Font License 1.1. Os textos das licenças estão em `OFL-*.txt`.
 - `assets/pose_model/pose_landmarker_lite.task`: modelo do MediaPipe Pose, de origem externa (Google).
 
 Os PNG de `assets/dieselpunk_sprites`, `scenario_sprites`, `skyline_sprites` e `atmosphere` dependem do `render_models.py` do legado e da pasta `modelos_3d`, que não está no repositório.

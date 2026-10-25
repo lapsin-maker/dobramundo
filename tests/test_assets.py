@@ -42,8 +42,8 @@ def test_avioes_tem_todas_as_camadas():
 
 def test_camadas_do_piloto():
     layers = ASSETS / "pilot_layers"
-    names = ["skin", "shirt", "base", "hearing", "chair"]
-    names += [f"hair_{o.key}" for o in HAIR_STYLES if o.key != "raspado"]
+    names = ["skin", "shirt", "base", "hearing", "chair", "hijab"]
+    names += [f"hair_{o.key}" for o in HAIR_STYLES if o.key not in ("raspado", "hijab")]
     names += [f"glasses_{o.key}" for o in GLASSES if o.key != "nenhum"]
     names += [f"acc_{o.key}" for o in ACCESSORIES if o.key != "nenhum"]
     for view in ("flight", "menu"):

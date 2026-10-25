@@ -247,6 +247,10 @@ class WorldView:
         solar = world.segment_solar(seg)
         keep = 1.0 - solar  # a peça do estágio anterior afunda enquanto a nova cresce
         for side in (-1, 1):
+            # quarteirões: a cada 6 trechos, 2 ficam vazios (num lado de cada vez), para o
+            # cenário ter blocos e respiros em vez de uma fila contínua de peças soltas
+            if (seg + (3 if side > 0 else 0)) % 6 in (4, 5):
+                continue
             if green < 1.0 and keep > 0.0:
                 self.piece(screen, biome.industrial_mid, seg, side, C.MID_ROW_X, z, mid_cam, (1.0 - green) * keep)
             if green > 0.0 and keep > 0.0:
@@ -258,8 +262,8 @@ class WorldView:
                 marco = seg % C.LANDMARK_EVERY == 4 and (seg // C.LANDMARK_EVERY + (side > 0)) % 2 == 0
                 specs = [biome.landmark] if marco else biome.solar_mid
                 self.piece(screen, specs, seg, side, C.MID_ROW_X, z, mid_cam, solar)
-            if border_z > C.MARGIN_MAX_Z or (seg + (side > 0)) % 2:
-                continue  # a borda alterna de lado a cada trecho e some ao longe
+            if border_z > C.MARGIN_MAX_Z or (seg + (side > 0)) % 2 or (seg // 2) % 4 == 3:
+                continue  # a borda alterna de lado a cada trecho, tem vãos e some ao longe
             if green < 1.0 and keep > 0.0:
                 self.piece(
                     screen,
@@ -593,6 +597,22 @@ class WorldView:
         if self.show_hitboxes:
             pygame.draw.rect(screen, rgb("40c4ff"), self.hitbox_rect(player.hitbox()), 2)
 
+    @staticmethod
+    def splash(screen: pygame.Surface, center, color, progress: float, scale: float) -> None:
+        """Gotas que se abrem e somem (progress 0 -> 1), com um pingo claro no meio."""
+        cx, cy = int(center[0]), int(center[1])
+        pale = lerp_color(color, (255, 255, 255), 0.35)
+        for k in range(7):
+            angle = k * 0.9 + 0.3
+            reach = (14 + 70 * progress) * scale
+            r = max(1, int((7 - 5 * progress) * scale))
+            px, py = int(cx + math.cos(angle) * reach), int(cy + math.sin(angle) * reach * 0.7)
+            pygame.draw.circle(screen, color, (px, py), r)
+        core = max(1, int((22 - 20 * progress) * scale))
+        pygame.draw.circle(screen, pale, (cx, cy), core)
+        if progress < 0.6:
+            pygame.draw.circle(screen, (255, 255, 255), (cx - core // 3, cy - core // 3), max(1, core // 3))
+
     def remember_rotation(self, key: tuple, image: pygame.Surface) -> pygame.Surface:
         """Guarda uma rotação do avião (descarte gradual, como o cache de sprites)."""
         return self.rotations.put(key, image)
@@ -660,17 +680,9 @@ class WorldView:
         self.draw_player(screen, run, look)
         for entity in ahead:
             self.draw_entity(screen, world, entity)
-        for beam in run.beams:
-            x, y, scale = project(beam.x, 160.0, max(C.NEAR_CLIP_Z, beam.z), self.cam)
-            _, y0, _ = project(beam.x, 0.0, max(C.NEAR_CLIP_Z, beam.z), self.cam)
-            alpha = clamp(beam.ttl / 0.18, 0.0, 1.0)
-            pygame.draw.line(
-                screen,
-                lerp_color(self.sky.fog_color, beam.color, alpha),
-                (int(x), int(y)),
-                (int(x), int(y0)),
-                max(1, int(6 * scale * alpha)),
-            )
+        for beam in run.beams:  # respingo de aquarela na cor do resíduo coletado
+            x, y, scale = project(beam.x, 90.0, max(C.NEAR_CLIP_Z, beam.z), self.cam)
+            self.splash(screen, (x, y), beam.color, clamp(1.0 - beam.ttl / 0.55, 0.0, 1.0), scale)
         for text in run.floating:
             x, y, _ = project(text.x, text.y, C.PLAYER_Z, self.cam)
             surf = self.text(text.text, text.color)

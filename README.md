@@ -4,6 +4,16 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
+## Novidades da versão 1.4
+
+- **Papel e aquarela:** a direção de arte segue a logo. Os sprites recebem um filtro de papel (`tools/stylize.py`), com sombreamento em degraus, contorno de tinta azul-marinho e grão de papel, e os cartões das telas têm sombra e textura de papel. As fontes Fredoka, Nunito e Patrick Hand são embutidas no jogo, sob licença OFL.
+- **Vila como diorama:** morros, rio com ponte, caminhos e um largo central onde o avião pousa. As cinco casas passam de industriais a solarpunk, uma a uma, conforme a vila avança.
+- **Abertura em livro ilustrado:** quatro páginas, da cidade cinzenta ao lançamento do avião, com um rastro de aquarela nas cores da logo.
+- **Piloto mais completo:** proporções de criança, 10 tons de pele, 12 estilos de cabelo, roupas, óculos, acessórios, aparelho auditivo e cadeira de rodas. A tela Piloto abre na primeira execução e tem o botão "Surpresa!".
+- **Céu e fases:** sol e nuvens de papel no céu limpo. A fumaça de cada fase é tingida pelo bioma: úmida e cinza-azulada em Manaus, ocre em Petrolina. As fases ganham peças regionais, silhuetas da cidade no horizonte e cenário em quarteirões.
+- **Coleta:** cada resíduo coletado deixa um respingo de aquarela na sua cor.
+- **Ajustes:** HUD do voo mais discreto, pintura padrão "Liso", permanência padrão de 2,0 s (ajustável de 1,0 a 3,5 s) e logo com a proporção correta nas telas.
+
 ## Novidades da versão 1.3.1
 
 - **Licença:** o jogo passa a ser código aberto sob Creative Commons Atribuição 4.0 (CC BY 4.0), como pede o item 4.6 do regulamento da jam (ver [Licenças](#licenças)). O `LICENSE` vai no repositório, no executável e no cartucho, e os créditos do jogo citam a licença e o modelo de pose usado.
@@ -33,7 +43,7 @@ O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.3.1.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.4.0.
 
 ### Tema e objetivo
 
@@ -67,14 +77,23 @@ A versão atual tem duas fases, cada uma numa cidade brasileira do seu bioma:
 - Petrolina abre quando a criança conquista pelo menos 1 estrela em Manaus.
 - Cerrado, Mata Atlântica, Pantanal e Pampa aparecem no mapa como "Em breve".
 - A paisagem de cada fase tem três estágios: cidade industrial (dieselpunk), despertar ecológico e cidade solarpunk. Eles se sucedem aos 33,3% e aos 66,7% de transformação.
+- No estágio industrial, peças regionais (guindaste, termelétrica e contêineres em Manaus; torres de transmissão, caixas d'água e galpões em Petrolina) se misturam às estruturas do kit, e silhuetas da cidade regional aparecem no horizonte.
+- O céu das fases poluídas é tingido pelo bioma: cinza e úmido em Manaus, ocre e seco em Petrolina.
+- O cenário é organizado em quarteirões, com vãos entre eles, em vez de uma fila contínua de peças.
 
 ## Como se joga
 
 Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a criança escolhe a fase e o modo no mapa. No voo, o avião decola da vila, coleta resíduos e power-ups, desvia de obstáculos e acumula transformação. No resultado, estrelas e recursos vão para o perfil, e a criança volta à vila para construir melhorias e peças.
 
+### Primeira execução
+
+Na primeira execução, a criança passa pelo **Piloto**, pela **Abertura** e pelo **Aviso ao supervisor**, nesta ordem, e cada uma aparece só uma vez. Depois vem a **Calibração**, se o controle for corporal, e então a vila. A abertura pode ser revista em Opções ("Ver a abertura"), e o piloto muda pelo botão Piloto da vila.
+
+A abertura é um livro ilustrado de quatro páginas: uma cidade cinzenta e cheia de fumaça; uma criança que encontra um jornal na rua; a dobradura do avião, passo a passo, sobre uma mesa de papel, com a legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo enquanto a cidade ganha cor.
+
 ### Resíduos e recursos
 
-Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Um halo pulsante marca tudo o que se pode pegar, e chevrons âmbar no chão marcam o que colide, em todos os estágios.
+Há quatro tipos de resíduo, com as cores da coleta seletiva da Resolução CONAMA nº 275/2001: papel (azul), plástico (vermelho), metal (amarelo) e vidro (verde). Eles aparecem em três alturas da pista. Cada coleta gera recursos para a vila e para as peças do avião: 4 recursos por coleta no modo Normal e 1 no modo Difícil. Um halo pulsante marca tudo o que se pode pegar, e chevrons âmbar no chão marcam o que colide, em todos os estágios. Ao coletar, um respingo de aquarela na cor do resíduo marca o ponto.
 
 ### Obstáculos
 
@@ -140,7 +159,7 @@ Durante o voo aparece uma meta por vez, de 20 a 60 segundos: coletar resíduos d
 
 ### Vila-base
 
-A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar na cena. Conforme a vila avança, o céu clareia e os prédios de fundo dão lugar à arquitetura solarpunk. O percentual "sustentável" da tela é a proporção de melhorias construídas. ESC na vila pergunta se é para sair do jogo.
+A vila tem oito melhorias, compradas com recursos. Cada uma aparece no seu lugar na cena, que é um diorama de papel: morros, um rio com ponte, caminhos e um largo central onde o avião pousa. As cinco casas do fundo passam de industriais a solarpunk, uma a uma, conforme a vila avança; o céu clareia, com sol e nuvens de papel, a fumaça diminui e surgem brilhos de papel. Há árvores e gente passeando. O percentual "sustentável" da tela é a proporção de melhorias construídas. ESC na vila pergunta se é para sair do jogo.
 
 | Melhoria | Custo | Descrição |
 |---|---|---|
@@ -165,11 +184,22 @@ As peças são reaproveitadas de resíduos. Cada uma tem dois níveis e altera o
 
 ### Hangar
 
-O hangar oferece 11 dobraduras de voo distinto, entre elas uma miniatura do 14-Bis. A pintura pode ser a original do estúdio ou uma de 14 cores de papel. Há 26 padrões: dois são gratuitos (Liso e Jornal) e os outros 24 custam pontos, de 300 a 5 000. Os pontos se acumulam em todos os voos. Escolher uma cor define o padrão do avião como liso.
+O hangar oferece 11 dobraduras de voo distinto, entre elas uma miniatura do 14-Bis. A pintura pode ser a original do estúdio ou uma de 14 cores de papel. Há 26 padrões: dois são gratuitos (Liso e Jornal) e os outros 24 custam pontos, de 300 a 5 000. Os pontos se acumulam em todos os voos. A pintura padrão é a Liso, papel branco limpo. Escolher uma cor define o padrão do avião como liso.
 
 ### Piloto
 
-A criança monta o piloto com tom de pele, estilo e cor do cabelo, roupa, óculos, acessório (boné, lenço, abafador de ruído, capacete de aviador ou nenhum), aparelho auditivo e cadeira de rodas. O piloto não tem marcação de gênero, e os dispositivos assistivos são itens comuns da lista.
+A criança monta o piloto na tela Piloto, que abre antes da vila na primeira execução e depois fica no menu da vila. Um balão de fala acompanha as escolhas. O botão **Surpresa!** sorteia uma combinação, sem mexer no aparelho auditivo nem na cadeira de rodas, e na primeira vez o botão **Pronto!** confirma a escolha.
+
+As opções são:
+
+- **Pele:** 10 tons, seis realistas e quatro de fantasia (roxo, azul, verde e rosa).
+- **Cabelo:** 12 estilos (curto, cacheado, black power, longo, tranças, coque, franja, maria-chiquinha, afro puffs, moicano, lenço e raspado), em 10 cores.
+- **Roupa:** 8 cores de camiseta.
+- **Óculos:** sem óculos, redondos, quadrados ou de sol.
+- **Acessório:** nenhum, boné, lenço, abafador de ruído, capacete de aviador, flor, tiara ou coroa de papel.
+- **Aparelho auditivo** e **cadeira de rodas:** sim ou não.
+
+O piloto não tem marcação de gênero, e os dispositivos assistivos são itens comuns da lista.
 
 ## Controles
 
@@ -195,7 +225,7 @@ Em Opções, a opção **Controle do avião** escolhe o modo:
 - **Centrar sozinho:** com a opção ligada (padrão), cabeça, mãos e tronco refazem a postura neutra sozinhos depois de 3 segundos sem o segmento. Os pés não se recalibram sozinhos.
 - **Trocar lados:** inverte esquerda e direita, para câmeras que não espelham a imagem.
 - No console T-TEA, os mesmos segmentos usam os pontos da câmera do console (veja [Console T-TEA (cartucho)](#console-t-tea-cartucho)).
-- **Menus:** um cursor acompanha o segmento. O botão é acionado quando o cursor permanece sobre ele pelo tempo de permanência, que é de 1,2 segundo por padrão e pode ser ajustado de 0,6 a 3,0 segundos em Opções.
+- **Menus:** um cursor acompanha o segmento. O botão é acionado quando o cursor permanece sobre ele pelo tempo de permanência, que é de 2,0 segundos por padrão e pode ser ajustado de 1,0 a 3,5 segundos em Opções.
 - **Sensibilidade:** de 0,5 a 2,0 vezes (padrão 1,0). Valores maiores exigem um movimento menor.
 - **Pausa automática:** se o segmento sai da área de captura por 1 segundo durante o voo, o jogo pausa. Ao voltar, espera a presença estável por 1,2 segundo e faz uma contagem de 3 segundos antes de retomar.
 - Sem webcam, sem as bibliotecas ou sem o modelo de pose, o jogo segue com teclado e mouse. Se a câmera falhar com um segmento selecionado, o motivo aparece em Opções e na calibração.
@@ -327,7 +357,7 @@ O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramun
 
 ### Especificação e assets
 
-`Dobramundo.spec` empacota toda a pasta `assets/` com as extensões `.png`, `.json`, `.ogg`, `.wav`, `.task` e `.ico`. As variáveis `DOBRA_ONEFILE=1` (arquivo único) e `DOBRA_CONSOLE=1` (console) alteram a geração. Para trocar um sprite sem recompilar, coloque o PNG em `Dobramundo/assets/<pasta>/<nome>.png`, ao lado do executável. O jogo procura essa cópia antes da embutida.
+`Dobramundo.spec` empacota toda a pasta `assets/` com as extensões `.png`, `.json`, `.ogg`, `.wav`, `.task`, `.ico`, `.ttf` e `.txt` (as fontes e as licenças OFL vão junto). As variáveis `DOBRA_ONEFILE=1` (arquivo único) e `DOBRA_CONSOLE=1` (console) alteram a geração. Para trocar um sprite sem recompilar, coloque o PNG em `Dobramundo/assets/<pasta>/<nome>.png`, ao lado do executável. O jogo procura essa cópia antes da embutida.
 
 ## Desenvolvimento
 
@@ -363,7 +393,8 @@ dobramundo/                          pacote do jogo
         entities.py                  objetos e caixas de colisão
     engine/                          desenho pseudo-3D
         world_view.py                ordem de pintura de uma fase
-        sky.py, ground.py            céu em paralaxe e chão texturizado
+        sky.py, ground.py            céu de papel em paralaxe e chão texturizado
+        paper.py                     formas de papel desenhadas por código (vila e abertura)
         sprites.py                   projeção, neblina e caches de sprite
         cache.py                     BoundedCache (descarte gradual) usado por todos os caches
         plane_skin.py, pilot.py      aparência do avião e piloto em camadas
@@ -374,13 +405,14 @@ dobramundo/                          pacote do jogo
         camera.py                    webcam do executável: MediaPipe Pose numa thread
         console.py                   pontos do rastreamento do console T-TEA
         floor.py                     calibração dos 4 cantos: câmera para a projeção
-    ui/                              tema, botões e seleção por permanência
-    scenes/                          telas: abertura, aviso, calibração, vila, mapa, voo etc.
+    ui/                              tema (fontes e cartões de papel), botões e seleção por permanência
+    scenes/                          telas: abertura, piloto, aviso, calibração, vila, mapa, voo etc.
         __init__.py                  registro das cenas: scene.goto("vila")
         projection.py                Projeção e chão: orientação e calibração (só no executável)
-assets/                              sprites, sons, texturas, modelo de pose e curvas
+assets/                              sprites, sons, texturas, fontes, modelo de pose e curvas
 tools/                               geração de assets e do cartucho (ver tools/README.md)
     build_cartridge.py               monta e valida o cartucho do console T-TEA
+    stylize.py                       filtro de papel e aquarela aplicado aos sprites
 tests/                               suíte pytest
 docs/                                GDD e arte original da logo
 docs/arquitetura.md                  arquitetura do código
@@ -427,7 +459,8 @@ O número após `--self-test` é a quantidade de quadros por voo, com padrão de
 Os comandos abaixo estão detalhados, com dependências, em [tools/README.md](tools/README.md).
 
 ```
-python tools/build_assets.py                   # sprites low-poly de fases e vila
+python tools/build_assets.py                   # sprites low-poly de fases e vila, já com o filtro de papel
+python tools/stylize.py                        # refaz o filtro de papel nos sprites existentes
 python tools/build_assets.py --pilot           # camadas do piloto e anchors.json
 python tools/make_audio.py                     # trilhas e efeitos sonoros
 python tools/make_logo.py ARTE.png             # logo, ícone da janela e ícone do executável
@@ -449,6 +482,7 @@ O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-pyt
 - **Programação:** IA generativa (Gemini e Claude) apoiou a programação
 - **Tecnologia:** Python, pygame, OpenCV e MediaPipe Pose
 - **Música e efeitos:** Sintetizados pelo projeto
+- **Fontes:** Fredoka, Nunito e Patrick Hand (Google Fonts, licença OFL)
 - **Evento:** 3ª ExerGame JAM LARVA/UDESC 2026
 
 A música e os efeitos são gerados por síntese no script `tools/make_audio.py`. Os modelos low-poly das fases, da vila, dos resíduos e do piloto são gerados por código em `tools/lowpoly`.
@@ -469,4 +503,5 @@ O regulamento da 3ª ExerGame JAM LARVA (item 4.6) determina que o executável e
 - **Fora da CC BY 4.0, com as licenças de origem:**
   - **Modelo de pose** (`assets/pose_model/pose_landmarker_lite.task`): Google MediaPipe, licença Apache 2.0. Vai só no executável; o cartucho do T-TEA não o inclui.
   - **Captura corporal:** adaptada do T-TEA 2.0 (LARVA/UDESC), nas condições do grupo de origem.
+  - **Fontes** (`assets/fonts`): Fredoka, Nunito e Patrick Hand, do Google Fonts, sob a SIL Open Font License 1.1. Os textos das licenças estão em `assets/fonts/OFL-*.txt`.
   - **Dependências** (pygame, numpy, OpenCV, MediaPipe e o runtime do T-TEA): cada uma com a sua licença. O executável inclui as bibliotecas do pygame (LGPL), do OpenCV e do MediaPipe (Apache 2.0) sem modificá-las.

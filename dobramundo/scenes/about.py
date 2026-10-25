@@ -65,7 +65,7 @@ class AboutScene(Scene):
         self.title(screen, texts.UI["sobre"], texts.TAGLINE)
         logo = self.app.assets.sprite("ui", "logo")
         if logo is not None:
-            screen.blit(self.scaled(logo, (190, 96)), (C.WIDTH - 214, 70))
+            screen.blit(self.scaled(logo, (190, 106)), (C.WIDTH - 214, 66))
         card = BODY.inflate(24, 24)
         T.panel(screen, card, T.PAPER, T.NAVY, 246, 20, 3)
         text = self.text

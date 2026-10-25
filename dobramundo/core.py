@@ -40,8 +40,11 @@ def first_scene(app):
         scene = make_scene(app, "calibracao", return_to=scene)
     if not app.profile.consentimento:
         scene = make_scene(app, "aviso", scene)
-    # A abertura completa aparece na primeira vez; depois fica em Opções > "Ver a abertura".
-    return scene if app.profile.abertura_vista else make_scene(app, "abertura", scene)
+    if not app.profile.abertura_vista:  # a história; depois fica em Opções > "Ver a abertura"
+        scene = make_scene(app, "abertura", scene)
+    if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
+        scene = make_scene(app, "piloto", first_time=True, return_to=scene)
+    return scene
 
 
 class GameCore:

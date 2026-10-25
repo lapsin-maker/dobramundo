@@ -73,8 +73,25 @@ def test_alto_contraste_e_espelhamento_desenham(app):
 
 def test_inicio_passa_pelo_aviso_na_primeira_vez(app):
     app.profile.consentimento = False
+    app.profile.piloto_montado = True
     intro = first_scene(app)
     assert isinstance(intro, IntroScene) and isinstance(intro.next_scene, ConsentScene)
+
+
+def test_a_primeira_tela_e_montar_o_piloto(app):
+    """Piloto (1ª vez) -> abertura -> aviso -> vila: a criança monta o personagem da história."""
+    from dobramundo.scenes.pilot import PilotScene
+
+    app.profile.consentimento = False
+    app.profile.piloto_montado = False
+    app.profile.abertura_vista = False
+    first = first_scene(app)
+    assert isinstance(first, PilotScene) and first.first_time
+    assert isinstance(first.return_to, IntroScene)
+    assert isinstance(first.return_to.next_scene, ConsentScene)
+    first.finish()
+    assert app.profile.piloto_montado
+    assert app.next_scene is first.return_to
 
 
 def test_comprar_melhoria_da_vila_desconta_recursos(app):
@@ -193,6 +210,7 @@ def test_self_test_completo(data_dir):
 
 def test_abertura_so_na_primeira_vez(app):
     app.profile.abertura_vista = True
+    app.profile.piloto_montado = True
     assert isinstance(first_scene(app), VillageScene)
 
 

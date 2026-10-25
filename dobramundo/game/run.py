@@ -13,7 +13,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 
 from .. import config as C
 from ..content.biomes import Biome
-from ..content.items import POWERUP_KINDS, WASTE_KEYS
+from ..content.items import POWERUP_KINDS, WASTE_BY_KEY, WASTE_KEYS
 from ..content.planes import POWERUP_MANEUVERS, START_MANEUVER, ManeuverRow
 from ..content.progress import RESOURCES_PER_WASTE, plane_stats, stars_for
 from .entities import Beam, Entity, FloatingText, entity_hitbox
@@ -23,6 +23,7 @@ from .player import Player
 from .world import World
 
 Event = Tuple[str, object]
+SPLASH_S = 0.55  # respingo de aquarela da coleta
 COMPLETE_GLIDE_S = 3.0  # depois de 100%, o avião segue voando para a criança ver a cidade
 
 
@@ -129,7 +130,7 @@ class FlightRun:
         self.combo_timer = C.COMBO_WINDOW_S
         if not normal and self.streak % C.COMBO_STEP == 0:  # Normal: pontos fixos, sem combo
             self.combo = min(C.MAX_COMBO, self.combo + 1)
-        self.beams.append(Beam(entity.x, entity.z))
+        self.beams.append(Beam(entity.x, entity.z, WASTE_BY_KEY[entity.sprite].color, SPLASH_S))
         self.floating.append(FloatingText(f"+{value}", entity.x, entity.y + 35.0))
         self.emit("collect", entity.sprite)
         self.mission_event("coletar", entity.sprite)

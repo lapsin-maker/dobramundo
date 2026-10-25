@@ -8,6 +8,7 @@ da câmera (o avião é o referencial): céu < nuvens < silhuetas < cenário.
 from __future__ import annotations
 
 import math
+import random
 import time
 from typing import Dict, List, Optional, Tuple
 
@@ -56,6 +57,48 @@ CLOUD_LAYOUT = [  # x, y, largura, deriva, paralaxe, opacidade
 ]
 
 
+SUN_POS = (730, 96)  # no céu, à direita do centro (fora do painel de vidas); anda um pouco com a câmera
+SUN_RADIUS = 40
+CLOUD_INK = (28, 52, 110)
+
+
+def paper_cloud(width: int, seed: int) -> pygame.Surface:
+    """Nuvem de papel recortado: montes arredondados, base reta, sombra azulada e traço de tinta."""
+    rng = random.Random(seed)
+    height = int(width * 0.46)
+    surface = pygame.Surface((width + 8, height + 8), pygame.SRCALPHA)
+    base_y = height - 4
+    bumps = []
+    x = width * 0.12
+    while x < width * 0.9:
+        r = rng.uniform(0.14, 0.24) * width
+        bumps.append((x, base_y - r * rng.uniform(0.55, 0.95), r))
+        x += r * rng.uniform(0.9, 1.3)
+    bumps.append((width * 0.5, base_y - width * 0.12, width * 0.22))
+    for color, grow in (((*CLOUD_INK, 170), 3), ((248, 251, 255, 255), 0)):
+        for cx, cy, r in bumps:
+            pygame.draw.circle(surface, color, (int(cx) + 4, int(cy) + 4), int(r) + grow)
+        pygame.draw.rect(
+            surface,
+            color,
+            (int(bumps[0][0]) + 4 - grow, base_y - 6, int(bumps[-1][0] - bumps[0][0]) + 2 * grow, 10 + grow),
+        )
+    # sombra azulada na metade de baixo (papel dobrado) e base reta
+    shade = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    for cx, cy, r in bumps:
+        pygame.draw.circle(shade, (176, 204, 236, 255), (int(cx) + 4, int(cy) + 4 + int(r * 0.45)), int(r))
+    mask = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+    mask.blit(surface, (0, 0))
+    mask.fill((255, 255, 255, 255), special_flags=pygame.BLEND_RGB_MAX)
+    shade.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+    surface.blit(shade, (0, 0))
+    pygame.draw.rect(surface, (0, 0, 0, 0), (0, base_y + 6, width + 8, height + 8 - base_y - 6))
+    pygame.draw.line(
+        surface, (*CLOUD_INK, 170), (int(bumps[0][0]) + 2, base_y + 5), (int(bumps[-1][0]) + 6, base_y + 5), 3
+    )
+    return surface
+
+
 def blit_tiled(screen: pygame.Surface, surface: pygame.Surface, offset: float, y: int) -> None:
     """Desenha uma faixa que se repete na horizontal, deslocada por offset."""
     tile = surface.get_width()
@@ -69,7 +112,8 @@ class SkyRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
         atmosphere = assets.folder("atmosphere")
-        self.panorama = self.prepare_panorama(atmosphere.get("sky_panorama"))
+        self.panorama_base = self.prepare_panorama(atmosphere.get("sky_panorama"))
+        self.panorama = self.panorama_base
         self.clouds = self.prepare_clouds(atmosphere.get("smog_cloud"))
         self.skyline_sprites = assets.folder("skyline_sprites")
         self.gradients = BoundedCache(24)
@@ -88,6 +132,7 @@ class SkyRenderer:
         if self.biome is biome:
             return
         self.biome = biome
+        self.panorama = self.tint_panorama(biome)
         self.skyline_cache = {}
         self.skyline_state = {}
         self.decor_cache = BoundedCache(64)
@@ -95,6 +140,25 @@ class SkyRenderer:
         self.decor_x = [i * C.DECOR_CYCLE / count + 120 * i for i in range(len(biome.sky_decor))]
 
     # ------------------------------------------------------------ preparo
+    def tint_panorama(self, biome: Biome) -> Optional[pygame.Surface]:
+        """O panorama de fumaça do kit é alaranjado; aqui ele vira cinza e recebe a cor do bioma
+        (névoa úmida em Manaus, poeira ocre em Petrolina), para cada fase poluída ter a sua cara."""
+        base = self.panorama_base
+        if base is None:
+            return None
+        grey = pygame.transform.grayscale(base)
+        tinted = grey.copy()
+        top, horizon = biome.stages[0].sky_top, biome.stages[0].sky_horizon
+        tone = lerp_color(top, horizon, 0.55)
+        tinted.fill(tone, special_flags=pygame.BLEND_RGB_MULT)
+        tinted.fill((60, 60, 60), special_flags=pygame.BLEND_RGB_ADD)  # não deixa o céu virar breu
+        # a faixa junto do horizonte puxa a cor do horizonte (névoa baixa)
+        band = pygame.Surface((tinted.get_width(), 70), pygame.SRCALPHA)
+        for y in range(70):
+            band.fill((*horizon, int(120 * y / 69)), (0, y, tinted.get_width(), 1))
+        tinted.blit(band, (0, tinted.get_height() - 70))
+        return display_format(tinted)
+
     @staticmethod
     def prepare_panorama(panorama: Optional[pygame.Surface]) -> Optional[pygame.Surface]:
         """Recorta o céu do panorama do kit até a linha do horizonte e ajusta à tela."""
@@ -111,15 +175,14 @@ class SkyRenderer:
 
     @staticmethod
     def prepare_clouds(smog: Optional[pygame.Surface]) -> List[dict]:
-        """Nuvens em posições fixas: versão de fumaça (estágio poluído) e versão limpa."""
+        """Nuvens em posições fixas: fumaça (estágio poluído) e nuvem de papel recortado (céu limpo)."""
         if smog is None:
             return []
         clouds = []
-        for x, y, w, drift, parallax, opacity in CLOUD_LAYOUT:
+        for i, (x, y, w, drift, parallax, opacity) in enumerate(CLOUD_LAYOUT):
             smoke = pygame.transform.smoothscale(smog, (w, int(w * 0.42)))
             smoke.fill((38, 30, 24, 0), special_flags=pygame.BLEND_RGBA_ADD)  # aparece sobre o céu escuro
-            clean = smoke.copy()
-            clean.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGB_MAX)
+            clean = display_format(paper_cloud(int(w * 0.8), i), alpha=True)
             clouds.append(
                 {
                     "x": float(x),
@@ -169,11 +232,34 @@ class SkyRenderer:
         elapsed: float,
     ) -> None:
         screen.blit(self.gradient(top, horizon), (0, 0))
+        self.draw_sun(screen, cam_x, horizon)
         self.draw_panorama(screen, cam_x, distance)
         self.draw_clouds(screen, cam_x, distance)
         self.draw_skyline(screen, horizon, cam_x, distance, solar_share)
         self.draw_sky_decor(screen, cam_x, solar_share, elapsed)
         self.draw_horizon_vehicle(screen, cam_x, solar_share)
+
+    def draw_sun(self, screen: pygame.Surface, cam_x: float, horizon: Color) -> None:
+        """Sol de papel: pálido atrás da fumaça, amarelo e com halo quando o céu limpa."""
+        clear = 1.0 - self.pollution
+        x = int(SUN_POS[0] - cam_x * 0.04)
+        y = SUN_POS[1]
+        key = (int(clear * 10), tuple(c // 8 for c in horizon))
+        sun = self.decor_cache.get(("sol", key))
+        if sun is None:
+            size = SUN_RADIUS * 4
+            sun = pygame.Surface((size, size), pygame.SRCALPHA)
+            center = (size // 2, size // 2)
+            core = lerp_color(lerp_color(horizon, (255, 255, 255), 0.45), rgb("ffe36b"), clear)
+            halo = lerp_color(horizon, rgb("fff3b0"), clear)
+            for k in range(4, 0, -1):  # halo em degraus (aquarela aguada)
+                alpha = int((28 if clear > 0.3 else 14) * clear + 6)
+                pygame.draw.circle(sun, (*halo, alpha), center, SUN_RADIUS + k * 12)
+            pygame.draw.circle(sun, (*CLOUD_INK, int(60 + 90 * clear)), center, SUN_RADIUS + 2)
+            pygame.draw.circle(sun, (*core, int(150 + 105 * clear)), center, SUN_RADIUS)
+            sun = display_format(sun, alpha=True)
+            self.decor_cache[("sol", key)] = sun
+        screen.blit(sun, sun.get_rect(center=(x, y)))
 
     def draw_panorama(self, screen: pygame.Surface, cam_x: float, distance: float) -> None:
         if self.panorama is None or self.pollution <= 0.01:
@@ -200,7 +286,7 @@ class SkyRenderer:
             return None
         surface = cloud["baked"].get((variant, level))
         if surface is None:
-            surface = cloud[variant].copy()
+            surface = display_format(cloud[variant].copy(), alpha=True)
             if level < 12:
                 surface.fill((255, 255, 255, int(255 * level / 12)), special_flags=pygame.BLEND_RGBA_MULT)
             cloud["baked"][(variant, level)] = surface
@@ -232,8 +318,16 @@ class SkyRenderer:
                 strip = self.build_skyline(biome.green_skyline, self.assets.scenery)
             elif name == "city" and biome is not None:
                 strip = self.build_skyline(biome.solar_skyline, self.assets.scenery)
+            elif name == "back":
+                layout: List[Tuple[str, int]] = []
+                regional = list(biome.industrial_skyline) if biome is not None else []
+                for i, item in enumerate(SKYLINE_BACK):
+                    layout.append(item)
+                    if regional and i % 3 == 1:
+                        layout.append(regional[(i // 3) % len(regional)])
+                strip = self.build_skyline(layout, {**self.skyline_sprites, **self.assets.scenery})
             else:
-                strip = self.build_skyline(SKYLINE_BACK if name == "back" else SKYLINE_FRONT, self.skyline_sprites)
+                strip = self.build_skyline(SKYLINE_FRONT, self.skyline_sprites)
             self.skyline_cache[name] = strip
         return self.skyline_cache[name]
 
