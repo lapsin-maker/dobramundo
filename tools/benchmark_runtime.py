@@ -11,7 +11,6 @@ import ctypes
 import json
 import os
 import platform
-import random
 import statistics
 import sys
 import time
@@ -126,6 +125,7 @@ def main() -> int:
         "rss_delta_bytes": memory_after - memory_before,
         "startup_watercolor_count": len(watercolor),
         "startup_watercolor_bytes": sum(s.get_pitch() * s.get_height() for _, s in watercolor),
+        "seed": 7,
         "flights": {},
     }
     camera = None
@@ -156,7 +156,7 @@ def main() -> int:
         for contrast in (False, True):
             setup_started = time.perf_counter()
             scene = FlightScene(app, city)
-            scene.run = FlightRun(BIOMES[city], "normal", {}, rng=random.Random(7), intro=False)
+            scene.run = FlightRun(BIOMES[city], "normal", {}, seed=7, intro=False)
             scene.run.invincible = True
             app.go(scene)
             app.options.alto_contraste = contrast

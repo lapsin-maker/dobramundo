@@ -57,11 +57,9 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
         command = [str(executable), "--self-test", "1200"]
         if require_camera:
             command.append("--exigir-camera")
-        subprocess.run(command, cwd=folder, env=env, check=True, timeout=180)
+        completed = subprocess.run(command, cwd=folder, env=env, check=False, timeout=180)
         report = Path(temporary) / "self_test.json"
         data = json.loads(report.read_text(encoding="utf-8"))
-        if data.get("status") != "ok":
-            raise RuntimeError("Self-test do executável não confirmou status ok")
         # Relatório de build público não precisa dos caminhos absolutos do executor.
         for key in tuple(data):
             if key in ("paths", "bundle_dir", "data_dir", "asset_dirs", "log", "profile"):
@@ -70,6 +68,9 @@ def build(onefile: bool = False, require_camera: bool = True) -> Path:
         camera["modelo"] = bool(camera.get("modelo"))
         data["run_id"] = run_id
         (reports / "self_test.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        completed.check_returncode()
+        if data.get("status") != "ok":
+            raise RuntimeError("Self-test do executável não confirmou status ok")
     return executable
 
 

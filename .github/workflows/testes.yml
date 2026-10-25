@@ -5,6 +5,11 @@ on:
     branches: [main, dobramundo]
   pull_request:
   workflow_dispatch:
+    inputs:
+      linux_diagnostics:
+        description: "Repetir apenas o build Linux para diagnosticar empacotamento (não substitui a CI completa)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -15,6 +20,7 @@ concurrency:
 
 jobs:
   testes:
+    if: github.event_name != 'workflow_dispatch' || !inputs.linux_diagnostics
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -52,10 +58,11 @@ jobs:
 
   executaveis:
     needs: testes
+    if: always() && !cancelled() && (needs.testes.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.linux_diagnostics))
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.linux_diagnostics && '["ubuntu-latest"]' || '["ubuntu-latest", "windows-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     env:
@@ -79,13 +86,21 @@ jobs:
       - name: Empacotar Linux preservando permissão de execução
         if: runner.os == 'Linux'
         run: tar -czf dist/Dobramundo-Linux.tar.gz -C dist Dobramundo
-      - name: Executável e relatório técnico
-        if: always()
+      - name: Executável Windows e relatório técnico
+        if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: Dobramundo-${{ runner.os }}-${{ github.sha }}
           path: |
             dist/Dobramundo/
+            build/desktop-selftest/self_test.json
+          retention-days: 14
+      - name: Pacote Linux e relatório técnico
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dobramundo-${{ runner.os }}-${{ github.sha }}
+          path: |
             dist/Dobramundo-Linux.tar.gz
             build/desktop-selftest/self_test.json
           retention-days: 14

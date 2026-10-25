@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from dobramundo.selftest import _safe_error_detail
 from tools import build_desktop
 
 
@@ -26,3 +27,18 @@ def test_failed_build_invalidates_the_previous_success(tmp_path, monkeypatch):
     assert current["status"] == "failed"
     assert current["exit_code"] == 7
     assert current["run_id"] != "old"
+
+
+@pytest.mark.parametrize(
+    "library",
+    [
+        r"C:\Users\João Vítor\project\libmediapipe.dll",
+        "/home/runner/project/libmediapipe.so",
+    ],
+)
+def test_native_error_preserves_library_without_local_directories(library):
+    error = RuntimeError(f"Failed to load '{library}'")
+    error.__cause__ = OSError("libEGL.so.1: cannot open shared object file")
+    detail = _safe_error_detail(error)
+    assert "libmediapipe" in detail and "libEGL.so.1" in detail
+    assert not any(value in detail for value in ("Users", "João", "runner", "/home", "project"))
