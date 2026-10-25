@@ -88,7 +88,7 @@ class IntroScene(Scene):
         self.finish()
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN) and getattr(event, "key", None) not in (
+        if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN) and event.dict.get("key") not in (
             pygame.K_LEFT,
             pygame.K_RIGHT,
             pygame.K_UP,

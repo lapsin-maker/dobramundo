@@ -111,6 +111,10 @@ class Button:
             pygame.draw.rect(screen, T.ORANGE, bar, border_radius=3)
 
 
+HOLD_MARGIN = 30  # pixels que o botão em seleção cresce de cada lado (contra o tremor)
+LEAVE_TOLERANCE = 0.5  # segundos fora dele que ainda mantêm a contagem
+
+
 class Menu:
     """Grupo de botões de uma tela: foco pelo teclado, clique e permanência."""
 
@@ -119,6 +123,7 @@ class Menu:
         self.focus = min(max(0, focus), max(0, len(self.buttons) - 1))
         self.hover: Optional[Button] = None
         self.dwell = 0.0
+        self.away = 0.0  # segundos fora do botão em seleção
         self.armed = True
         self.pointer: Optional[Tuple[int, int]] = None
         self.on_focus: Optional[Callable[[], None]] = None
@@ -195,17 +200,36 @@ class Menu:
         return False
 
     def update(self, dt: float, pointer: Optional[Tuple[int, int]], dwell_time: float) -> bool:
-        """Avança a permanência; True quando um botão foi acionado por ela."""
+        """Avança a permanência; True quando um botão foi acionado por ela.
+
+        O rastreamento do corpo treme alguns pixels por quadro: o botão em seleção
+        cresce HOLD_MARGIN de cada lado e sair dele por até LEAVE_TOLERANCE segundos
+        não zera a contagem (ela só fica parada).
+        """
         self.pointer = pointer
-        hovered = None
-        if pointer is not None:
-            for button in self.buttons:
-                if button.enabled and button.rect.inflate(16, 16).collidepoint(pointer):
-                    hovered = button
-                    break
+        current = self.hover if self.hover in self.buttons and self.hover.enabled else None
+        if (
+            current is not None
+            and pointer is not None
+            and current.rect.inflate(2 * HOLD_MARGIN, 2 * HOLD_MARGIN).collidepoint(pointer)
+        ):
+            self.away = 0.0
+            hovered = current
+        else:
+            hovered = None
+            if pointer is not None:
+                for button in self.buttons:
+                    if button is not current and button.enabled and button.rect.inflate(16, 16).collidepoint(pointer):
+                        hovered = button
+                        break
+            if hovered is None and current is not None:
+                self.away += dt
+                if self.away <= LEAVE_TOLERANCE:
+                    return False  # saída breve: a contagem espera
         if hovered is not self.hover:
             self.hover = hovered
             self.dwell = 0.0
+            self.away = 0.0
             self.armed = True
             if hovered is not None:
                 self.focus = self.buttons.index(hovered)

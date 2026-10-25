@@ -7,11 +7,17 @@ Este documento descreve o código do pacote `dobramundo/` como ele está no repo
 O pacote se divide em camadas com dependências em um sentido só: cada camada usa as de baixo, e nenhuma usa as de cima.
 
 ```
+executável (app.py: App)       cartucho do T-TEA (cartridge.py: ConsoleCore, Dobramundo)
+   plataformas: janela, relógio, eventos, tela cheia e, no console, o próprio console
+          \                                /
+           \                              /
+   núcleo (core.py: GameCore, first_scene): jogo sem plataforma
+                        |
 scenes/ ........ telas do jogo (menus, calibração, voo, resultado)
    |
 ui/ ............ tema, botões e seleção por permanência
-input/ ......... teclado, mouse e controle corporal (MediaPipe Pose)
-engine/ ........ desenho pseudo-3D: céu, chão, pista, objetos, avião, piloto
+input/ ......... teclado, mouse e pontos do corpo (webcam em camera.py; console em console.py)
+engine/ ........ desenho pseudo-3D: céu, chão, pista, objetos, avião, piloto, orientação
    |
 game/ .......... regras do voo: mundo, avião, vidas, pontos, estrelas, momento de foco, eventos
    |
@@ -20,21 +26,24 @@ content/ ....... dados do jogo: fases, aviões, pinturas, resíduos, melhorias, 
 config.py ...... constantes do motor (sem dependências)
 ```
 
-Duas camadas não dependem do pygame: `content/` e `game/`. Isso permite testar as regras do voo e a progressão sem janela (os testes ainda usam drivers `dummy` para as cenas). `input/pose.py` também não importa o pygame, e o MediaPipe e o OpenCV são importados só quando a câmera é ligada.
+Duas camadas não dependem do pygame: `content/` e `game/`. Isso permite testar as regras do voo e a progressão sem janela (os testes ainda usam drivers `dummy` para as cenas). `input/pose.py` também não importa o pygame nem o MediaPipe. Só `input/camera.py` importa o MediaPipe e o OpenCV, e apenas quando a câmera é ligada.
 
-O `App` (em `app.py`) reúne os serviços que as cenas usam: o perfil, a tela lógica, os sprites compartilhados (`assets`), o desenho (`view`), o som (`audio`), as entradas (`input`) e a cena atual.
+O `GameCore` (em `core.py`) reúne os serviços que as cenas usam: o perfil, a tela lógica, os sprites compartilhados (`assets`), o desenho (`view`), o som (`audio`), as entradas (`input`) e a cena atual. Ele não abre janela nem lê eventos do sistema: quem faz isso é a plataforma. O `App` (em `app.py`) é a plataforma do executável, e o `ConsoleCore` (em `cartridge.py`) é a do console. Os dois herdam do `GameCore`.
 
 ## 2. Um quadro
 
-`App.run()` chama `App.step(dt)` a cada quadro, com o tempo suavizado (`DT_SMOOTHING`) e limitado a `MAX_DT`. Cada `step` faz, nesta ordem:
+`App.run()` chama `App.step(dt)` a cada quadro, com o tempo suavizado (`DT_SMOOTHING`) e limitado a `MAX_DT`. No executável, `App.step` faz, nesta ordem:
 
-1. `_switch()`: se houver uma cena pendente (`App.go`), sai da atual (`leave`) e entra na nova (`enter`: toca a trilha e chama `build`).
-2. `events()`: lê os eventos do pygame. Converte a posição do mouse para as coordenadas lógicas (espelhar e girar), trata F11 e repassa os demais ao `InputHub`.
-3. `input.update(dt)`: consome a leitura mais recente da câmera (`BodyControl.poll`).
-4. `view.update(dt)`: avança o tempo do desenho e as decorações do céu.
-5. `scene.handle_event` para cada evento, depois `scene.update(dt)` e `scene.draw(canvas)`.
-6. `present()`: copia a tela lógica (1100 x 650) para a janela. O SDL escala para a janela ou a tela cheia, e espelhar e girar são aplicados aqui.
-7. `view.step_warm_up(ms)`: prepara sprites em fatias de tempo. São 6 ms nas telas de menu e 1,5 ms no voo (`idle_warm_up`).
+1. `App.events()`: lê os eventos do pygame. Converte a posição do mouse para as coordenadas lógicas (desfazendo espelho e rotação), trata F11 e repassa os demais ao `InputHub`.
+2. `GameCore.advance(dt, eventos)`, o mesmo núcleo em qualquer plataforma:
+   1. `_switch()`: se houver uma cena pendente (`GameCore.go`), sai da atual (`leave`) e entra na nova (`enter`: toca a trilha e chama `build`).
+   2. `input.update(dt)`: consome a leitura mais recente da câmera ou do console (`BodyControl.poll`).
+   3. `view.update(dt)`: avança o tempo do desenho e as decorações do céu.
+   4. `scene.handle_event` para cada evento, depois `scene.update(dt)` e `scene.draw(canvas)`.
+   5. `view.step_warm_up(ms)`: prepara sprites em fatias de tempo. São 6 ms nas telas de menu e 1,5 ms no voo (`idle_warm_up`).
+3. `present()`: copia a tela lógica (1100 x 650) para a janela, com espelho e rotação (`engine/orientation.py`). O SDL escala para a janela ou a tela cheia.
+
+No console, o cartucho faz o papel de `events()` e de `present()` em `Dobramundo.update` e `Dobramundo.draw`: recebe os eventos e o rastreamento, passa-os ao núcleo e desenha o canvas na superfície do console.
 
 Ao sair, `shutdown()` para o controle corporal e o som e grava o perfil.
 
@@ -63,9 +72,9 @@ Os relógios do momento de foco correm em tempo real (`real_dt`). Por isso a jan
 
 ## 3. Máquina de cenas e fluxo de telas
 
-Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por permanência e a barra de recursos. A troca de cena é sempre no fim do quadro, com `App.go(scene)`.
+Toda cena herda de `scenes/base.py:Scene`, que tem o menu com seleção por permanência e a barra de recursos. A troca de cena é sempre no fim do quadro, com `GameCore.go(scene)`.
 
-Fluxo da execução (`main.first_scene`). A cadeia é montada de trás para frente; a abertura só aparece na primeira vez:
+Fluxo da execução (`core.first_scene`, usado pelo executável e pelo cartucho). A cadeia é montada de trás para frente; a abertura só aparece na primeira vez:
 
 ```
 IntroScene (1ª execução) -> ConsentScene (se o aviso ainda não foi aceito)
@@ -81,7 +90,8 @@ VillageScene
   Melhorias .......... UpgradesScene (abas Vila e Avião)
   Hangar ............. HangarScene (abas Dobradura, Cor e Padrão)
   Piloto ............. PilotScene
-  Opções ............. OptionsScene -> IntroScene ("Ver a abertura") e CalibrationScene
+  Opções ............. OptionsScene -> IntroScene ("Ver a abertura"), CalibrationScene e
+                       ProjectionScene ("Projeção e chão", só no executável)
   Sobre .............. AboutScene (O jogo, ODS, Créditos, Referências)
   Esc ................ OptionsScene
 
@@ -204,6 +214,7 @@ O perfil fica num único JSON (`dobramundo_perfil.json`) e é modelado pela data
 - **Migração:** não há migração por versão. O campo `versao` é gravado, mas não é lido. Para uma mudança incompatível, é preciso aumentar `SCHEMA_VERSION`, criar o tratamento em `from_dict` e cobrir o caso em `tests/test_progress.py`.
 - **Importação do protótipo:** se não houver perfil, `import_legacy` lê `eco_runner_recorde.json` e `eco_runner_config.json` das pastas do protótipo (ver `legacy_data_dirs` em `paths.py`).
 - **Versão 1.2:** `voos_fase` e `historico` entram no perfil sem mudar `SCHEMA_VERSION` (continua 1). Campos ausentes em perfis antigos recebem o valor padrão.
+- **Versão 1.3:** a opção booleana `girar` vira `rotacao` (0, 90, 180 ou 270). Perfis com `girar` verdadeiro viram `rotacao = 180` (`persistence.py`). `SCHEMA_VERSION` continua 1, e campos novos, como `chao_pontos`, `alvo_frente` e `centralizar_sozinho`, recebem o valor padrão em perfis antigos.
 
 ## 10. Como adicionar um novo bioma
 
@@ -226,11 +237,25 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 
 ## 11. Controle por posição, momento de foco e abertura didática
 
-**Controle por posição** (`input/hub.py`, `game/player.py`). `InputHub.flight_command` devolve o alvo do corpo (-1..1, 0 na postura calibrada) quando o controle corporal está calibrado, o modo é posição (`controle_posicao`, padrão) e nenhuma tecla de direção está apertada. Caso contrário, devolve a velocidade do teclado somada ao corpo. `Player.command_target` converte o alvo em um ponto da pista: o centro do eixo horizontal e, na vertical, `REST_ALTITUDE` como centro, com os limites `MIN_ALTITUDE` e `MAX_ALTITUDE`. `Player.steer_to` aproxima o avião desse ponto com `POSITION_RESPONSE` (1/s), limitado por `MAX_LATERAL_SPEED` e `MAX_VERTICAL_SPEED` vezes o fator do avião. `AxisMapper.hold_when_lost` (`input/pose.py`) mantém a última leitura quando a câmera perde o segmento, então o avião conserva o rumo. Esse flag é definido ao abrir a câmera e em `InputHub.configure`.
+**Controle por posição** (`input/hub.py`, `game/player.py`). `InputHub.flight_command` devolve o alvo do corpo (-1..1, 0 na postura calibrada) quando o controle corporal está calibrado (ou quando os pés estão sobre a projeção, com `FloorControl`), o modo é posição (`controle_posicao`, padrão) e nenhuma tecla de direção está apertada. Caso contrário, devolve a velocidade do teclado somada ao corpo. `Player.command_target` converte o alvo em um ponto da pista: o centro do eixo horizontal e, na vertical, `REST_ALTITUDE` como centro, com os limites `MIN_ALTITUDE` e `MAX_ALTITUDE`. `Player.steer_to` aproxima o avião desse ponto com `POSITION_RESPONSE` (5,0 por segundo, em `config.py`), limitado por `MAX_LATERAL_SPEED` e `MAX_VERTICAL_SPEED` vezes o fator do avião. `AxisMapper.hold_when_lost` (`input/pose.py`) mantém a última leitura quando a câmera perde o segmento, então o avião conserva o rumo. Esse flag é definido ao abrir a câmera e em `InputHub.configure`.
 
 **Momento de foco** (`game/focus.py`). `FocusMoment` tem três estados: `None` (voo normal), `"pending"` (a seta espera o movimento) e `"success"` ou `"miss"` (legenda de 0,8 s). `find_threat` escolhe o obstáculo cujo contato com o avião acontece em `FOCUS_IMPACT_S` (0,3 a 0,75 s de mundo), que bateria no ponto atual e no ponto para onde o avião vai (`intended_point`). `choose_escape` escolhe a direção do desvio, com a tabela `PREFERRED` por tipo de obstáculo. `moved_towards` mede se o comando andou pelo menos `FOCUS_STEP` (0,3, na escala de -1 a 1) a partir do comando que havia quando a seta apareceu. Acertar cria um desvio guiado (`guide_point`, com `exact=True` no `Player.update`) até o ponto seguro, e o obstáculo recebe `dodged`. Errar só deixa o tempo voltar ao normal. Intervalo de `FOCUS_COOLDOWN_S` (9 s), com `FOCUS_FIRST_S` (5 s) no início. A abertura didática ignora o intervalo (`entity.lesson`). Não abre com `invincible`, invulnerabilidade ou escudo. A opção `momento_foco` desliga o recurso.
 
 **Abertura didática** (`game/world.py`, `game/run.py`). `FlightRun` recebe `intro=True` quando o modo é Normal ou quando é o primeiro voo da fase (`Profile.voos_fase`). `World.plan_intro` converte os tempos de `INTRO_*` (em `config.py`) em posições da pista pela velocidade inicial. `intro_pattern` põe só resíduos até `INTRO_FIRST_WASTE_S`, e `spawn_lessons` põe cada obstáculo da lista `INTRO_LESSONS` na faixa do meio, com um resíduo na faixa certa. `in_intro` vale até `INTRO_END_S` (22 s). `announce_lessons` publica o evento `lesson` antes da chegada, e a cena mostra a legenda de `texts.LESSONS`.
+
+## 12. Fontes de pontos, controles e orientação
+
+**Fontes de pontos.** O `InputHub` usa uma fonte por vez, com a forma `snapshot()`, `error`, `start()` e `stop()`:
+
+- Executável: `input/camera.py` (`PoseCameraSource`) lê a webcam numa thread e roda o MediaPipe Pose. A fonte é criada por `webcam_source()` em `input/hub.py`, e só esse módulo importa o MediaPipe e o OpenCV.
+- Console: `input/console.py` (`TrackingSource`) recebe a cada quadro os 33 pontos do corpo, com o x espelhado (`body_points`), e a posição dos pés já projetada na imagem do jogo (`locate_floor`). O cartucho entrega esses dados em `Dobramundo.update`.
+
+**BodyControl x FloorControl.** `InputHub.make_control` escolhe o controle de cada segmento:
+
+- `BodyControl` (`input/pose.py`) é relativo. O `AxisMapper` calibra o repouso (2 segundos e pelo menos 15 leituras, em `CALIBRATION_SECONDS` e `MIN_SAMPLES`) e só aceita o repouso se o desvio mediano das leituras fica até metade do alcance do segmento (`settle`, `STILL_SHARE`). Com `recenter_after` (`RECENTER_S`, 3 s, em `input/hub.py`), uma ausência longa apaga o repouso, e ele se refaz quando o segmento volta e fica parado. Isso vale para cabeça, mãos e tronco, com "Centrar sozinho" ligado, e para os pés na câmera sem chão calibrado.
+- `FloorControl` (subclasse de `BodyControl`, com `absolute = True`) é usado só com o segmento "pes" e um localizador de chão (`InputHub.set_floor`). O localizador converte os pontos na posição (0..1) da imagem do jogo, e o avião e o cursor vão até esse ponto. Não há repouso a calibrar, e, quando o pé some, o último ponto é mantido.
+
+**Orientação da projeção.** `engine/orientation.py` espelha primeiro e gira depois, no sentido horário. `game_to_screen` e `screen_to_game` fazem a conversão de ida e de volta, com as faixas pretas da imagem em pé. `App.to_logical` usa `screen_to_game` para o mouse, e `App.present` aplica `orient` na janela. A calibração do chão (`input/floor.py`, `FloorMap`) é uma homografia entre a câmera e a imagem projetada, medida nos quatro alvos (`TARGETS`, a 15% das bordas). `FloorMap.locator` desfaz a orientação e sobe o ponto em `alvo_frente`. `App.floor_setup` devolve esse localizador com um token que muda com os pontos, a rotação, o espelho e o cursor à frente, para refazê-lo só quando preciso. No console, `ConsoleCore.floor_setup` usa o localizador do próprio console.
 
 ## Pontos de atenção
 
@@ -257,3 +282,12 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 - **Opção "Efeitos fortes (clarão, tremor)"** (`efeitos_fortes`): controla o clarão da colisão e da estrela, o tremor e o tom do momento de foco.
 - **Medida de movimento e histórico**: `FlightRun.record_movement` e `FlightRun.summary`; `scenes/result.py` (`apply_run` e `movement_line`); `Profile.historico`, com até `HISTORY_LIMIT` (60) voos, gravado em `dobramundo_perfil.json`.
 - **Equilíbrio**: `tools/balance.py` e `test_fase_dura_alguns_minutos` marcam a decisão de coleta no próprio objeto (antes usavam `id()`, que se repete quando objetos são liberados, e coletavam bem menos que 4 de cada 10). Recalibrados `RESTORATION_PER_TRASH` (0,115), `RESTORATION_COMBO_BONUS` (0,013), `NORMAL_RESTORATION_PER_TRASH` (1,18) e `COST_SCALE` (12).
+
+## Mudanças da versão 1.3
+
+- **Núcleo e plataformas:** `core.py` (`GameCore`, `first_scene`) é o jogo sem plataforma. `app.py` (`App`) é o executável, com `events()`, `present()`, `run()` e `to_logical()`. `cartridge.py` (`ConsoleCore`, `Dobramundo`) é o cartucho do console. `GameCore.advance` faz o quadro comum às duas plataformas. O registro de cenas (`scenes/__init__.py`) segue explícito, sem `importlib`.
+- **Fontes de pontos:** a webcam com MediaPipe foi para `input/camera.py`. `input/console.py` traz os pontos do console. `input/pose.py` ficou com segmentos, calibração, eixos e `FloorControl`.
+- **Chão e orientação:** `input/floor.py` (`FloorMap`), `engine/orientation.py` e `scenes/projection.py`. Opções `rotacao`, `espelhar`, `chao_pontos` e `alvo_frente`, com migração de `girar` em `persistence.py`.
+- **Conforto:** `RECENTER_S` em `input/hub.py`, `AxisMapper.settle` (o repouso só vale com o segmento parado) e as opções `centralizar_sozinho` e `inverter_horizontal` ("Trocar lados").
+- **Seleção:** `HOLD_MARGIN` (30 px) e `LEAVE_TOLERANCE` (0,5 s) em `ui/widgets.py`.
+- **Cartucho:** `tools/build_cartridge.py` monta `build/cartucho/` sem `app.py`, `main.py`, `selftest.py`, `input/camera.py` e o modelo de pose, gera `CREDITOS.md` e roda `tsdk check` e `tsdk build`. `PLATFORM_KEYS` (ESC, P e F2) fica com o console, e `PLAYER_OPTIONS` define as opções que acompanham a criança registrada.

@@ -33,7 +33,7 @@ def _frame_stats(times: List[float]) -> Dict[str, float]:
 
 def pose_check() -> dict:
     """O detector de pose carrega? (bibliotecas e modelo empacotados; não abre a webcam)."""
-    from .input.pose import create_landmarker
+    from .input.camera import create_landmarker
     from .paths import find_pose_model
 
     model = find_pose_model()
@@ -83,6 +83,7 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
     from .scenes.map import MapScene
     from .scenes.options import OptionsScene
     from .scenes.pilot import PilotScene
+    from .scenes.projection import ProjectionScene
     from .scenes.upgrades import UpgradesScene
     from .scenes.village import VillageScene
 
@@ -126,6 +127,7 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
         ("melhorias", UpgradesScene(app)),
         ("melhorias_aviao", UpgradesScene(app, "aviao")),
         ("opcoes", OptionsScene(app)),
+        ("projecao", ProjectionScene(app)),
         ("sobre", AboutScene(app)),
         ("ods", AboutScene(app, "ods")),
     ):

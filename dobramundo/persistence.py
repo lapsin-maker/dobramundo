@@ -48,14 +48,20 @@ class Options:
     alto_contraste: bool = False
     superficie: str = "monitor"
     espelhar: bool = False  # inverte a imagem na horizontal (projeção por trás)
-    girar: bool = False  # gira 180° (projetor no teto, imagem no chão ou na mesa)
+    rotacao: int = 0  # 0, 90, 180 ou 270 graus no sentido horário (projetor no teto, chão, mesa)
     tela_cheia: bool = False
     permanencia: float = 1.2  # segundos parado sobre um botão para selecioná-lo
     sensibilidade: float = 1.0  # alcance do movimento corporal (maior = movimento menor basta)
     inverter_vertical: bool = False  # câmera vista de cima (chão, mesa): subir e descer trocados
+    inverter_horizontal: bool = False  # imagem da câmera sem espelho: esquerda e direita trocadas
     controle_posicao: bool = True  # o corpo indica onde o avião fica (não: indica a velocidade)
     momento_foco: bool = True  # câmera lenta guiada perto de uma batida
     efeitos_fortes: bool = True  # clarões e tremor de tela (desligar para sensibilidade sensorial)
+    centralizar_sozinho: bool = True  # cabeça e mãos: posição neutra automática, refeita após ausência
+    # Calibração do chão (projeção + webcam): onde a câmera vê os 4 alvos projetados
+    # (superior esquerdo, superior direito, inferior direito, inferior esquerdo), 0..1.
+    chao_pontos: List[List[float]] = field(default_factory=list)
+    alvo_frente: float = 0.12  # cursor dos pés à frente dos dedos (fração da altura da imagem)
 
 
 @dataclass
@@ -122,8 +128,11 @@ class Profile:
         self.historico = [_flat(e) for e in self.historico if isinstance(e, dict)][-HISTORY_LIMIT:]
         o = self.opcoes
         for name in ("volume_geral", "volume_musica", "volume_efeitos"):
-            setattr(o, name, max(0.0, min(1.0, float(getattr(o, name)))))
+            setattr(o, name, max(0.0, min(1.0, float(vars(o)[name]))))
         o.superficie = o.superficie if o.superficie in SURFACES else "monitor"
+        o.rotacao = o.rotacao if o.rotacao in (0, 90, 180, 270) else 0
+        o.alvo_frente = max(0.0, min(0.35, float(o.alvo_frente)))
+        o.chao_pontos = _floor_points(o.chao_pontos)
         o.permanencia = max(0.6, min(3.0, float(o.permanencia)))
         o.sensibilidade = max(0.5, min(2.0, float(o.sensibilidade)))
         return self
@@ -142,6 +151,8 @@ class Profile:
             if name != "opcoes" and name in data:
                 _assign(profile, name, data[name])
         options = data.get("opcoes")
+        if isinstance(options, dict) and "rotacao" not in options and _as_bool(options.get("girar", False)):
+            options = {**options, "rotacao": 180}  # perfis até a 1.2 tinham só "girar 180°"
         if isinstance(options, dict):
             for name in profile.opcoes.__dataclass_fields__:
                 if name in options:
@@ -150,6 +161,16 @@ class Profile:
             return profile.normalize()
         except (TypeError, ValueError, AttributeError, IndexError) as exc:
             raise ProfileError(f"perfil inválido ({exc.__class__.__name__})") from exc
+
+
+def _floor_points(points: object) -> List[List[float]]:
+    """Quatro pontos (x, y) entre 0 e 1, ou nenhum (calibração ausente ou inválida)."""
+    try:
+        result = [[float(p[0]), float(p[1])] for p in points]  # type: ignore[union-attr]
+    except (TypeError, ValueError, IndexError):
+        return []
+    ok = len(result) == 4 and all(0.0 <= v <= 1.0 for p in result for v in p)
+    return result if ok else []
 
 
 def _flat(entry: dict) -> dict:
@@ -170,7 +191,7 @@ def _as_bool(value: object) -> bool:
 
 def _assign(target: object, name: str, value: object) -> None:
     """Grava value em target.name convertendo para o tipo do valor padrão (ignora o que não serve)."""
-    default = getattr(target, name)
+    default = vars(target)[name]
     try:
         if isinstance(default, bool):
             setattr(target, name, _as_bool(value))

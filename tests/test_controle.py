@@ -141,10 +141,26 @@ def test_permanencia_aciona_uma_vez_por_entrada():
     for _ in range(30):
         menu.update(0.05, (50, 30), 1.2)
     assert hits == ["a"]  # 1,5 s parado: um acionamento só
-    menu.update(0.05, (500, 500), 1.2)
+    for _ in range(12):  # sai por 0,6 s (mais que a tolerância): rearma
+        menu.update(0.05, (500, 500), 1.2)
     for _ in range(30):
         menu.update(0.05, (50, 30), 1.2)
     assert hits == ["a", "a"]
+
+
+def test_permanencia_tolera_tremor_e_saida_breve():
+    """Tremor perto da borda e uma saída curta não zeram a contagem."""
+    hits = []
+    menu = Menu([Button(pygame.Rect(0, 0, 100, 60), "A", lambda: hits.append("a"))])
+    for _ in range(12):
+        menu.update(0.05, (50, 30), 1.2)  # 0,6 s dentro
+    for _ in range(6):
+        menu.update(0.05, (120, 30), 1.2)  # 20 px fora da borda: ainda vale (margem do botão em seleção)
+    for _ in range(4):
+        menu.update(0.05, (500, 500), 1.2)  # 0,2 s fora: a contagem espera
+    for _ in range(6):
+        menu.update(0.05, (50, 30), 1.2)
+    assert hits == ["a"]  # 0,6 + 0,3 + 0,3 = 1,2 s de permanência
 
 
 def test_teclado_move_o_foco_e_confirma():

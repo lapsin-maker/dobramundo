@@ -16,7 +16,7 @@ import pygame
 from .. import config as C
 from ..content.biomes import Biome
 from ..util import Color, clamp, lerp_color, rgb
-from .assets import Assets
+from .assets import Assets, display_format
 from .cache import BoundedCache
 
 # Silhuetas industriais do horizonte (assets/skyline_sprites): fileira de trás e da frente.
@@ -107,7 +107,7 @@ class SkyRenderer:
         top = max(0, int(horizon_row * C.SKY_PANORAMA_SCALE) - C.HORIZON_Y)
         sky = pygame.Surface((scaled_w, C.HORIZON_Y))
         sky.blit(big, (0, -top))
-        return sky.convert() if pygame.display.get_surface() else sky
+        return display_format(sky)
 
     @staticmethod
     def prepare_clouds(smog: Optional[pygame.Surface]) -> List[dict]:

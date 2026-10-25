@@ -24,7 +24,7 @@ POSE_MODEL_NAME = "pose_landmarker_lite.task"
 
 def is_frozen() -> bool:
     """True quando o jogo roda a partir do executável do PyInstaller."""
-    return bool(getattr(sys, "frozen", False))
+    return bool(vars(sys).get("frozen", False))
 
 
 def app_dir() -> Path:
@@ -36,7 +36,7 @@ def app_dir() -> Path:
 
 def bundle_dir() -> Path:
     """Pasta dos arquivos embutidos (sys._MEIPASS no PyInstaller)."""
-    meipass = getattr(sys, "_MEIPASS", None)
+    meipass = vars(sys).get("_MEIPASS")
     return Path(meipass) if meipass else app_dir()
 
 

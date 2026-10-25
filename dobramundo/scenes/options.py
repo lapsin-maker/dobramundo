@@ -124,25 +124,26 @@ class OptionsScene(Scene):
             lambda: self.set_surface(s_index + 1),
         )
         y += ROW_H + GAP
+        desktop = self.app.platform == "desktop"  # no console, a projeção é do próprio console
         buttons.append(
             self.button(
                 (left, y, half, ROW_H),
-                f"Espelhar: {'sim' if o.espelhar else 'não'}",
-                lambda: self.flip("espelhar"),
-                selected=o.espelhar,
+                "Projeção e chão",
+                lambda: self.goto("projecao"),
+                enabled=desktop,
                 size=T.SIZES["body"],
-                key="esp",
+                key="projecao",
+                sublabel=f"Girar {o.rotacao}°" + (", espelhada" if o.espelhar else ""),
             )
         )
-        buttons.append(
-            self.button(
-                (left + half + GAP, y, half, ROW_H),
-                f"Girar 180°: {'sim' if o.girar else 'não'}",
-                lambda: self.flip("girar"),
-                selected=o.girar,
-                size=T.SIZES["body"],
-                key="gir",
-            )
+        toggle(
+            left + half + GAP,
+            y,
+            "centralizar",
+            "Centrar sozinho",
+            o.centralizar_sozinho,
+            lambda: self.flip("centralizar_sozinho"),
+            half,
         )
         y += ROW_H + GAP
         toggle(left, y, "foco", "Momento de foco (câmera lenta)", o.momento_foco, lambda: self.flip("momento_foco"))
@@ -152,7 +153,7 @@ class OptionsScene(Scene):
             ("volume_musica", "Música"),
             ("volume_efeitos", "Efeitos"),
         ):
-            value = getattr(o, key)
+            value = vars(o)[key]
             stepper(
                 right,
                 y,
@@ -164,12 +165,22 @@ class OptionsScene(Scene):
             )
             y += ROW_H + GAP
         toggle(right, y, "silencio", texts.UI["silencio"], o.silencio, lambda: self.flip("silencio"), half)
-        toggle(right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
+        if desktop:
+            toggle(right + half + GAP, y, "tela", "Tela cheia", o.tela_cheia, self.fullscreen, half)
         y += ROW_H + GAP
         toggle(right, y, "contraste", texts.UI["alto_contraste"], o.alto_contraste, lambda: self.flip("alto_contraste"))
         y += ROW_H + GAP
         toggle(
-            right, y, "inverter", "Inverter subir e descer", o.inverter_vertical, lambda: self.flip("inverter_vertical")
+            right, y, "inverter", "Trocar cima/baixo", o.inverter_vertical, lambda: self.flip("inverter_vertical"), half
+        )
+        toggle(
+            right + half + GAP,
+            y,
+            "inverter_lados",
+            "Trocar lados",
+            o.inverter_horizontal,
+            lambda: self.flip("inverter_horizontal"),
+            half,
         )
         y += ROW_H + GAP
         toggle(
@@ -207,14 +218,14 @@ class OptionsScene(Scene):
 
     def adjust(self, name: str, step: float, low: float, high: float) -> None:
         o = self.app.options
-        setattr(o, name, round(max(low, min(high, getattr(o, name) + step)), 2))
+        setattr(o, name, round(max(low, min(high, vars(o)[name] + step)), 2))
         self.changed()
         if name.startswith("volume"):
             self.app.audio.play("sfx_foco")
 
     def flip(self, name: str) -> None:
         o = self.app.options
-        setattr(o, name, not getattr(o, name))
+        setattr(o, name, not vars(o)[name])
         self.changed()
 
     def fullscreen(self) -> None:

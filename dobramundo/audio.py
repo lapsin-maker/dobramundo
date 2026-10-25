@@ -37,9 +37,11 @@ class Audio:
         self.active = 0
         if not enabled:
             return
+        # Quem abre o mixer é a plataforma: o executável (app.py) ou o console T-TEA.
+        if not pygame.mixer.get_init():
+            log.warning("sem dispositivo de áudio: mixer fechado")
+            return
         try:
-            if not pygame.mixer.get_init():
-                pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=1024)
             pygame.mixer.set_num_channels(16)
             pygame.mixer.set_reserved(2)
             self.channels = [pygame.mixer.Channel(0), pygame.mixer.Channel(1)]
@@ -101,6 +103,16 @@ class Audio:
         channel = self.channels[self.active]
         channel.set_volume(self.effective_music())
         channel.play(sound, loops=-1, fade_ms=MUSIC_FADE_MS)
+
+    def pause_music(self) -> None:
+        if self.enabled:
+            for channel in self.channels:
+                channel.pause()
+
+    def resume_music(self) -> None:
+        if self.enabled:
+            for channel in self.channels:
+                channel.unpause()
 
     def stop(self) -> None:
         if self.enabled:

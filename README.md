@@ -4,6 +4,16 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
+## Novidades da versão 1.3
+
+- **Núcleo separado da plataforma:** o jogo sem plataforma fica no núcleo (`core.py`). O executável (`app.py`) cuida da janela, do som, do relógio, da tela cheia e da orientação da imagem, e o cartucho do console T-TEA (`cartridge.py`) usa o mesmo núcleo.
+- **Cartucho para o console T-TEA:** todos os segmentos funcionam no console. Com os pés, o avião e o cursor seguem o ponto da projeção onde a criança pisa; com tronco, mãos ou cabeça, os pontos vêm da câmera do console. O perfil fica no armazenamento do jogador. Veja [Console T-TEA (cartucho)](#console-t-tea-cartucho).
+- **Projeção e chão:** a opção "Projeção e chão", em Opções (só no executável), gira a imagem em 0°, 90°, 180° ou 270° e espelha. Com quatro alvos numerados e uma foto da webcam, o jogo aprende onde está a projeção no chão, e então onde a criança pisa vira a posição do avião. A antiga opção "Girar 180°" é migrada para essa tela.
+- **Cursor à frente:** a distância do cursor à frente dos dedos vai de 0 a 35% (padrão 12%).
+- **Controle confortável:** cabeça, mãos e tronco só aceitam a posição neutra quando o segmento está parado. Com "Centrar sozinho" (padrão), a posição neutra é refeita sozinha depois de 3 segundos sem o segmento. As mãos usam o centro da palma.
+- **Seleção mais tolerante:** o botão em seleção cresce 30 px de cada lado, e sair dele por até 0,5 s não zera a contagem.
+- **Opções reorganizadas:** "Projeção e chão", "Centrar sozinho", "Trocar cima/baixo" e "Trocar lados" (inverte esquerda e direita).
+
 ## Novidades da versão 1.2
 
 - **Controle por posição:** com o controle corporal, o corpo indica o ponto em que o avião deve ficar, e o avião vai até lá suavemente. Ficar parado mantém o avião parado. A opção "Controle do avião", em Opções, volta ao controle por velocidade.
@@ -19,7 +29,7 @@ O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.2.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.3.0.
 
 ### Tema e objetivo
 
@@ -177,11 +187,24 @@ Em Opções, a opção **Controle do avião** escolhe o modo:
 | Mão esquerda | Punho (índice 15) |
 | Cabeça | Nariz e orelhas (índices 0, 7 e 8) |
 
-- **Calibração:** a criança fica parada na postura confortável por cerca de 2 segundos (40 leituras). O jogo usa a mediana como centro. A calibração pode ser refeita em Opções, na pausa ("Recalibrar") e ao trocar de segmento.
+- **Calibração:** a criança fica parada na postura confortável por cerca de 2 segundos, com pelo menos 15 leituras. O jogo usa a mediana como centro, e o repouso só é aceito se o segmento ficou parado; se ele se mexer, a calibração recomeça. A calibração pode ser refeita em Opções, na pausa ("Recalibrar") e ao trocar de segmento.
+- **Centrar sozinho:** com a opção ligada (padrão), cabeça, mãos e tronco refazem a postura neutra sozinhos depois de 3 segundos sem o segmento. Os pés não se recalibram sozinhos.
+- **Trocar lados:** inverte esquerda e direita, para câmeras que não espelham a imagem.
+- No console T-TEA, os mesmos segmentos usam os pontos da câmera do console (veja [Console T-TEA (cartucho)](#console-t-tea-cartucho)).
 - **Menus:** um cursor acompanha o segmento. O botão é acionado quando o cursor permanece sobre ele pelo tempo de permanência, que é de 1,2 segundo por padrão e pode ser ajustado de 0,6 a 3,0 segundos em Opções.
 - **Sensibilidade:** de 0,5 a 2,0 vezes (padrão 1,0). Valores maiores exigem um movimento menor.
 - **Pausa automática:** se o segmento sai da área de captura por 1 segundo durante o voo, o jogo pausa. Ao voltar, espera a presença estável por 1,2 segundo e faz uma contagem de 3 segundos antes de retomar.
 - Sem webcam, sem as bibliotecas ou sem o modelo de pose, o jogo segue com teclado e mouse. Se a câmera falhar com um segmento selecionado, o motivo aparece em Opções e na calibração.
+
+### Pés sobre a projeção
+
+Com a superfície **Chão** e o segmento **Pés**, o avião e o cursor seguem onde a criança pisa na imagem projetada. Sem calibração, os pés usam a posição relativa à postura neutra, como os demais segmentos. Para a calibração, use **Opções > Projeção e chão** (só no executável):
+
+1. Deixe a webcam vendo toda a projeção no chão e escolha "Calibrar os 4 cantos". Os alvos 1, 2, 3 e 4 aparecem a 15% das bordas da imagem.
+2. A câmera tira uma foto. Clique no centro de cada alvo, na ordem 1 (superior esquerdo), 2 (superior direito), 3 (inferior direito) e 4 (inferior esquerdo).
+3. Confira pisando sobre os alvos. "Cursor à frente" (0 a 35%, padrão 12%) desloca o cursor um pouco à frente dos dedos, para ficar visível.
+
+A câmera estima a posição do pé; ela não detecta o contato com o chão. Passar a imagem de deitada para em pé (90° ou 270°), ou o contrário, apaga a calibração, e o jogo pede para calibrar de novo. Espelhar ou girar 180° não exige nova calibração, mas mover a câmera ou o projetor exige.
 
 ### Teclado e mouse (supervisor)
 
@@ -203,9 +226,9 @@ O mouse também seleciona botões por permanência quando não há controle corp
 
 ### Superfícies de exibição
 
-Em Opções, a superfície pode ser monitor, parede, mesa ou chão (T-TEA). Cada uma traz uma sugestão de segmento: qualquer segmento, tronco ou cabeça, uma das mãos, ou pés sobre a projeção. Se a câmera já estiver em uso, escolher a superfície aplica o segmento sugerido (chão: pés; mesa: mão direita; parede: tronco em pé), com um aviso. Para câmeras vistas de cima, a opção **Inverter subir e descer** troca o sentido vertical.
+Em Opções, a superfície pode ser monitor, parede, mesa ou chão (T-TEA). Cada uma traz uma sugestão de segmento: qualquer segmento, tronco ou cabeça, uma das mãos, ou pés sobre a projeção. Se a câmera já estiver em uso, escolher a superfície aplica o segmento sugerido (chão: pés; mesa: mão direita; parede: tronco em pé), com um aviso. Para câmeras vistas de cima, a opção **Trocar cima/baixo** troca o sentido vertical.
 
-As opções **Espelhar** e **Girar 180°** atingem a imagem inteira. Espelhar serve à projeção por trás de uma parede. Girar serve ao projetor no teto ou à imagem no chão ou na mesa. O mouse é convertido de volta para as coordenadas do jogo.
+Em **Opções > Projeção e chão** (só no executável), a imagem inteira pode ser girada no sentido horário em 0°, 90°, 180° ou 270° e espelhada. Espelhar serve à projeção por trás de uma parede. Girar serve ao projetor no teto ou à imagem no chão ou na mesa; girada 90° ou 270°, a imagem fica em pé, com faixas pretas dos lados. O mouse é convertido de volta para as coordenadas do jogo.
 
 ## Acessibilidade, segurança e privacidade
 
@@ -253,6 +276,28 @@ Se a pasta escolhida não for gravável, o jogo usa a próxima opção da lista 
 
 Se não houver perfil salvo, o jogo importa da pasta de dados do protótipo (`EcoRunner`, ou a pasta `save/` do código-fonte) os pontos acumulados, os padrões comprados, a pintura e o avião escolhidos e o modo de jogo. A importação acontece só na primeira execução.
 
+## Console T-TEA (cartucho)
+
+O Dobramundo também roda como cartucho do console T-TEA. O console cuida da janela, do relógio, da câmera, do modelo de pose e da pausa; o cartucho leva só o núcleo do jogo. Não há webcam, MediaPipe, self-test nem janela própria no cartucho.
+
+- **Rastreamento:** perfil "body" (os 33 pontos do corpo), com resolução de 1100 x 650.
+- **Pés:** o chão interativo do console define a posição do avião e do cursor, e pisar sobre um botão o escolhe.
+- **Tronco, mãos e cabeça:** o movimento é medido nos pontos da câmera do console, espelhados. A opção **Trocar lados** desfaz o espelho se a câmera estiver atrás da criança.
+- **Primeira vez:** o controle começa nos pés, com a superfície Chão.
+- **Jogador registrado:** o perfil fica no armazenamento do jogador. As opções de controle (sensibilidade, permanência, controle por posição, momento de foco, efeitos fortes, alto contraste, silêncio, trocas de lado e de cima/baixo e centrar sozinho) acompanham a criança, e cada voo vira um evento da sessão.
+- **Teclas:** ESC encerra o jogo, P pausa e F2 (demonstração) fica com o console.
+- **Perda do rastreamento:** o console pausa o jogo, que mostra "Volte para a área do jogo". Ao voltar, o voo retoma depois de uma contagem.
+- **Opções:** "Tela cheia" não aparece, e "Projeção e chão" fica desativada, porque a projeção é do próprio console.
+
+Para gerar o cartucho, use a ferramenta oficial de cartuchos do T-TEA (comando `tsdk`, Python 3.14):
+
+```
+python tools/build_cartridge.py --tsdk CAMINHO_DO_TSDK
+python tools/build_cartridge.py --so-montar
+```
+
+O primeiro comando monta `build/cartucho/`, roda `tsdk check` e `tsdk build` e gera `dist/dobramundo-1.3.0.ttea`. Com `--so-montar`, ele só monta a pasta, sem validar nem gerar o arquivo. O `CREDITOS.md` do cartucho é gerado a partir dos créditos. A licença do código ainda será definida pela equipe.
+
 ## Gerar o executável
 
 ### Windows
@@ -287,8 +332,10 @@ O script segue a mesma sequência com `python3` e gera `dist/Dobramundo/Dobramun
 ```
 dobramundo/                          pacote do jogo
     __init__.py, __main__.py         nome, versão e entrada com "python -m dobramundo"
-    main.py                          ponto de entrada, primeira cena e mensagens de erro
-    app.py                           janela, laço principal e serviços compartilhados
+    main.py                          ponto de entrada do executável, self-test e mensagens de erro
+    core.py                          núcleo sem plataforma: GameCore (serviços e quadro) e first_scene
+    app.py                           executável: janela, laço principal, som, tela cheia e orientação
+    cartridge.py                     cartucho do console T-TEA: ConsoleCore e Dobramundo
     config.py                        constantes do motor (tela, projeção, voo, neblina, paralaxe)
     paths.py                         pastas de assets e de dados (código-fonte e executável)
     persistence.py                   perfil versionado em JSON e importação do protótipo
@@ -318,13 +365,18 @@ dobramundo/                          pacote do jogo
         plane_skin.py, pilot.py      aparência do avião e piloto em camadas
         assets.py                    carregamento preguiçoso dos PNG
     input/                           entradas
-        hub.py                       teclado, mouse e controle corporal
-        pose.py                      MediaPipe Pose, segmentos e calibração
+        hub.py                       teclado, mouse e escolha da fonte e do controle
+        pose.py                      segmentos, calibração e eixos (sem MediaPipe)
+        camera.py                    webcam do executável: MediaPipe Pose numa thread
+        console.py                   pontos do rastreamento do console T-TEA
+        floor.py                     calibração dos 4 cantos: câmera para a projeção
     ui/                              tema, botões e seleção por permanência
     scenes/                          telas: abertura, aviso, calibração, vila, mapa, voo etc.
         __init__.py                  registro das cenas: scene.goto("vila")
+        projection.py                Projeção e chão: orientação e calibração (só no executável)
 assets/                              sprites, sons, texturas, modelo de pose e curvas
-tools/                               geração de assets (ver tools/README.md)
+tools/                               geração de assets e do cartucho (ver tools/README.md)
+    build_cartridge.py               monta e valida o cartucho do console T-TEA
 tests/                               suíte pytest
 docs/                                GDD e arte original da logo
 docs/arquitetura.md                  arquitetura do código
@@ -381,7 +433,7 @@ python tools/measure_obstacles.py              # confere as medidas de colisão 
 
 ### Compatibilidade com Python 3.8
 
-O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-python` e o alvo do ruff. Conforme o escopo do projeto, esse piso atende ao console T-TEA. Os módulos usam `from __future__ import annotations` e os tipos do `typing`.
+O projeto mantém compatibilidade com Python 3.8, que é o piso de `requires-python` e o alvo do ruff. Esse piso vale para o executável e para o código do pacote. O cartucho gerado para o console declara Python 3.14, exigido pela ferramenta oficial de cartuchos do T-TEA. Os módulos usam `from __future__ import annotations` e os tipos do `typing`.
 
 ## Créditos
 

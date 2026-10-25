@@ -16,7 +16,7 @@ import pygame
 
 from .. import config as C
 from ..util import Color, haze_at, lerp_color
-from .assets import Assets
+from .assets import Assets, display_format
 from .sprites import project
 
 Row = Tuple[int, float, int]  # y da tela, profundidade, grupo de escala
@@ -34,9 +34,7 @@ def compute_ground_rows() -> List[Row]:
 
 class GroundRenderer:
     def __init__(self, assets: Assets) -> None:
-        self.textures = {
-            name: s.convert() if pygame.display.get_surface() else s for name, s in assets.folder("ground").items()
-        }
+        self.textures = {name: display_format(s) for name, s in assets.folder("ground").items()}
         self.rows = compute_ground_rows()
         self.groups: Dict[tuple, object] = {}
         self.fog_cache: Dict[Color, pygame.Surface] = {}
@@ -52,9 +50,7 @@ class GroundRenderer:
             tex_h = texture.get_height()
             tile = pygame.transform.smoothscale(texture, (tile_w, tex_h))
             copies = max(1, math.ceil(C.GROUND_STRIP_MIN / tile_w))
-            strip = pygame.Surface((tile_w * copies, tex_h))
-            if pygame.display.get_surface():
-                strip = strip.convert()
+            strip = display_format(pygame.Surface((tile_w * copies, tex_h)))
             for x in range(0, strip.get_width(), tile_w):
                 strip.blit(tile, (x, 0))
             cached = (strip, tile_w)
