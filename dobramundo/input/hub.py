@@ -15,7 +15,7 @@ import pygame
 from .. import config as C
 from ..paths import find_pose_model
 from ..util import clamp
-from .pose import SEGMENTS, BodyControl, PoseCameraSource
+from .pose import SEGMENTS, BodyControl, FloorControl
 
 FlightCommand = Tuple[float, float, Optional[Tuple[float, float]]]  # (ix, iy, alvo de posição)
 FLIGHT_KEYS = {
@@ -32,6 +32,14 @@ FLIGHT_KEYS = {
 POINTER_REACH = 0.46  # fração da tela que o cursor corporal alcança a partir do centro
 AUTO_PAUSE_S = 1.0  # segundos fora da área de captura até pausar
 RESUME_S = 1.2  # segundos de volta à área até liberar a retomada
+RECENTER_S = 3.0  # ausência que apaga o repouso de cabeça, mãos e tronco (calibra de novo sozinho)
+
+
+def webcam_source():
+    """Webcam do executável (importada só aqui: o cartucho do T-TEA não leva a câmera)."""
+    from .camera import PoseCameraSource
+
+    return PoseCameraSource(find_pose_model())
 
 
 class InputHub:
@@ -43,7 +51,14 @@ class InputHub:
         self.source = None  # fonte da câmera, compartilhada entre segmentos
         self.segment_key = "teclado"
         self.position_control = True  # o corpo indica onde o avião fica (senão, a velocidade)
-        self.source_factory = lambda: PoseCameraSource(find_pose_model())
+        self.comfort = True  # repouso refeito sozinho depois de uma ausência longa
+        self.invert_x = False
+        # Pés sobre a projeção: função dos pontos do corpo -> posição na imagem do jogo.
+        # Definida pela plataforma (calibração do chão no executável; o próprio console no T-TEA).
+        self.floor_locate = None
+        self.floor_token: object = None
+        self.settings = (1.0, 1.0, False)  # sensibilidade, zona morta e inverter subir/descer
+        self.source_factory = webcam_source  # o console T-TEA troca pela fonte dele
 
     # --------------------------------------------------------- corpo
     def set_segment(self, key: str, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False) -> None:
@@ -53,6 +68,7 @@ class InputHub:
         muda. Abrir e fechar a webcam a cada troca travava o quadro e, se a thread
         anterior demorasse a terminar, abria uma segunda captura do mesmo dispositivo.
         """
+        self.settings = (sensitivity, dead_scale, invert_y)
         if key == self.segment_key and self.body is not None:
             return
         self.segment_key = key
@@ -63,19 +79,41 @@ class InputHub:
         if self.source is None:
             self.source = self.source_factory()
             self.source.start()
-        self.body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y)
-        self.body.mapper.hold_when_lost = self.position_control
+        self.body = self.make_control(key)
+
+    def make_control(self, key: str) -> BodyControl:
+        """Pés sobre a projeção calibrada viram posição absoluta; o resto, relativo ao repouso."""
+        if key == "pes" and self.floor_locate is not None:
+            return FloorControl(self.source, self.floor_locate)
+        sensitivity, dead_scale, invert_y = self.settings
+        body = BodyControl(self.source, SEGMENTS[key], sensitivity, dead_scale, invert_y, self.invert_x)
+        body.mapper.hold_when_lost = self.position_control
+        body.recenter_after = RECENTER_S if self.comfort and key != "pes" else None
+        return body
+
+    def set_floor(self, locate, token: object) -> None:
+        """Troca a localização dos pés sobre a projeção (token muda quando a calibração muda)."""
+        if token == self.floor_token:
+            return
+        self.floor_locate, self.floor_token = locate, token
+        if self.body is not None and self.segment_key == "pes":
+            self.body = self.make_control("pes")
 
     def configure(
         self, sensitivity: float, dead_scale: float, invert_y: bool = False, position: Optional[bool] = None
     ) -> None:
         if position is not None:
             self.position_control = position
+        self.settings = (sensitivity, dead_scale, invert_y)
         if self.body is not None:
-            self.body.mapper.sensitivity = sensitivity
-            self.body.mapper.dead_scale = dead_scale
-            self.body.mapper.invert_y = invert_y
-            self.body.mapper.hold_when_lost = self.position_control
+            mapper = self.body.mapper
+            mapper.sensitivity = sensitivity
+            mapper.dead_scale = dead_scale
+            mapper.invert_y = invert_y
+            mapper.invert_x = self.invert_x
+            mapper.hold_when_lost = self.position_control
+            if not self.body.absolute:
+                self.body.recenter_after = RECENTER_S if self.comfort and self.segment_key != "pes" else None
 
     def stop_camera(self) -> None:
         """Desliga a webcam (ao sair do jogo ou ao voltar para teclado e mouse)."""
@@ -107,7 +145,7 @@ class InputHub:
         elif event.type == pygame.MOUSEMOTION:
             self.mouse_pos = event.pos
             self.mouse_moved = 0.0
-        elif event.type == getattr(pygame, "WINDOWFOCUSLOST", -1):
+        elif event.type == pygame.WINDOWFOCUSLOST:
             self.pressed.clear()  # evita tecla "presa" ao trocar de janela
 
     def clear_keys(self) -> None:
@@ -155,6 +193,9 @@ class InputHub:
         """Cursor corporal nos menus (None antes da calibração ou sem câmera)."""
         if not self.body_ready:
             return None
+        position = self.body.position()
+        if position is not None:  # pés sobre a projeção: o cursor fica onde a criança pisa
+            return int(position[0] * (C.WIDTH - 1)), int(position[1] * (C.HEIGHT - 1))
         ax, ay = self.body.axes()
         return (int(C.WIDTH / 2 + ax * C.WIDTH * POINTER_REACH), int(C.HEIGHT / 2 - ay * C.HEIGHT * POINTER_REACH))
 

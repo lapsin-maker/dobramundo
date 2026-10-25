@@ -1,25 +1,17 @@
-"""Controle corporal pela webcam (MediaPipe Pose), por qualquer segmento.
+"""Controle corporal por qualquer segmento, a partir dos 33 pontos do corpo.
 
-Adaptado da captura do T-TEA 2.0 (LARVA/UDESC): o MediaPipe Tasks
-(PoseLandmarker em modo VIDEO) lê a imagem espelhada da webcam e encontra 33
-pontos do corpo. O segmento escolhido (pés, tronco em pé ou sentado, uma das
-mãos ou cabeça) vira um ponto; depois da calibração da postura neutra (cerca de
-2 s parado), o deslocamento em relação a ela vira dois eixos de -1 a 1, que
-movem o avião e o cursor dos menus.
+Os pontos vêm de uma fonte (a webcam do executável, em input/camera.py, ou o
+rastreamento do console T-TEA, em input/ttea.py). O segmento escolhido (pés,
+tronco em pé ou sentado, uma das mãos ou cabeça) vira um ponto; depois da
+calibração da postura neutra (cerca de 2 s parado), o deslocamento em relação a
+ela vira dois eixos de -1 a 1, que movem o avião e o cursor dos menus.
 
-O vídeo é processado localmente, quadro a quadro, e nunca é gravado. As
-bibliotecas (mediapipe, opencv) são opcionais e só são importadas quando a
-câmera é ligada; sem elas o jogo segue com teclado e mouse.
+Este módulo não usa câmera nem bibliotecas de visão computacional.
 """
 
 from __future__ import annotations
 
-import threading
-import time
-from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
-
-from ..log import log
+from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
 Landmark = Tuple[float, float, float]  # x, y, visibilidade
@@ -58,10 +50,11 @@ SEGMENTS: Dict[str, Segment] = {
         0.010,
         "Sente-se confortável, de frente para a câmera",
     ),
+    # mãos: centro da palma (punho, mínimo e indicador), mais estável que o punho sozinho
     "mao_direita": Segment(
         "mao_direita",
         "Mão direita",
-        (16,),
+        (16, 18, 20),
         1,
         0.10,
         0.08,
@@ -71,7 +64,7 @@ SEGMENTS: Dict[str, Segment] = {
     "mao_esquerda": Segment(
         "mao_esquerda",
         "Mão esquerda",
-        (15,),
+        (15, 17, 19),
         1,
         0.10,
         0.08,
@@ -118,14 +111,21 @@ class AxisMapper:
     DEFAULT_READING_S = 0.05  # intervalo suposto quando a leitura não informa o tempo
     SMOOTHING = 0.35  # 0..1: quanto maior, mais rápido responde
     LOST_DECAY = 0.85  # sem o ponto, os eixos voltam ao centro aos poucos
+    STILL_SHARE = 0.5  # parado = metade do alcance do segmento (desvio mediano das leituras)
 
     def __init__(
-        self, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+        self,
+        segment: Segment,
+        sensitivity: float = 1.0,
+        dead_scale: float = 1.0,
+        invert_y: bool = False,
+        invert_x: bool = False,
     ) -> None:
         self.segment = segment
         self.sensitivity = sensitivity
         self.dead_scale = dead_scale
         self.invert_y = invert_y  # câmera vista de cima ou de cabeça para baixo: subir vira descer
+        self.invert_x = invert_x  # imagem da câmera sem espelho: esquerda e direita trocadas
         # Controle por posição: sem o ponto, o comando fica onde estava (o avião mantém o
         # rumo). No controle por velocidade, volta ao centro aos poucos (o avião para).
         self.hold_when_lost = False
@@ -155,8 +155,7 @@ class AxisMapper:
                 self.samples.append(point)
                 self.sampled_time += self.DEFAULT_READING_S if elapsed is None else elapsed
                 if self.progress >= 1.0:
-                    # mediana: uma leitura ruim durante a calibração não desloca o repouso
-                    self.base = (median([p[0] for p in self.samples]), median([p[1] for p in self.samples]))
+                    self.settle()
             return
         if point is None:
             if self.hold_when_lost:
@@ -170,142 +169,54 @@ class AxisMapper:
         target_y = shape(self.base[1] - point[1], dead, max(dead * 2, seg.range_y / self.sensitivity))
         if self.invert_y:
             target_y = -target_y
+        if self.invert_x:
+            target_x = -target_x
         self.ax += (target_x - self.ax) * self.SMOOTHING
         self.ay += (target_y - self.ay) * self.SMOOTHING
+
+    def settle(self) -> None:
+        """Fim da janela de calibração: aceita o repouso só se o segmento ficou parado.
+
+        Mediana, para que uma leitura ruim não desloque o repouso; e o desvio mediano
+        das leituras, para que um segmento em movimento não vire o repouso (recomeça).
+        """
+        base = (median([p[0] for p in self.samples]), median([p[1] for p in self.samples]))
+        spread = max(
+            median([abs(p[0] - base[0]) for p in self.samples]), median([abs(p[1] - base[1]) for p in self.samples])
+        )
+        if spread > self.STILL_SHARE * min(self.segment.range_x, self.segment.range_y):
+            self.samples, self.sampled_time = [], 0.0
+            return
+        self.base = base
 
     def axes(self) -> Tuple[float, float]:
         return (self.ax, self.ay) if self.calibrated else (0.0, 0.0)
 
 
-# ----------------------------------------------------------------- MediaPipe
-def create_landmarker(model_path: Path):
-    """PoseLandmarker do MediaPipe Tasks em modo VIDEO (uma pessoa)."""
-    from mediapipe.tasks import python as mp_python
-    from mediapipe.tasks.python import vision
-
-    options = vision.PoseLandmarkerOptions(
-        base_options=mp_python.BaseOptions(model_asset_path=str(model_path)),
-        running_mode=vision.RunningMode.VIDEO,
-        num_poses=1,
-        min_pose_detection_confidence=0.5,
-        min_pose_presence_confidence=0.5,
-        min_tracking_confidence=0.5,
-    )
-    return vision.PoseLandmarker.create_from_options(options)
-
-
-class PoseCameraSource:
-    """Lê a webcam numa thread e guarda a leitura mais recente (pontos + miniatura).
-
-    Erros (câmera ocupada, biblioteca faltando, modelo ausente) ficam em ``error``.
-    """
-
-    def __init__(self, model_path: Optional[Path], camera_index: int = 0) -> None:
-        self.model_path = model_path
-        self.camera_index = camera_index
-        self.error: Optional[str] = None
-        self._lock = threading.Lock()
-        self._stop = threading.Event()
-        self._thread: Optional[threading.Thread] = None
-        self._seq = 0
-        self._landmarks: Optional[List[Landmark]] = None
-        self._preview: Optional[bytes] = None
-        if model_path is None or not Path(model_path).is_file():
-            self.fail("modelo de pose não encontrado")
-
-    def fail(self, message: str) -> None:
-        """Registra a falha da câmera (aparece nas opções e na calibração, e no log)."""
-        self.error = message
-        log.warning("câmera: %s", message)
-
-    @property
-    def running(self) -> bool:
-        return self._thread is not None and self._thread.is_alive()
-
-    def start(self) -> None:
-        if self.error is not None or self.running:
-            return
-        self._stop.clear()
-        self._thread = threading.Thread(target=self._run, name="webcam-pose", daemon=True)
-        self._thread.start()
-
-    def stop(self, timeout: float = 1.5) -> None:
-        """Pede para a thread parar; a referência só é solta quando ela termina de fato."""
-        self._stop.set()
-        thread = self._thread
-        if thread is not None and thread is not threading.current_thread():
-            thread.join(timeout=timeout)
-            if thread.is_alive():
-                return  # ainda liberando a câmera: running segue True e impede outra captura
-        self._thread = None
-
-    def snapshot(self) -> Tuple[int, Optional[List[Landmark]], Optional[bytes]]:
-        with self._lock:
-            return self._seq, self._landmarks, self._preview
-
-    def _publish(self, landmarks: Optional[List[Landmark]], preview: Optional[bytes]) -> None:
-        with self._lock:
-            self._seq += 1
-            self._landmarks = landmarks
-            self._preview = preview
-
-    def _run(self) -> None:
-        try:
-            import cv2
-            import mediapipe as mp
-
-            landmarker = create_landmarker(self.model_path)
-        except ImportError:
-            self.fail("instale mediapipe e opencv para usar a câmera")
-            return
-        except Exception as exc:  # modelo corrompido, runtime etc.
-            self.fail(f"modelo de pose não carregou ({exc.__class__.__name__})")
-            return
-        capture = cv2.VideoCapture(self.camera_index)
-        if not capture.isOpened():
-            capture.release()
-            landmarker.close()
-            self.fail("não foi possível abrir a webcam")
-            return
-        capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_SIZE[0])
-        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_SIZE[1])
-        last_ts = 0
-        try:
-            while not self._stop.is_set():
-                ok, frame = capture.read()
-                if not ok:
-                    self.fail("a webcam não envia imagem")
-                    break
-                frame = cv2.flip(frame, 1)  # espelho: direita do jogador = direita da tela
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                timestamp = max(last_ts + 1, int(time.monotonic() * 1000))
-                last_ts = timestamp
-                result = landmarker.detect_for_video(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb), timestamp)
-                points = None
-                if result.pose_landmarks:
-                    points = [(p.x, p.y, getattr(p, "visibility", 1.0) or 0.0) for p in result.pose_landmarks[0]]
-                preview = cv2.resize(rgb, PREVIEW_SIZE, interpolation=cv2.INTER_AREA).tobytes()
-                self._publish(points, preview)  # só a miniatura fica na memória; nada é gravado
-        except Exception as exc:
-            self.fail(f"erro na câmera ({exc.__class__.__name__})")
-        finally:
-            capture.release()
-            landmarker.close()
-
-
 class BodyControl:
-    """Liga a fonte da câmera ao mapeador do segmento escolhido.
+    """Liga a fonte dos pontos ao mapeador do segmento escolhido.
 
     ``source`` precisa ter snapshot() -> (seq, pontos, miniatura) e ``error``; quem a
     liga e desliga é o InputHub (os testes usam uma fonte falsa com essa forma).
+    Com ``recenter_after`` (segundos), uma ausência longa apaga o repouso: quando o
+    segmento volta e fica parado, a calibração se refaz sozinha.
     """
 
+    absolute = False  # o comando é relativo ao repouso calibrado
+
     def __init__(
-        self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0, invert_y: bool = False
+        self,
+        source,
+        segment: Segment,
+        sensitivity: float = 1.0,
+        dead_scale: float = 1.0,
+        invert_y: bool = False,
+        invert_x: bool = False,
     ) -> None:
         self.source = source
         self.segment = segment
-        self.mapper = AxisMapper(segment, sensitivity, dead_scale, invert_y)
+        self.mapper = AxisMapper(segment, sensitivity, dead_scale, invert_y, invert_x)
+        self.recenter_after: Optional[float] = None
         self.preview: Optional[bytes] = None
         self.visible = False
         self.missing_time = 0.0  # segundos sem ver o segmento (pausa automática)
@@ -335,7 +246,7 @@ class BodyControl:
         self.mapper.reset()
 
     def poll(self, dt: float) -> None:
-        """Consome a leitura nova da câmera, se houver (chamado a cada quadro)."""
+        """Consome a leitura nova da fonte, se houver (chamado a cada quadro)."""
         self._since_reading += dt
         seq, landmarks, preview = self.source.snapshot()
         if seq != 0 and seq != self._seq:
@@ -343,9 +254,9 @@ class BodyControl:
             self._frames += 1
             self.landmarks = landmarks
             self.preview = preview
-            point = segment_point(landmarks, self.segment)
+            point = self.locate(landmarks)
             self.visible = point is not None
-            self.mapper.feed(point, self._since_reading)
+            self.feed(point, self._since_reading)
             self._since_reading = 0.0
         if self.receiving:
             if self.visible:
@@ -354,6 +265,69 @@ class BodyControl:
             else:
                 self.missing_time += dt
                 self.seen_time = 0.0
+                if self.recenter_after is not None and self.calibrated and self.missing_time >= self.recenter_after:
+                    self.recalibrate()
+
+    def locate(self, landmarks: Optional[Sequence[Landmark]]) -> Optional[Point]:
+        return segment_point(landmarks, self.segment)
+
+    def feed(self, point: Optional[Point], elapsed: float) -> None:
+        self.mapper.feed(point, elapsed)
 
     def axes(self) -> Tuple[float, float]:
         return self.mapper.axes()
+
+    def position(self) -> Optional[Point]:
+        """Ponto da tela lógica (0..1) apontado diretamente; só no controle absoluto."""
+        return None
+
+
+class FloorControl(BodyControl):
+    """Pés sobre a projeção: onde a criança pisa na imagem do jogo vira o comando.
+
+    ``locate`` recebe os pontos da fonte e devolve a posição dos pés na imagem do
+    jogo (0..1, x para a direita e y para baixo), ou None. No executável ela vem da
+    calibração do chão (input/floor.py); no console T-TEA, do próprio console. Não
+    há repouso a calibrar: o meio da imagem é o centro da pista; pisar mais à frente
+    (para o alto da imagem) sobe o avião, mais atrás desce.
+    """
+
+    absolute = True
+
+    def __init__(self, source, locate: Callable[[Optional[Sequence[Landmark]]], Optional[Point]]) -> None:
+        super().__init__(source, SEGMENTS["pes"])
+        self.locator = locate
+        self.point: Optional[Point] = None
+
+    @property
+    def calibrated(self) -> bool:
+        return True
+
+    @property
+    def progress(self) -> float:
+        return 1.0
+
+    def recalibrate(self) -> None:
+        """Nada a refazer: a calibração do chão é feita na tela de projeção."""
+
+    def locate(self, landmarks: Optional[Sequence[Landmark]]) -> Optional[Point]:
+        return self.locator(landmarks)
+
+    def feed(self, point: Optional[Point], elapsed: float) -> None:
+        if point is None:
+            return  # mantém o último ponto: o avião segue o rumo
+        if self.point is None:
+            self.point = point
+        else:
+            k = AxisMapper.SMOOTHING
+            (x, y), (tx, ty) = self.point, point
+            self.point = (x + (tx - x) * k, y + (ty - y) * k)
+
+    def axes(self) -> Tuple[float, float]:
+        if self.point is None:
+            return 0.0, 0.0
+        x, y = self.point
+        return max(-1.0, min(1.0, 2.0 * x - 1.0)), max(-1.0, min(1.0, 1.0 - 2.0 * y))
+
+    def position(self) -> Optional[Point]:
+        return self.point

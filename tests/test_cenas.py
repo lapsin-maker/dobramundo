@@ -64,7 +64,7 @@ def test_cenas_desenham(app, factory):
 def test_alto_contraste_e_espelhamento_desenham(app):
     app.options.alto_contraste = True
     app.options.espelhar = True
-    app.options.girar = True
+    app.options.rotacao = 180
     app.apply_options()
     show(app, FlightScene(app, "amazonia"), 5)
     assert app.view.high_contrast
@@ -218,9 +218,7 @@ def test_esc_na_vila_pergunta_antes_de_sair(app):
 
 
 def test_falha_ao_salvar_aparece_na_vila(app, monkeypatch):
-    import dobramundo.app as app_module
-
-    monkeypatch.setattr(app_module, "save_profile", lambda profile: False)
+    monkeypatch.setattr(app, "writer", lambda profile: False)
     app.save()
     show(app, VillageScene(app))
     assert app.save_failed

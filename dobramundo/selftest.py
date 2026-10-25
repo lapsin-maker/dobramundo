@@ -33,7 +33,7 @@ def _frame_stats(times: List[float]) -> Dict[str, float]:
 
 def pose_check() -> dict:
     """O detector de pose carrega? (bibliotecas e modelo empacotados; não abre a webcam)."""
-    from .input.pose import create_landmarker
+    from .input.camera import create_landmarker
     from .paths import find_pose_model
 
     model = find_pose_model()

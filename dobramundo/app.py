@@ -1,60 +1,57 @@
-"""Aplicação: janela, laço principal, cenas e serviços compartilhados.
+"""Executável: janela, laço principal, eventos do sistema e projeção.
 
-A imagem é desenhada numa tela lógica de 1100x650 e o SDL a escala para a
-janela ou para a tela cheia (pygame.SCALED). Para projeção no chão, na mesa ou
-por trás de uma parede, a imagem pode ser espelhada e/ou girada 180°; o mouse
-é convertido de volta para as coordenadas lógicas.
+O jogo em si fica no núcleo (core.py). Aqui ficam só as partes do computador: a
+janela escalável (pygame.SCALED desenha a tela lógica de 1100x650 em qualquer
+tamanho), o mixer de som, o relógio, a tela cheia e a orientação da imagem para
+projeção no chão, na mesa ou na parede (espelhar e girar 90°, 180° ou 270°). O
+mouse é convertido de volta para as coordenadas lógicas.
 """
 
 from __future__ import annotations
 
-import math
 import os
-import random
 from typing import List, Optional
 
 import pygame
 
 from . import APP_NAME
 from . import config as C
-from .audio import Audio
-from .content.biomes import BIOME_ORDER, BIOMES
-from .content.progress import plane_stats
-from .engine.assets import shared_assets
-from .engine.world_view import PlaneLook, WorldView
-from .game.world import World
-from .input.hub import InputHub
-from .persistence import Profile, load_profile, save_profile
-from .ui.theme import Text
+from .core import GameCore
+from .persistence import Profile, load_profile
 
 
-class App:
+class App(GameCore):
     def __init__(self, audio: bool = True, profile: Optional[Profile] = None) -> None:
         pygame.init()
         pygame.display.set_caption(APP_NAME)
-        self.profile = profile or load_profile()
+        if audio and not pygame.mixer.get_init():
+            try:
+                pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=1024)
+            except pygame.error:
+                pass  # sem dispositivo de áudio: o jogo segue em silêncio
         self.display = self.open_window()
-        self.canvas = pygame.Surface((C.WIDTH, C.HEIGHT)).convert()
-        self.assets = shared_assets()
+        super().__init__(profile or load_profile(), audio, canvas=pygame.Surface((C.WIDTH, C.HEIGHT)).convert())
         icon = self.assets.sprite("ui", "icone")
         if icon is not None:
             pygame.display.set_icon(icon)
         self.clock = pygame.time.Clock()
-        self.text = Text()
-        self.view = WorldView(self.assets)
-        self.audio = Audio(audio)
-        self.input = InputHub()
-        self.running = True
-        self.save_failed = False
         self.smooth_dt = 1.0 / C.FPS
-        self.frame = 0
-        self.scene = None
-        self.next_scene = None
-        self.backdrop_world: Optional[World] = None
-        self.backdrop_time = 0.0
         self.apply_options()
         if self.profile.opcoes.tela_cheia:
             self.toggle_fullscreen()
+
+    def floor_setup(self):
+        """Pés sobre a projeção só com a superfície "chão" e os 4 cantos calibrados."""
+        o = self.options
+        if o.superficie != "chao":
+            return None, None
+        from .input.floor import FloorMap
+
+        floor = FloorMap.maybe(o.chao_pontos)
+        if floor is None:
+            return None, None
+        token = (tuple(map(tuple, o.chao_pontos)), o.rotacao, o.espelhar, o.alvo_frente)
+        return floor.locator(o.rotacao, o.espelhar, o.alvo_frente), token
 
     @staticmethod
     def open_window() -> pygame.Surface:
@@ -65,77 +62,22 @@ class App:
         headless = os.environ.get("SDL_VIDEODRIVER") == "dummy"
         return pygame.display.set_mode((C.WIDTH, C.HEIGHT), 0 if headless else pygame.SCALED)
 
-    # ---------------------------------------------------------- serviços
-    @property
-    def options(self):
-        return self.profile.opcoes
-
-    def save(self) -> None:
-        """Grava o perfil; se a pasta não aceitar, a vila avisa (o jogo segue)."""
-        self.save_failed = not save_profile(self.profile)
-
-    def apply_options(self) -> None:
-        self.audio.apply(self.options)
-        self.view.high_contrast = self.options.alto_contraste
-        stats = plane_stats(self.profile.pecas)
-        self.input.position_control = self.options.controle_posicao
-        if self.profile.controle != self.input.segment_key:
-            self.input.set_segment(
-                self.profile.controle, self.options.sensibilidade, stats.dead_zone, self.options.inverter_vertical
-            )
-        else:
-            o = self.options
-            self.input.configure(o.sensibilidade, stats.dead_zone, o.inverter_vertical, o.controle_posicao)
-
-    def plane_look(self) -> PlaneLook:
-        p = self.profile
-        return PlaneLook(p.aviao, p.plane_color(p.aviao), p.plane_pattern(p.aviao), p.piloto)
-
     def toggle_fullscreen(self) -> None:
         try:
             pygame.display.toggle_fullscreen()
         except pygame.error:
             pass
 
-    def backdrop(
-        self, screen: pygame.Surface, dt: float, biome_key: Optional[str] = None, restoration: Optional[float] = None
-    ) -> None:
-        """Cenário em movimento lento atrás dos menus."""
-        key = biome_key or BIOME_ORDER[0]
-        world = self.backdrop_world
-        if world is None or world.biome.key != key:
-            world = World(BIOMES[key], "normal", random.Random(7))
-            world.entities.clear()
-            world.spawn_pattern = lambda z: None  # type: ignore[assignment]
-            self.backdrop_world = world
-        if restoration is not None and abs(world.restoration - restoration) > 0.5:
-            world.set_restoration(restoration)
-        world.advance(dt, 90.0 * dt)
-        self.backdrop_time += dt
-        self.view.mode = self.profile.modo
-        self.view.background(screen, world, math.sin(self.backdrop_time * 0.2) * 60.0)
-
-    # ------------------------------------------------------------- cenas
-    def go(self, scene) -> None:
-        """Troca de cena no fim do quadro (evita trocar no meio de um evento)."""
-        self.next_scene = scene
-
-    def _switch(self) -> None:
-        if self.next_scene is None:
-            return
-        old, self.scene, self.next_scene = self.scene, self.next_scene, None
-        if old is not None:
-            old.leave()
-        self.scene.enter()
-
     # ------------------------------------------------------------ entrada
     def to_logical(self, pos) -> tuple:
-        x, y = pos
-        if self.options.espelhar:
-            x = C.WIDTH - 1 - x
-        if self.options.girar:
-            x, y = C.WIDTH - 1 - x, C.HEIGHT - 1 - y
-        return int(x), int(y)
+        """Posição na janela -> tela lógica, desfazendo espelho e rotação da projeção."""
+        from .engine.orientation import screen_to_game
+
+        # centro do pixel, para que espelhar e girar levem cada pixel exatamente a outro
+        x, y = screen_to_game(
+            (pos[0] + 0.5) / C.WIDTH, (pos[1] + 0.5) / C.HEIGHT, self.options.rotacao, self.options.espelhar
+        )
+        return int(min(C.WIDTH - 1, max(0, x * C.WIDTH))), int(min(C.HEIGHT - 1, max(0, y * C.HEIGHT)))
 
     def events(self) -> List[pygame.event.Event]:
         out = []
@@ -155,28 +97,15 @@ class App:
 
     # ------------------------------------------------------------- quadro
     def present(self) -> None:
-        frame = self.canvas
-        if self.options.espelhar or self.options.girar:
-            flipped = pygame.transform.flip(frame, self.options.espelhar != self.options.girar, self.options.girar)
-            self.display.blit(flipped, (0, 0))
-        else:
-            self.display.blit(frame, (0, 0))
+        from .engine.orientation import orient
+
+        self.display.blit(orient(self.canvas, self.options.rotacao, self.options.espelhar), (0, 0))
         pygame.display.flip()
 
     def step(self, dt: float, events: Optional[List[pygame.event.Event]] = None) -> None:
-        """Um quadro: entrada, atualização e desenho da cena atual."""
-        self._switch()
-        events = self.events() if events is None else events
-        self.input.update(dt)
-        self.view.update(dt)
-        scene = self.scene
-        for event in events:
-            scene.handle_event(event)
-        scene.update(dt)
-        scene.draw(self.canvas)
+        """Um quadro: entrada, atualização, desenho e apresentação na janela."""
+        self.advance(dt, self.events() if events is None else events)
         self.present()
-        self.view.step_warm_up(6.0 if scene.idle_warm_up else 1.5)
-        self.frame += 1
 
     def run(self, first_scene, max_frames: Optional[int] = None) -> None:
         self.go(first_scene)
@@ -190,8 +119,3 @@ class App:
                     self.running = False
         finally:
             self.shutdown()
-
-    def shutdown(self) -> None:
-        self.input.stop_camera()
-        self.audio.stop()
-        self.save()

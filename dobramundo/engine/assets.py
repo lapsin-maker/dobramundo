@@ -22,15 +22,21 @@ SCENERY_FOLDERS = ("dieselpunk_sprites", "scenario_sprites", "era_final_sprites"
 SpriteSet = Dict[str, pygame.Surface]
 
 
+def display_format(surface: pygame.Surface, alpha: bool = False) -> pygame.Surface:
+    """Converte para o formato da tela (desenho mais rápido); sem tela aberta, devolve igual."""
+    try:
+        return surface.convert_alpha() if alpha else surface.convert()
+    except pygame.error:
+        return surface
+
+
 def load_image(path: Path, alpha: bool = True) -> Optional[pygame.Surface]:
     try:
         image = pygame.image.load(str(path))
     except (OSError, pygame.error) as exc:
         log.warning("imagem não carregou: %s (%s)", path, exc)
         return None
-    if pygame.display.get_surface() is None:
-        return image
-    return image.convert_alpha() if alpha else image.convert()
+    return display_format(image, alpha)
 
 
 class Assets:

@@ -252,27 +252,25 @@ def test_limite_minimo_e_um():
 
 # ------------------------------------------------------- espelho e giro (app)
 @pytest.mark.parametrize(
-    "espelhar, girar, esperado",
+    "espelhar, rotacao, esperado",
     [
-        (False, False, (100, 50)),
-        (True, False, (C.WIDTH - 1 - 100, 50)),
-        (False, True, (C.WIDTH - 1 - 100, C.HEIGHT - 1 - 50)),
-        (True, True, (100, C.HEIGHT - 1 - 50)),
+        (False, 0, (100, 50)),
+        (True, 0, (C.WIDTH - 1 - 100, 50)),
+        (False, 180, (C.WIDTH - 1 - 100, C.HEIGHT - 1 - 50)),
+        (True, 180, (100, C.HEIGHT - 1 - 50)),
     ],
 )
-def test_to_logical_combina_espelhar_e_girar(app, espelhar, girar, esperado):
+def test_to_logical_combina_espelhar_e_girar(app, espelhar, rotacao, esperado):
     app.options.espelhar = espelhar
-    app.options.girar = girar
+    app.options.rotacao = rotacao
     assert app.to_logical((100, 50)) == esperado
 
 
 def test_save_marca_falha_e_depois_limpa(app, monkeypatch):
-    import dobramundo.app as app_module
-
-    monkeypatch.setattr(app_module, "save_profile", lambda profile: False)
+    monkeypatch.setattr(app, "writer", lambda profile: False)
     app.save()
     assert app.save_failed is True
-    monkeypatch.setattr(app_module, "save_profile", lambda profile: True)
+    monkeypatch.setattr(app, "writer", lambda profile: True)
     app.save()
     assert app.save_failed is False
 
