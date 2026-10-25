@@ -32,9 +32,10 @@ class PilotScene(Scene):
             buttons.append(
                 self.button(
                     (632, y, 368, 50),
-                    option.label,
+                    option.label
+                    if option.label.lower().startswith(("sem ", label.lower()))
+                    else f"{label}: {option.label}",
                     (lambda f=field: self.cycle(f, 1)),
-                    sublabel=label,
                     swatch=option.color,
                     size=T.SIZES["body"],
                     key=f"{field}_val",

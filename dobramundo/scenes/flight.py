@@ -45,8 +45,9 @@ def draw_star(
 
 
 class Banner:
-    def __init__(self, title: str, subtitle: str = "", color=T.SUN, ttl: float = 2.6) -> None:
+    def __init__(self, title: str, subtitle: str = "", color=T.SUN, ttl: float = 2.6, stars: int = 0) -> None:
         self.title, self.subtitle, self.color, self.ttl, self.total = title, subtitle, color, ttl, ttl
+        self.stars = stars  # estrelas desenhadas antes do título
 
 
 class FlightScene(Scene):
@@ -189,7 +190,7 @@ class FlightScene(Scene):
                     need = ", ".join(PART_BY_KEY[k].name for k in self.biome.required_parts)
                     self.banners.append(Banner("2 estrelas!", f"Para a 3ª estrela aqui, instale: {need}", T.SUN, 3.6))
                 else:
-                    self.banners.append(Banner(f"{'★' * int(data)}  Estrela {data}!", "", T.SUN, 2.2))
+                    self.banners.append(Banner(f"Estrela {data}!", "", T.SUN, 2.2, stars=int(data)))
             elif name == "complete":
                 audio.play("sfx_fim_fase")
                 self.banners.append(Banner(f"{self.biome.city} solarpunk!", "A cidade se transformou.", T.SUN, 3.0))
@@ -277,11 +278,15 @@ class FlightScene(Scene):
         banner = self.banners[-1]
         fade = min(1.0, banner.ttl / 0.4, (banner.total - banner.ttl) / 0.3 + 0.2)
         title = self.text.render(banner.title, T.SIZES["title"], T.NAVY, True)
-        width = max(title.get_width(), self.text.font(T.SIZES["body"]).size(banner.subtitle)[0]) + 60
+        icons = banner.stars * 34
+        width = max(title.get_width() + icons, self.text.font(T.SIZES["body"]).size(banner.subtitle)[0]) + 60
         rect = pygame.Rect(0, 0, width, 92 if banner.subtitle else 60)
         rect.center = (C.WIDTH // 2, 168)
         T.panel(screen, rect, T.PAPER, T.ORANGE, int(235 * fade), 18, 3)
-        screen.blit(title, title.get_rect(midtop=(rect.centerx, rect.top + 10)))
+        left = rect.centerx - (title.get_width() + icons) // 2
+        for i in range(banner.stars):
+            draw_star(screen, (left + 14 + i * 34, rect.top + 30), 14, True)
+        screen.blit(title, (left + icons, rect.top + 10))
         if banner.subtitle:
             self.text.blit(
                 screen, banner.subtitle, (rect.centerx, rect.top + 56), T.SIZES["body"], T.INK, anchor="midtop"

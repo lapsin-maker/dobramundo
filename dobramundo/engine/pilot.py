@@ -21,6 +21,7 @@ from ..content.pilot import ACCESSORIES, GLASSES, HAIR_COLORS, SHIRT_COLORS, SKI
 from .assets import Assets
 
 FOLDER = "pilot_layers"
+MIN_PILOT_SHARE = 0.27  # altura mínima do piloto em relação ao sprite do avião
 
 
 def tinted(layer: pygame.Surface, color) -> pygame.Surface:
@@ -88,24 +89,31 @@ class PilotRenderer:
         return tuple(box) if box and len(box) == 4 else None  # type: ignore[return-value]
 
     def mount(self, plane_surface: pygame.Surface, plane: str, view: str, look: dict) -> pygame.Surface:
-        """Avião + piloto. Sem camadas geradas, devolve o avião como está."""
+        """Avião + piloto. Sem camadas geradas, devolve o avião como está.
+
+        O corpo do piloto (caixa "body" do anchors.json, sem cabelo nem cadeira) é
+        escalado para a altura da caixa do avião e alinhado pelo centro da base.
+        """
         pilot = self.compose(view, look)
         box = self.anchor(plane, view)
-        if pilot is None or box is None:
+        body = self.anchors.get("body", {}).get(view)
+        if pilot is None or box is None or not body:
             return plane_surface
         x0, y0, x1, y1 = box
-        target_h = max(4, y1 - y0)
-        scale = target_h / pilot.get_height()
-        size = (max(2, int(pilot.get_width() * scale)), target_h)
+        y0 = min(y0, y1 - int(plane_surface.get_height() * MIN_PILOT_SHARE))  # 14-Bis: boneco quase escondido
+        bx0, by0, bx1, by1 = body
+        scale = max(4, y1 - y0) / max(1, by1 - by0)
+        size = (max(2, int(pilot.get_width() * scale)), max(2, int(pilot.get_height() * scale)))
         pilot_scaled = pygame.transform.smoothscale(pilot, size)
-        cx = (x0 + x1) // 2
-        left = cx - size[0] // 2
-        top = y0
+        left = int((x0 + x1) / 2 - (bx0 + bx1) / 2 * scale)
+        top = int(y1 - by1 * scale)
         pad_top = max(0, -top)
         pad_left = max(0, -left)
         pad_right = max(0, left + size[0] - plane_surface.get_width())
+        pad_bottom = max(0, top + size[1] - plane_surface.get_height())
         out = pygame.Surface(
-            (plane_surface.get_width() + pad_left + pad_right, plane_surface.get_height() + pad_top), pygame.SRCALPHA
+            (plane_surface.get_width() + pad_left + pad_right, plane_surface.get_height() + pad_top + pad_bottom),
+            pygame.SRCALPHA,
         )
         out.blit(plane_surface, (pad_left, pad_top))
         out.blit(pilot_scaled, (left + pad_left, top + pad_top))

@@ -26,6 +26,7 @@ from .plane_skin import PlaneSkin
 from .sky import SkyRenderer
 from .sprites import SpriteCache, fog_level, project
 
+RIVER_NEGRO = rgb("2a1a10")  # águas escuras do Rio Negro
 RIVER_ENCOUNTER = rgb("b08452")  # Solimões (barrento) ao lado do Rio Negro, no despertar
 HC_PLANE = rgb("ffeb3b")
 HC_OBSTACLE = rgb("ff3d00")
@@ -300,7 +301,10 @@ class WorldView:
             purify = clamp((wave_z - z) / C.ROAD_PURIFY_BAND, 0.0, 1.0)
             purify = purify * purify * (3 - 2 * purify)
             even = seg % 2 == 0
-            color = lerp_color(lerp_color(road_even if even else road_odd, purified, purify * (not river)), fog, haze)
+            base = lerp_color(road_even if even else road_odd, purified, purify * (not river))
+            if river:  # encontro das águas: o Negro fica escuro à esquerda
+                base = lerp_color(base, RIVER_NEGRO, stage_weight * (0.9 if even else 1.0))
+            color = lerp_color(base, fog, haze)
             lane = lerp_color(lane_base, fog, haze)
             if final and solar_road:
                 curb = lerp_color(rgb("c9a04a"), fog, haze)  # meio-fio dourado do piso drenante
