@@ -5,5 +5,5 @@
     models_*.py catálogos de modelos (Amazônia, Caatinga, comuns, piloto)
 
 Os sprites gerados seguem a mesma câmera e a mesma luz dos sprites já existentes
-do jogo (tools/render_models.py), para que tudo pareça do mesmo mundo.
+do jogo (tools/legado/render_models.py), para que tudo pareça do mesmo mundo.
 """

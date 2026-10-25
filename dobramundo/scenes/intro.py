@@ -123,7 +123,7 @@ class IntroScene(Scene):
 
     def draw(self, screen: pygame.Surface) -> None:
         t = self.time
-        restoration = 5.0 if t < LAUNCH_END else lerp(5.0, 70.0, (t - LAUNCH_END) / 3.0)
+        restoration = 5.0 if t < LAUNCH_END else lerp(5.0, 95.0, (t - LAUNCH_END) / 2.6)
         self.app.backdrop(screen, 1 / 60, "amazonia", restoration)
         T.veil(screen, (20, 14, 10), int(90 * (1.0 - clamp((t - LAUNCH_END) / 3.0, 0.0, 1.0))) // 10 * 10)
         center = (C.WIDTH // 2, 330)

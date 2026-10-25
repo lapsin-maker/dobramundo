@@ -154,13 +154,16 @@ class WorldView:
         level = fog_level(z)
         if level >= C.FOG_LEVELS:
             return
+        if outline is not None:  # alto contraste: contorno feito uma vez e reescalado como o sprite
+            source = self.cache.outlined_source(sprite, key, outline)
+            out_w = max(2, screen_w * source.get_width() // sprite.get_width())
+            out_h = max(2, screen_h * source.get_height() // sprite.get_height())
+            left, top = left - (out_w - screen_w) // 2, top - (out_h - screen_h) // 2
+            screen.blit(self.cache.get(source, ("hc", key, outline), (out_w, out_h), flip), (left, top))
+            return
         size = (screen_w, screen_h)
         scaled = self.cache.get(sprite, key, size, flip)
-        if outline is not None:
-            scaled = self.cache.outlined(scaled, (key, size, flip), outline)
-            pad = (scaled.get_width() - screen_w) // 2
-            left, top = left - pad, top - pad
-        elif level > 0:
+        if level > 0:
             scaled = self.cache.fogged(scaled, (key, size, flip), level)
         screen.blit(scaled, (left, top))
 
@@ -482,6 +485,9 @@ class WorldView:
         width = max(8, int(C.PLANE_WIDTH * scale))
         sprite = self.skin.surface(look.plane, "flight", look.color, look.pattern, look.pilot)
         look_key = self.skin.look_key(look.plane, look.color, look.pattern, look.pilot)
+        if sprite is not None and self.high_contrast:
+            sprite = self.cache.outlined_source(sprite, ("plane", look_key), HC_PLANE)
+            look_key += "#hc"
         pose = player.maneuver_pose()
         if sprite is None:
             self.draw_paper_fallback(screen, int(sx), int(sy), width, player.roll + (pose[0] if pose else 0.0))
@@ -516,8 +522,6 @@ class WorldView:
                     self.rotations.clear()
                 image = pygame.transform.rotozoom(base, angle, 1.0)
                 self.rotations[key] = image
-        if self.high_contrast:
-            image = self.cache.outlined(image, ("plane_hc", look_key, image.get_size()), HC_PLANE)
         screen.blit(image, image.get_rect(center=(int(sx), int(sy))))
         if run.shield_timer > 0:
             pulse = 0.5 + 0.5 * math.sin(self.elapsed * 8.0)
@@ -578,9 +582,15 @@ class WorldView:
 
     @staticmethod
     def desaturate(screen: pygame.Surface) -> None:
-        gray = pygame.transform.grayscale(screen)
+        """Fundo em cinza escurecido, processado em meia resolução (~4x mais rápido).
+
+        A leve suavização que sobra ajuda o avião e os objetos contornados a saltarem à vista.
+        """
+        w, h = screen.get_size()
+        small = pygame.transform.scale(screen, (w // 2, h // 2))
+        gray = pygame.transform.grayscale(small)
         gray.fill(HC_DIM, special_flags=pygame.BLEND_RGB_MULT)
-        screen.blit(gray, (0, 0))
+        pygame.transform.scale2x(gray, screen)
 
     def draw_run(self, screen: pygame.Surface, run, look: PlaneLook) -> None:
         """Quadro completo de um voo (sem HUD)."""

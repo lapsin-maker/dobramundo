@@ -39,8 +39,8 @@ def outline_surface(sprite: pygame.Surface, color: Color, thickness: int) -> pyg
     dark = mask.to_surface(setcolor=(0, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
     ring = [
         (dx, dy)
-        for dx in range(-pad, pad + 1, max(1, pad // 2))
-        for dy in range(-pad, pad + 1, max(1, pad // 2))
+        for dx in range(-pad, pad + 1, max(1, pad // 4))
+        for dy in range(-pad, pad + 1, max(1, pad // 4))
         if dx * dx + dy * dy <= pad * pad
     ]
     for dx, dy in ring:
@@ -58,6 +58,7 @@ class SpriteCache:
     def __init__(self) -> None:
         self.scaled: Dict[tuple, pygame.Surface] = {}
         self.mips: Dict[tuple, List[pygame.Surface]] = {}
+        self.outlines: Dict[tuple, pygame.Surface] = {}
         self.fog_color: Color = (92, 54, 26)
 
     def clear(self) -> None:
@@ -116,13 +117,14 @@ class SpriteCache:
             self.put(key, tinted)
         return tinted
 
-    def outlined(self, scaled: pygame.Surface, cache_key: tuple, color: Color) -> pygame.Surface:
-        key = ("hc", cache_key, color)
-        result = self.scaled.get(key)
+    def outlined_source(self, sprite: pygame.Surface, key: tuple, color: Color) -> pygame.Surface:
+        """Versão de alto contraste do sprite inteiro, feita uma vez: depois é reescalada
+        pelo cache normal (contornar cada novo tamanho custava ~25 ms por quadro)."""
+        cache_key = (key, color)
+        result = self.outlines.get(cache_key)
         if result is None:
-            thickness = max(2, min(7, scaled.get_height() // 14))
-            result = outline_surface(scaled, color, thickness)
-            self.put(key, result)
+            result = outline_surface(sprite, color, max(4, sprite.get_height() // 20))
+            self.outlines[cache_key] = result
         return result
 
     def warm(self, sprite: Optional[pygame.Surface], key: tuple, flips=(False,)) -> None:

@@ -1,6 +1,6 @@
 """Rasterizador numpy: malha low-poly -> sprite RGBA (e mapa de partes).
 
-Mesma convenção de tools/render_models.py: projeção ortográfica em vista 3/4
+Mesma convenção de tools/legado/render_models.py: projeção ortográfica em vista 3/4
 (yaw -35°, pitch 24°), luz difusa vinda da esquerda e de cima, supersampling 3x
 com alfa pré-multiplicado. Cada face recebe uma leve variação de tom (facetado).
 """

@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-WIDTH, HEIGHT = 256, 128      # u (largura, eixo x do mundo) × v (profundidade)
+WIDTH, HEIGHT = 256, 128  # u (largura, eixo x do mundo) × v (profundidade)
 
 
 def periodic_noise(rng: np.random.Generator, shape, scale: float) -> np.ndarray:
@@ -26,7 +26,7 @@ def periodic_noise(rng: np.random.Generator, shape, scale: float) -> np.ndarray:
     white = rng.standard_normal(shape)
     fy = np.fft.fftfreq(shape[0])[:, None]
     fx = np.fft.fftfreq(shape[1])[None, :]
-    filt = np.exp(-(fx ** 2 + fy ** 2) * (scale ** 2))
+    filt = np.exp(-(fx**2 + fy**2) * (scale**2))
     smooth = np.real(np.fft.ifft2(np.fft.fft2(white) * filt))
     smooth -= smooth.min()
     return smooth / max(smooth.max(), 1e-9)
@@ -35,9 +35,9 @@ def periodic_noise(rng: np.random.Generator, shape, scale: float) -> np.ndarray:
 def make_grass(seed: int) -> Image.Image:
     rng = np.random.default_rng(seed)
     shape = (HEIGHT, WIDTH)
-    broad = periodic_noise(rng, shape, 18.0)      # manchas grandes (claro/escuro)
-    clumps = periodic_noise(rng, shape, 6.0)      # tufos
-    fine = periodic_noise(rng, shape, 1.2)        # textura de folhas
+    broad = periodic_noise(rng, shape, 18.0)  # manchas grandes (claro/escuro)
+    clumps = periodic_noise(rng, shape, 6.0)  # tufos
+    fine = periodic_noise(rng, shape, 1.2)  # textura de folhas
 
     dark = np.array([46, 104, 40], dtype=np.float32)
     light = np.array([118, 178, 70], dtype=np.float32)
@@ -68,8 +68,9 @@ def make_grass(seed: int) -> Image.Image:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--out", type=Path,
-                        default=Path(__file__).resolve().parents[1] / "assets" / "ground" / "grass.png")
+    parser.add_argument(
+        "--out", type=Path, default=Path(__file__).resolve().parents[1] / "assets" / "ground" / "grass.png"
+    )
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)

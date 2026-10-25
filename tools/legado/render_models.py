@@ -6,7 +6,7 @@ O Pygame é 2D, então os modelos 3D da pasta são pré-renderizados em vista 3/
 textura difusa (map_Kd), cor Kd, emissão Ke e sombreamento Lambert por face.
 
 Uso:
-    python tools/render_models.py --models PASTA_MODELOS_3D [--only trees props trash]
+    python tools/legado/render_models.py --models PASTA_MODELOS_3D [--only trees props trash]
 
 Requer: numpy, Pillow (somente para gerar os sprites; o jogo não precisa).
 """

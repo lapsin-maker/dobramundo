@@ -34,14 +34,14 @@ INTRO_CAPTIONS = (
 CONSENT_TITLE = "Aviso ao supervisor e aos responsáveis"
 
 CONSENT_LINES = (
-    "O Dobramundo deve ser usado sob supervisão de um adulto responsável.",
-    "O uso requer supervisão (Pereira et al., 2023).",
-    "O vídeo da câmera é processado localmente, no próprio computador.",
-    "O vídeo não é gravado.",
-    "O uso depende do consentimento dos responsáveis, conforme a LGPD.",
+    "O Dobramundo deve ser usado sob a supervisão de um adulto (Pereira et al., 2023).",
+    "Use em área livre, sem obstáculos ao redor da criança.",
+    "O vídeo da câmera é processado no próprio computador e nunca é gravado.",
+    "O uso depende do consentimento dos responsáveis pela criança.",
     "Base legal: arts. 11 e 14 da Lei nº 13.709/2018 (LGPD).",
     "Se o jogador sair da área da câmera, o jogo pausa automaticamente.",
     "O supervisor pode pausar a qualquer momento com a tecla P ou ESC.",
+    "Volume, silêncio e alto contraste ficam em Opções.",
 )
 
 ABOUT_SECTIONS = (
@@ -181,7 +181,7 @@ CREDITS = (
         "Gerciane Larice da Silva Barros e Luiz Felipe Santana Tomio",
     ),
     ("Captura", "Adaptada do T-TEA 2.0 (LARVA/UDESC)"),
-    ("Modelos 3D", "Feitos pela equipe em Blender"),
+    ("Modelos 3D", "Feitos pela equipe em Blender e modelos low-poly gerados por código (tools/lowpoly)"),
     ("Programação", "IA generativa (Gemini e Claude) apoiou a programação"),
     ("Tecnologia", "Python, pygame, OpenCV e MediaPipe Pose"),
     ("Música e efeitos", "Sintetizados pelo projeto"),
