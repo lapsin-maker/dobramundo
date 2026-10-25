@@ -4,6 +4,10 @@
 
 **Dobre o papel, voe e transforme a cidade.** Exergame sério de voo em que a criança pilota, com o próprio corpo, um avião de papel reciclado.
 
+## Novidades da versão 1.3.1
+
+- **Licença:** o jogo passa a ser código aberto sob Creative Commons Atribuição 4.0 (CC BY 4.0), como pede o item 4.6 do regulamento da jam (ver [Licenças](#licenças)). O `LICENSE` vai no repositório, no executável e no cartucho, e os créditos do jogo citam a licença e o modelo de pose usado.
+
 ## Novidades da versão 1.3
 
 - **Núcleo separado da plataforma:** o jogo sem plataforma fica no núcleo (`core.py`). O executável (`app.py`) cuida da janela, do som, do relógio, da tela cheia e da orientação da imagem, e o cartucho do console T-TEA (`cartridge.py`) usa o mesmo núcleo.
@@ -29,7 +33,7 @@ O Dobramundo é um exergame sério de voo, com proposta terapêutica. A criança
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.3.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.3.1.
 
 ### Tema e objetivo
 
@@ -296,7 +300,7 @@ python tools/build_cartridge.py --tsdk CAMINHO_DO_TSDK
 python tools/build_cartridge.py --so-montar
 ```
 
-O primeiro comando monta `build/cartucho/`, roda `tsdk check` e `tsdk build` e gera `dist/dobramundo-1.3.0.ttea`. Com `--so-montar`, ele só monta a pasta, sem validar nem gerar o arquivo. O `CREDITOS.md` do cartucho é gerado a partir dos créditos. A licença do código ainda será definida pela equipe.
+O primeiro comando monta `build/cartucho/`, roda `tsdk check` e `tsdk build` e gera `dist/dobramundo-<versão>.ttea`. Com `--so-montar`, ele só monta a pasta, sem validar nem gerar o arquivo. O cartucho leva o `LICENSE` (CC BY 4.0) e um `CREDITOS.md` gerado a partir dos créditos do jogo.
 
 ## Gerar o executável
 
@@ -459,7 +463,10 @@ PEREIRA, G. B. et al. Jogo sério para estímulo sensorial de crianças com tran
 
 ## Licenças
 
-- **Código e assets da equipe:** o repositório ainda não define a licença do código, dos sprites, dos ícones, dos textos e das trilhas gerados pelo projeto. Sem um arquivo de licença, o repositório não concede, por si só, permissão de uso ou de redistribuição.
-- **Modelo de pose** (`assets/pose_model/pose_landmarker_lite.task`): do Google MediaPipe, sob licença Apache 2.0.
-- **Captura corporal:** adaptada do T-TEA 2.0 (LARVA/UDESC). A condição de uso desse código deve ser confirmada com o grupo de origem.
-- **Dependências:** pygame, OpenCV e MediaPipe mantêm suas próprias licenças.
+O regulamento da 3ª ExerGame JAM LARVA (item 4.6) determina que o executável e o código-fonte sejam disponibilizados como código aberto, sob licença Creative Commons, no Git da competição. Por isso:
+
+- **Código, sprites, ícones, logo, textos, músicas e efeitos do Dobramundo:** [Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.pt-br), texto completo em [`LICENSE`](LICENSE). Qualquer pessoa pode copiar, adaptar e redistribuir, inclusive em outras edições da jam, desde que dê o crédito: *Dobramundo, Liga de Psiquiatria e Neurociências – CENSUPEG (3ª ExerGame JAM LARVA/UDESC, 2026)*, com link para a licença e indicação do que foi alterado.
+- **Fora da CC BY 4.0, com as licenças de origem:**
+  - **Modelo de pose** (`assets/pose_model/pose_landmarker_lite.task`): Google MediaPipe, licença Apache 2.0. Vai só no executável; o cartucho do T-TEA não o inclui.
+  - **Captura corporal:** adaptada do T-TEA 2.0 (LARVA/UDESC), nas condições do grupo de origem.
+  - **Dependências** (pygame, numpy, OpenCV, MediaPipe e o runtime do T-TEA): cada uma com a sua licença. O executável inclui as bibliotecas do pygame (LGPL), do OpenCV e do MediaPipe (Apache 2.0) sem modificá-las.

@@ -38,7 +38,7 @@ resolution = [1100, 650]
 game_api = 1
 requires_ttea = ">=2.0,<3"
 assets = ["assets"]
-licenses = ["CREDITOS.md"]
+licenses = ["LICENSE", "CREDITOS.md"]
 
 [game.name]
 pt-BR = "Dobramundo"
@@ -63,8 +63,9 @@ def credits_text() -> str:
         lines.append(f"- **{label}:** {value}")
     lines += [
         "",
-        "Código, imagens e sons do Dobramundo: equipe do projeto. A licença de distribuição ainda",
-        "será definida pela equipe; até lá, todos os direitos são reservados aos autores.",
+        "Código, imagens, textos e sons do Dobramundo: Creative Commons Atribuição 4.0",
+        "Internacional (CC BY 4.0), texto completo em LICENSE. Crédito: Dobramundo, Liga de",
+        "Psiquiatria e Neurociências – CENSUPEG (3ª ExerGame JAM LARVA/UDESC, 2026).",
         "",
         "O cartucho não inclui bibliotecas nem modelos de terceiros: a câmera e o rastreamento",
         "do corpo são do console T-TEA.",
@@ -95,6 +96,7 @@ def stage() -> Path:
     (STAGE / "ttea.toml").write_text(MANIFEST, encoding="utf-8")
     (STAGE / "pyproject.toml").write_text(PYPROJECT, encoding="utf-8")
     (STAGE / "CREDITOS.md").write_text(credits_text(), encoding="utf-8")
+    shutil.copy2(ROOT / "LICENSE", STAGE / "LICENSE")
     return STAGE
 
 

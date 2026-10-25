@@ -20,6 +20,7 @@ datas = []
 for file in sorted((ROOT / "assets").rglob("*")):
     if file.is_file() and file.suffix.lower() in ASSET_EXTS:
         datas.append((str(file), str(Path("assets") / file.parent.relative_to(ROOT / "assets"))))
+datas.append((str(ROOT / "LICENSE"), "."))  # licença CC BY 4.0 junto do executável
 
 # MediaPipe: o hook padrão não leva a biblioteca nativa do MediaPipe Tasks (mediapipe/tasks/c).
 binaries, hiddenimports = [], []
