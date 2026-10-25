@@ -196,6 +196,7 @@ class App(GameCore):
 
         self.display.blit(orient(self.canvas, self.options.rotacao, self.options.espelhar), (0, 0))
         pygame.display.flip()
+        self.input.note_presented()
 
     def step(self, dt: float, events: Optional[List[pygame.event.Event]] = None) -> None:
         """Um quadro: entrada, atualização, desenho e apresentação na janela."""

@@ -111,11 +111,14 @@ def blit_tiled(screen: pygame.Surface, surface: pygame.Surface, offset: float, y
 class SkyRenderer:
     def __init__(self, assets: Assets) -> None:
         self.assets = assets
-        atmosphere = assets.folder("atmosphere")
-        self.panorama_base = self.prepare_panorama(atmosphere.get("sky_panorama"))
+        # Heavy image decode/preparation is scheduled by WorldView's sliced
+        # warm-up queue instead of happening in App construction/set_biome.
+        self.panorama_base = None
         self.panorama = self.panorama_base
-        self.clouds = self.prepare_clouds(atmosphere.get("smog_cloud"))
-        self.skyline_sprites = assets.folder("skyline_sprites")
+        self._smog_source = None
+        self._smog_loaded = False
+        self.clouds = []
+        self.skyline_sprites = {}
         self.gradients = BoundedCache(24, 20 * 1024 * 1024)
         self.decor_cache = BoundedCache(64, 20 * 1024 * 1024)
         self.biome: Optional[Biome] = None
@@ -133,15 +136,60 @@ class SkyRenderer:
         if self.biome is biome:
             return
         self.biome = biome
-        self.panorama = self.tint_panorama(biome)
-        decor_names = {decor.sprite for decor in biome.sky_decor}
-        decor_names.add(biome.horizon_vehicle[0])
-        self.decor_sprites = self.assets.scenery_for(decor_names)
+        self.panorama = self.panorama_base
+        self.decor_sprites = {}
         self.skyline_cache = {}
         self.skyline_state = {}
         self.decor_cache = BoundedCache(64, 20 * 1024 * 1024)
         count = max(1, len(biome.sky_decor))
         self.decor_x = [i * C.DECOR_CYCLE / count + 120 * i for i in range(len(biome.sky_decor))]
+
+    def prepare_atmosphere_asset(self, name: str) -> None:
+        image = self.assets.sprite("atmosphere", name)
+        if name == "sky_panorama":
+            self.panorama_base = self.prepare_panorama(image)
+            self.panorama = self.panorama_base
+        elif name == "smog_cloud":
+            self._smog_source = image
+            self._smog_loaded = True
+
+    def prepare_cloud(self, index: int) -> None:
+        if len(self.clouds) > index:
+            return
+        if not self._smog_loaded:
+            return
+        if self._smog_source is None:
+            self.clouds = []
+            return
+        x, y, width, drift, parallax, opacity = CLOUD_LAYOUT[index]
+        smoke = pygame.transform.smoothscale(self._smog_source, (width, int(width * 0.42)))
+        smoke.fill((38, 30, 24, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        clean = display_format(paper_cloud(int(width * 0.8), index), alpha=True)
+        self.clouds.append(
+            {
+                "x": float(x),
+                "y": y,
+                "w": width,
+                "drift": drift,
+                "parallax": parallax,
+                "opacity": opacity,
+                "smoke": smoke,
+                "clean": clean,
+                "baked": BoundedCache(24, 2 * 1024 * 1024),
+            }
+        )
+
+    def prepare_tinted_panorama(self) -> None:
+        if self.biome is not None:
+            self.panorama = self.tint_panorama(self.biome)
+
+    def prepare_decor(self, name: str) -> None:
+        self.decor_sprites.update(self.assets.scenery_for((name,)))
+
+    def prepare_skyline_sprite(self, name: str) -> None:
+        sprite = self.assets.sprite("skyline_sprites", name)
+        if sprite is not None:
+            self.skyline_sprites[name] = sprite
 
     def release_biome_cache(self) -> None:
         """Solta faixas e variações específicas de uma fase já encerrada."""
@@ -344,6 +392,11 @@ class SkyRenderer:
             else:
                 layout = SKYLINE_FRONT
             names = {sprite for sprite, _ in layout}
+            for sprite_name in names:
+                if sprite_name not in self.skyline_sprites:
+                    sprite = self.assets.sprite("skyline_sprites", sprite_name)
+                    if sprite is not None:
+                        self.skyline_sprites[sprite_name] = sprite
             scene_sprites = self.assets.scenery_for(names) if name != "front" else {}
             strip = self.build_skyline(layout, {**self.skyline_sprites, **scene_sprites})
             self.skyline_cache[name] = strip

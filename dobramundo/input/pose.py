@@ -14,6 +14,8 @@ from __future__ import annotations
 import time
 from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from .telemetry import input_frame
+
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
 Landmark = Tuple[float, float, float]  # x, y, visibilidade
 MIN_VISIBILITY = 0.5
@@ -286,6 +288,9 @@ class BodyControl:
         self.inference_ms = 0.0
         self.capture_to_publish_ms = 0.0
         self.reading_captured_at: Optional[float] = None
+        self.reading_consumed_at: Optional[float] = None
+        self.reading_rendered_at: Optional[float] = None
+        self.presented_frame = None
         self.capture_to_render_ms: Optional[float] = None
         self.stale_dropped = 0
         self.read_failures = 0
@@ -353,6 +358,7 @@ class BodyControl:
             self.landmarks = landmarks
             self.preview = preview
             self.reading_captured_at = captured_at
+            self.reading_consumed_at = time.monotonic()
             if captured_at is None:
                 self.capture_to_render_ms = None
             point = self.locate(landmarks)
@@ -418,8 +424,20 @@ class BodyControl:
         if self.reading_captured_at is None:
             self.capture_to_render_ms = None
             return None
-        self.capture_to_render_ms = max(0.0, (time.monotonic() - self.reading_captured_at) * 1000.0)
+        self.reading_rendered_at = time.monotonic()
+        self.capture_to_render_ms = max(0.0, (self.reading_rendered_at - self.reading_captured_at) * 1000.0)
         return self.capture_to_render_ms
+
+    def note_presented(self):
+        self.presented_frame = input_frame(
+            self._seq,
+            self.reading_captured_at,
+            self.reading_consumed_at,
+            self.reading_rendered_at,
+            time.monotonic(),
+            self.visible and self.calibrated,
+        )
+        return self.presented_frame
 
     def axes(self) -> Tuple[float, float]:
         return self.mapper.axes()

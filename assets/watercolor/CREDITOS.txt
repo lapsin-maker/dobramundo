@@ -21,3 +21,9 @@ de cor/estampa, projeta água/solo e aproxima as margens. Papel, cabelo e pele
 mantêm o pigmento da arte. Há desenhos procedurais de reserva quando faltam
 assets e pictogramas nativos. Nenhuma geração ou chamada de rede ocorre no jogo.
 A lógica de colisão e o controle corporal seguem independentes das ilustrações.
+
+Versão 1.7: map_pigment_v17.png foi criado pela ferramenta integrada image_gen
+como textura abstrata de pigmento e papel. O mapa usa silhueta, regiões e
+destinos definidos pelo código; a imagem não é uma fonte geográfica.
+Prompt completo e registro: generation_v17_map.json. A variante de runtime é
+preparada em tools/prepare_assets.py; a fonte original permanece neste diretório.

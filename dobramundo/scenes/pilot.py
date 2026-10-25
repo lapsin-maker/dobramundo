@@ -50,7 +50,7 @@ PAGES: Tuple[Tuple[str, str, List[Option]], ...] = (
 )
 PAGE_BY_FIELD = {field: (label, options) for field, label, options in PAGES}
 MOBILITY_KEYS = ("livre", "cadeira", "andador")
-NAV_LABELS = {"cor_cabelo": "Tom", "acessorio": "Acess.", "mobilidade": "Apoio"}
+NAV_LABELS = {"cor_cabelo": "Cor", "acessorio": "Enfeite", "mobilidade": "Apoio"}
 GREETINGS = ("Oi! Esse é você?", "Que legal!", "Pronto para voar?", "Uau, ficou ótimo!")
 PREVIEW = pygame.Rect(24, 146, 300, 390)
 CHOICES = pygame.Rect(340, 146, 736, 390)
@@ -299,7 +299,9 @@ class PilotScene(Scene):
         app = self.app
         app.backdrop(screen, self.last_dt, None, 40.0)
         T.veil(screen, (10, 18, 40), 112)
-        subtitle = "Escolha cada parte do seu jeito" if self.first_time else "Personalize seu piloto"
+        subtitle = (
+            "Fique sobre uma escolha para selecionar" if self.first_time else "Fique sobre uma escolha para mudar"
+        )
         self.title(screen, texts.UI["piloto"], subtitle)
 
         T.panel(screen, PREVIEW, T.PAPER, T.NAVY, 245, 22, 3)
@@ -317,8 +319,4 @@ class PilotScene(Scene):
             screen.blit(img, img.get_rect(midbottom=(PREVIEW.centerx, stage.top + 3 + bob)))
 
         T.panel(screen, CHOICES, (250, 246, 233), T.NAVY, 225, 20, 2)
-        instruction = f"{PAGE_BY_FIELD[self.page][0]}: toque em uma opção"
-        self.text.blit(
-            screen, instruction, (CHOICES.centerx, CHOICES.top - 20), T.SIZES["small"], T.NAVY, True, "midbottom"
-        )
         self.draw_menu(screen)

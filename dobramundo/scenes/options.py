@@ -23,11 +23,24 @@ SURFACE_HINT = {
 }
 ROW_H = 48
 GAP = 6
+SECTION_H = 54
+PAGE_ROW_H = 56
+PAGE_GAP = 10
+OPTION_PAGES = (
+    ("controle", "Controle", "plane"),
+    ("superficie", "Superfície", "map"),
+    ("som", "Som", "sound"),
+    ("acessibilidade", "Acessibilidade", "accessibility"),
+)
 # Superfície -> segmento sugerido (aplicado quando a câmera já está em uso).
 SURFACE_SEGMENT = {"chao": "pes", "mesa": "mao_direita", "parede": "tronco_pe"}
 
 
 class OptionsScene(Scene):
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self.section = "controle"
+
     def build(self) -> None:
         buttons = []
         self._build_controls(buttons)
@@ -35,7 +48,153 @@ class OptionsScene(Scene):
         self._build_audio(buttons)
         self._build_accessibility(buttons)
         self._build_footer(buttons)
-        self.menu.set_buttons(buttons)
+        self._add_comfort_options(buttons)
+        self._section_buttons = []
+        tab_gap = 10
+        tab_w = (C.WIDTH - 48 - tab_gap * 3) // 4
+        for index, (key, label, icon_name) in enumerate(OPTION_PAGES):
+            fitted_label, label_size = T.fit_text(
+                self.text, label, tab_w - 64, size=T.SIZES["body"], minimum=T.SIZES["small"], bold=True
+            )
+            self._section_buttons.append(
+                self.button(
+                    (24 + index * (tab_w + tab_gap), 92, tab_w, SECTION_H),
+                    fitted_label,
+                    lambda section=key: self.select_section(section),
+                    icon=T.icon_surface(icon_name, 34, T.TEAL if key == self.section else T.NAVY),
+                    selected=key == self.section,
+                    size=label_size,
+                    key=f"section:{key}",
+                )
+            )
+        controls, footer = self._partition_buttons(buttons)
+        self._arrange_page(controls)
+        visible_controls = [button for group in controls.values() for button in group]
+        self.menu.set_buttons([*self._section_buttons, *visible_controls, *footer])
+
+    def _add_comfort_options(self, buttons) -> None:
+        o = self.app.options
+        self._toggle(
+            buttons,
+            24,
+            562,
+            "movimento",
+            "Movimento reduzido",
+            o.reduzir_movimento,
+            lambda: self.flip("reduzir_movimento"),
+            510,
+        )
+        self._toggle(
+            buttons,
+            566,
+            562,
+            "auto_abertura",
+            "Abertura automática",
+            o.abertura_automatica,
+            lambda: self.flip("abertura_automatica"),
+            510,
+        )
+
+    @staticmethod
+    def _unit_for_key(key: str) -> str:
+        prefixes = (
+            "seg",
+            "sens",
+            "perm_editor",
+            "perm",
+            "sup",
+            "volume_geral",
+            "volume_musica",
+            "volume_efeitos",
+            "escala_contraste",
+        )
+        for prefix in prefixes:
+            if key.startswith(prefix):
+                return prefix
+        return key
+
+    def _partition_buttons(self, buttons):
+        page_for = {
+            "seg": "controle",
+            "calibrar": "controle",
+            "posicao": "controle",
+            "sens": "controle",
+            "perm": "controle",
+            "perm_editor": "controle",
+            "sup": "superficie",
+            "projecao": "superficie",
+            "centralizar": "superficie",
+            "foco": "superficie",
+            "volume_geral": "som",
+            "volume_musica": "som",
+            "volume_efeitos": "som",
+            "silencio": "som",
+            "tela": "som",
+            "contraste": "acessibilidade",
+            "escala_contraste": "acessibilidade",
+            "inverter": "acessibilidade",
+            "inverter_lados": "acessibilidade",
+            "efeitos": "acessibilidade",
+            "movimento": "acessibilidade",
+            "auto_abertura": "acessibilidade",
+        }
+        grouped = {name: {} for name, _, _ in OPTION_PAGES}
+        footer = []
+        for button in buttons:
+            if button.key in {"voltar", "abertura", "treino", "dwell_treino", "preparar"}:
+                footer.append(button)
+                continue
+            unit = self._unit_for_key(button.key)
+            page = page_for.get(unit)
+            if page is not None:
+                grouped[page].setdefault(unit, []).append(button)
+        return grouped[self.section], footer
+
+    def _arrange_page(self, units) -> None:
+        rows = {
+            "controle": [
+                (("seg", 2),),
+                (("calibrar", 1), ("posicao", 1)),
+                (("sens", 2),),
+                (("perm", 1), ("perm_editor", 1)),
+            ],
+            "superficie": [(("sup", 2),), (("projecao", 1), ("centralizar", 1)), (("foco", 2),)],
+            "som": [
+                (("volume_geral", 2),),
+                (("volume_musica", 2),),
+                (("volume_efeitos", 2),),
+                (("silencio", 1), ("tela", 1)),
+            ],
+            "acessibilidade": [
+                (("contraste", 1), ("escala_contraste", 1)),
+                (("inverter", 1), ("inverter_lados", 1)),
+                (("efeitos", 2),),
+                (("movimento", 1), ("auto_abertura", 1)),
+            ],
+        }[self.section]
+        full_w = C.WIDTH - 48
+        half_w = (full_w - GAP) // 2
+        y = 165
+        for row in rows:
+            for unit_key, span in row:
+                group = units.get(unit_key, [])
+                if not group:
+                    continue
+                width = full_w if span == 2 else half_w
+                x = 24 if span == 2 or len(row) == 1 else 24 + (0 if row.index((unit_key, span)) == 0 else half_w + GAP)
+                if len(group) == 3:
+                    arrow = min(48, max(38, width // 5))
+                    group[0].rect = pygame.Rect(x, y, arrow, PAGE_ROW_H)
+                    group[1].rect = pygame.Rect(x + arrow + 4, y, width - 2 * arrow - 8, PAGE_ROW_H)
+                    group[2].rect = pygame.Rect(x + width - arrow, y, arrow, PAGE_ROW_H)
+                else:
+                    group[0].rect = pygame.Rect(x, y, width, PAGE_ROW_H)
+            y += PAGE_ROW_H + PAGE_GAP
+
+    def select_section(self, section: str) -> None:
+        if section in {key for key, _, _ in OPTION_PAGES}:
+            self.section = section
+            self.build()
 
     def _stepper(
         self, buttons, x: int, y: int, key: str, label: str, value: str, minus: Callable, plus: Callable, w: int = 510
@@ -282,8 +441,6 @@ class OptionsScene(Scene):
         )
 
     def _build_footer(self, buttons) -> None:
-        o = self.app.options
-        width = 510
         footer = (
             (texts.UI["voltar"], lambda: self.goto("vila"), "voltar"),
             ("História", self.intro, "abertura"),
@@ -291,36 +448,18 @@ class OptionsScene(Scene):
             ("Mirar", self.replay_dwell, "dwell_treino"),
             ("Preparar", self.prepare, "preparar"),
         )
+        footer_y = 536
+        footer_width = (C.WIDTH - 48 - 4 * 10) // 5
         for index, (label, action, key) in enumerate(footer):
             buttons.append(
                 self.button(
-                    (24 + index * 210, 508, 202, ROW_H),
+                    (24 + index * (footer_width + 10), footer_y, footer_width, 56),
                     label,
                     action,
                     key=key,
                     icon=T.icon_surface("stabilizer", 28, T.GREEN) if key == "preparar" else None,
                 )
             )
-        self._toggle(
-            buttons,
-            24,
-            562,
-            "movimento",
-            "Movimento reduzido",
-            o.reduzir_movimento,
-            lambda: self.flip("reduzir_movimento"),
-            width,
-        )
-        self._toggle(
-            buttons,
-            566,
-            562,
-            "auto_abertura",
-            "Abertura automática",
-            o.abertura_automatica,
-            lambda: self.flip("abertura_automatica"),
-            width,
-        )
 
     # ------------------------------------------------------------ ações
     def changed(self) -> None:
@@ -381,10 +520,8 @@ class OptionsScene(Scene):
         self.app.backdrop(screen, self.last_dt, None, 50.0)
         T.veil(screen, (10, 18, 40), 140)
         self.title(screen, texts.UI["opcoes"], "Ajustes para o supervisor e para a criança")
-        self.text.blit(screen, "Controle e superfície", (24, 92), T.SIZES["label"], T.WHITE, True)
-        self.text.blit(screen, "Som e visão", (566, 92), T.SIZES["label"], T.WHITE, True)
         self.draw_menu(screen)
-        self.toast.draw(screen, self.text, (C.WIDTH // 2 + 160, 604), 560)
+        self.toast.draw(screen, self.text, (C.WIDTH // 2, 492), 560)
         body = self.app.input.body
         if body is not None and body.error:
             self.text.blit(

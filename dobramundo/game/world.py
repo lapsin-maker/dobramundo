@@ -113,6 +113,78 @@ def _axis_reachable(
     )
 
 
+def _route_threat_groups(entities: List[Entity]) -> List[Tuple[float, float, List[Entity]]]:
+    """Agrupa janelas de colisão sobrepostas sem reordenar a pista por outro critério."""
+    threats = [
+        entity
+        for entity in entities
+        if entity.spec is not None
+        and not entity.collected
+        and not entity.hit
+        and not entity.dodged
+        and entity.z - C.PLAYER_Z >= -ROUTE_Z_HALF
+    ]
+    intervals = sorted(
+        [(entity.z - C.PLAYER_Z - ROUTE_Z_HALF, entity.z - C.PLAYER_Z + ROUTE_Z_HALF, entity) for entity in threats],
+        key=lambda item: (item[0], item[1]),
+    )
+    groups: List[Tuple[float, float, List[Entity]]] = []
+    for start, end, entity in intervals:
+        if groups and start <= groups[-1][1]:
+            old_start, old_end, members = groups[-1]
+            members.append(entity)
+            groups[-1] = (old_start, max(old_end, end), members)
+        else:
+            groups.append((start, end, [entity]))
+    return groups
+
+
+def _free_route_cells(members: List[Entity], half_w: float, half_h: float) -> set[Tuple[int, int]]:
+    """Células discretas cuja hitbox expandida não intercepta nenhum membro do grupo."""
+    safe = set()
+    for xi, x in enumerate(_ROUTE_XS):
+        for yi, y in enumerate(_ROUTE_YS):
+            blocked = any(
+                abs(x - entity.x) <= entity.spec.width * 0.5 + half_w
+                and y + half_h >= entity.spec.y_min
+                and y - half_h <= entity.spec.y_max
+                for entity in members
+            )
+            if not blocked:
+                safe.add((xi, yi))
+    return safe
+
+
+def _point_reachable(
+    start: Tuple[float, float],
+    end: Tuple[float, float],
+    elapsed: float,
+    speed: Tuple[float, float],
+    position_response: float,
+    velocity_response: float,
+) -> bool:
+    """Os dois eixos devem caber no mesmo intervalo, com seus limites físicos."""
+    return _axis_reachable(
+        start[0],
+        end[0],
+        elapsed,
+        speed[0],
+        -C.MAX_PLAYER_X,
+        C.MAX_PLAYER_X,
+        position_response,
+        velocity_response,
+    ) and _axis_reachable(
+        start[1],
+        end[1],
+        elapsed,
+        speed[1],
+        C.MIN_ALTITUDE,
+        C.MAX_ALTITUDE,
+        position_response,
+        velocity_response,
+    )
+
+
 def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tuple[float, float]]]:
     """Planeja uma rota de referência por grupos de obstáculos no eixo x/altura.
 
@@ -126,30 +198,9 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
     stats = plane_stats({})
     half_w = C.PLANE_WIDTH * 0.42 * stats.hitbox
     half_h = C.PLANE_HEIGHT * 0.5 * stats.hitbox
-    threats = [
-        entity
-        for entity in entities
-        if entity.spec is not None
-        and not entity.collected
-        and not entity.hit
-        and not entity.dodged
-        and entity.z - C.PLAYER_Z >= -ROUTE_Z_HALF
-    ]
-    if not threats:
+    groups = _route_threat_groups(entities)
+    if not groups:
         return []
-
-    intervals = sorted(
-        [(entity.z - C.PLAYER_Z - ROUTE_Z_HALF, entity.z - C.PLAYER_Z + ROUTE_Z_HALF, entity) for entity in threats],
-        key=lambda item: (item[0], item[1]),
-    )
-    groups: List[Tuple[float, float, List[Entity]]] = []
-    for start, end, entity in intervals:
-        if groups and start <= groups[-1][1]:
-            old_start, old_end, members = groups[-1]
-            members.append(entity)
-            groups[-1] = (old_start, max(old_end, end), members)
-        else:
-            groups.append((start, end, [entity]))
 
     factor = C.NORMAL_SPEED_FACTOR if mode == "normal" else 1.0
     worst_case_speed = (C.BASE_SPEED + 100.0 * C.RESTORATION_SPEED_GAIN + C.DIFFICULTY_SPEED_GAIN) * factor
@@ -159,25 +210,11 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
     velocity_response = C.FLIGHT_RESPONSE * stats.response
     movement_margin = ROUTE_REACTION_MARGIN_S + ROUTE_REVERSAL_MARGIN_S
 
-    def free_cells(members: List[Entity]) -> set[Tuple[int, int]]:
-        safe = set()
-        for xi, x in enumerate(_ROUTE_XS):
-            for yi, y in enumerate(_ROUTE_YS):
-                blocked = any(
-                    abs(x - entity.x) <= entity.spec.width * 0.5 + half_w
-                    and y + half_h >= entity.spec.y_min
-                    and y - half_h <= entity.spec.y_max
-                    for entity in members
-                )
-                if not blocked:
-                    safe.add((xi, yi))
-        return safe
-
     parents: List[Dict[Tuple[int, int], Optional[Tuple[int, int]]]] = []
     previous: set[Tuple[int, int]] = set()
     previous_end = 0.0
     for index, (start, end, members) in enumerate(groups):
-        safe = free_cells(members)
+        safe = _free_route_cells(members, half_w, half_h)
         if not safe:
             return None
         if index == 0:
@@ -186,23 +223,11 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
                 (xi, yi)
                 for xi, x in enumerate(_ROUTE_XS)
                 for yi, y in enumerate(_ROUTE_YS)
-                if _axis_reachable(
-                    0.0,
-                    x,
+                if _point_reachable(
+                    (0.0, C.START_ALTITUDE),
+                    (x, y),
                     available,
-                    move_x,
-                    -C.MAX_PLAYER_X,
-                    C.MAX_PLAYER_X,
-                    position_response,
-                    velocity_response,
-                )
-                and _axis_reachable(
-                    C.START_ALTITUDE,
-                    y,
-                    available,
-                    move_y,
-                    C.MIN_ALTITUDE,
-                    C.MAX_ALTITUDE,
+                    (move_x, move_y),
                     position_response,
                     velocity_response,
                 )
@@ -224,23 +249,11 @@ def find_reachable_route(entities: List[Entity], mode: str) -> Optional[List[Tup
                         if (
                             cell not in current
                             and cell in safe
-                            and _axis_reachable(
-                                _ROUTE_XS[px],
-                                _ROUTE_XS[xi],
+                            and _point_reachable(
+                                (_ROUTE_XS[px], _ROUTE_YS[py]),
+                                (_ROUTE_XS[xi], _ROUTE_YS[yi]),
                                 available,
-                                move_x,
-                                -C.MAX_PLAYER_X,
-                                C.MAX_PLAYER_X,
-                                position_response,
-                                velocity_response,
-                            )
-                            and _axis_reachable(
-                                _ROUTE_YS[py],
-                                _ROUTE_YS[yi],
-                                available,
-                                move_y,
-                                C.MIN_ALTITUDE,
-                                C.MAX_ALTITUDE,
+                                (move_x, move_y),
                                 position_response,
                                 velocity_response,
                             )
@@ -400,10 +413,12 @@ class World:
         intro: bool = False,
         restoration: Optional[float] = None,
         challenge_seed: Optional[int] = None,
+        spawn_enabled: bool = True,
     ) -> None:
         self.biome = biome
         self.mode = mode
         self.intro = intro  # abertura didática: uma coisa por vez antes do sorteio
+        self.spawn_enabled = bool(spawn_enabled)
         self.challenge_theme: Optional[ChallengeTheme] = challenge_theme_for(biome.key, challenge_seed)
         self.rng = rng or random.Random()
         self.route_planner = RoutePlanner(mode)
@@ -441,10 +456,12 @@ class World:
         self.set_restoration(restoration)
         self.plan_intro()
         z = 520.0
-        while z <= C.TRACK_LENGTH:
-            self.spawn_pattern(z)
-            z += self.rng.choice((100.0, 120.0, 140.0))
-        self.spawn_lessons()
+        if self.spawn_enabled:
+            while z <= C.TRACK_LENGTH:
+                self.spawn_pattern(z)
+                z += self.rng.choice((100.0, 120.0, 140.0))
+        if self.intro and self.spawn_enabled:
+            self.spawn_lessons()
 
     def set_restoration(self, value: float) -> None:
         """Atribuição direta (início, testes): o cenário fica no estado final na hora."""
@@ -664,6 +681,8 @@ class World:
         return False
 
     def spawn_pattern(self, z: float) -> None:
+        if not self.spawn_enabled:
+            return
         if self.in_intro(z):
             self.intro_pattern(z)
             return
@@ -708,7 +727,8 @@ class World:
         # usado pelo planner deve ser o mesmo que a entidade manterá neste quadro.
         for entity in self.entities:
             entity.z -= dz
-        self.spawn_lessons()
+        if self.intro and self.spawn_enabled:
+            self.spawn_lessons()
         segments = self.segments
         for i in range(len(segments)):
             segments[i] -= dz
@@ -718,7 +738,8 @@ class World:
             self.solar_since.pop(self.segment_base - 1, None)
             new_z = (segments[-1] if segments else C.SEGMENT_LENGTH) + C.SEGMENT_LENGTH
             segments.append(new_z)
-            self.spawn_pattern(new_z + 20.0)
+            if self.spawn_enabled:
+                self.spawn_pattern(new_z + 20.0)
 
     def prune(self) -> None:
         """Remove o que já passou pelo avião ou foi coletado (não cobre a visão)."""

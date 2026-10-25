@@ -1,5 +1,14 @@
 # Histórico do Dobramundo
 
+## 1.7.0 — 2026-10-25
+
+- A transformação de cada cidade continua entre voos. A primeira execução apresenta o piloto, a história com botão Pular e a vila; os primeiros voos oferecem apoio, respeitando uma escolha explícita.
+- Opções divididas em quatro grupos, textos com mais contraste, piloto mais visível no avião e mapa com pigmento de aquarela. Avisos de recompensa saem do horizonte do voo.
+- Preparo do cenário antes de iniciar a partida, solo com amostragem suave, avisos de ameaças nas bordas da ampliação e orçamento compartilhado de superfícies temporárias.
+- Proteção contra duas instâncias usando os mesmos dados, migração explícita de perfis e preservação de arquivos de versões futuras. Concluir, fechar e repetir uma tela de resultado não duplica recompensas.
+- Pacotes levam as imagens necessárias ao jogo, sem duplicar originais de edição e variantes preparadas. Montagem da release, inventário, comparações visuais, medição da leitura efetivamente usada e verificação do cartucho ficam versionados.
+- Documentação de uso simplificada; notas das sprints anteriores reunidas no histórico. Detalhes e evidências em [Entrega 1.7](docs/ENTREGA_1_7.md).
+
 ## 1.6.0 — 2026-10-25
 
 - Perfis locais independentes com cartões anônimos, preservação do save legado e recuperação a partir de cópias anteriores; falhas de leitura bloqueiam gravação destrutiva.
@@ -22,15 +31,15 @@
 
 O editor confirma escolhas mais devagar e exige sair do alvo antes de repetir. O controle de cabeça tolera melhor a perda de um marco facial, oferece calibração dos quatro alcances confortáveis e interrompe o cursor quando a leitura envelhece. Alto contraste também amplia avião, objetos e passagens, com escala ajustável. A vila começa industrial e colorida, tem moradores e pedidos persistentes e evolui para jardins, energia e alimentos integrados às construções.
 
-As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
+As margens do voo mudam gradualmente, o mapa tem rota e arte própria, o hangar mostra três modelos por página e a história usa quatro cenários ilustrados. Veja [escopo, operação e limites da sprint 3](docs/historico/SPRINT3.md). Os testes de renderização e controle não substituem ensaios presenciais com webcam, projeção e crianças.
 
 Os artefatos dessa sprint pertencem à publicação histórica correspondente. Consulte a release mais recente para os downloads atuais.
 
 ## Entrega anterior — sprint 2: aquarela em movimento
 
-Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).
+Água e terreno avançam em perspectiva, e árvores e construções das margens passam pelo avião: o voo não fica sobre uma pintura parada. Manaus e Petrolina têm três estágios, com arte regional em aquarela, 11 aviões pintados, piloto personalizável, resíduos circulares e benefícios hexagonais. A vila começa colorida e poluída e ganha energia limpa, hortas e natureza integrada às construções. O primeiro voo oferece treino visual opcional; as compras mostram o terreno antes e a obra depois. Veja [implementação, capturas e validação](docs/historico/DIRECAO_AQUARELA.md) e os [prompts da sprint](assets/watercolor/generation-sprint2.json).
 
-Baixe o executável e a galeria com gravações reais na [prévia da sprint 2](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint2-aquarela-2026-10-25). A [documentação da entrega](docs/ENTREGA_SPRINT2.md) explica a instalação, o perfil separado e a verificação dos arquivos. Esta prévia mantém a versão interna 1.4.0 e é identificada pela tag da sprint.
+Baixe o executável e a galeria com gravações reais na [prévia da sprint 2](https://github.com/lapsin-maker/dobramundo/releases/tag/sprint2-aquarela-2026-10-25). A [documentação da entrega](docs/historico/ENTREGA_SPRINT2.md) explica a instalação, o perfil separado e a verificação dos arquivos. Esta prévia mantém a versão interna 1.4.0 e é identificada pela tag da sprint.
 
 ## Histórico — versão 1.4
 

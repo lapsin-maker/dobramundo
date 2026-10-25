@@ -6,20 +6,22 @@
 #   DOBRA_ONEFILE=1 pyinstaller --noconfirm --clean Dobramundo.spec (arquivo único)
 #   DOBRA_CONSOLE=1 ...  mantém a janela de console (depuração)
 #
-# Toda a pasta assets/ entra no pacote (sprites, sons, modelo de pose).
+# Inventário de runtime sem fontes redundantes de edição.
 
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(SPECPATH).resolve()
+sys.path.insert(0, str(ROOT))
+from tools.runtime_assets import runtime_assets
 ONEFILE = os.environ.get("DOBRA_ONEFILE") == "1"
 CONSOLE = os.environ.get("DOBRA_CONSOLE") == "1"
 ASSET_EXTS = {".png", ".json", ".ogg", ".wav", ".task", ".ico", ".ttf", ".txt"}  # .ttf/.txt: fontes e licenças OFL
 
 datas = []
-for file in sorted((ROOT / "assets").rglob("*")):
-    if file.is_file() and file.suffix.lower() in ASSET_EXTS:
-        datas.append((str(file), str(Path("assets") / file.parent.relative_to(ROOT / "assets"))))
+for file, relative in runtime_assets(ROOT):
+    datas.append((str(file), str(Path("assets") / relative.parent)))
 datas.append((str(ROOT / "LICENSE"), "."))  # licença CC BY 4.0 junto do executável
 
 # MediaPipe: o hook padrão não leva a biblioteca nativa do MediaPipe Tasks (mediapipe/tasks/c).

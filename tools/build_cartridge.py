@@ -23,12 +23,12 @@ sys.path.insert(0, str(ROOT))
 
 from dobramundo import __version__  # noqa: E402
 from dobramundo.content import texts  # noqa: E402
+from tools.runtime_assets import runtime_assets  # noqa: E402
 
 STAGE_ROOT = ROOT / "build"
 STAGE = STAGE_ROOT / "cartucho"
 # Partes que só o executável usa (o console não deixa o cartucho abrir janela nem câmera).
-DESKTOP_ONLY = {"app.py", "main.py", "__main__.py", "selftest.py", "input/camera.py"}
-SKIP_ASSETS = {"pose_model"}
+DESKTOP_ONLY = {"app.py", "main.py", "__main__.py", "selftest.py", "instance_lock.py", "input/camera.py"}
 
 MANIFEST = f"""[game]
 id = "dobramundo"
@@ -84,10 +84,6 @@ def ignore_package(folder: str, names):
     return skipped
 
 
-def ignore_assets(folder: str, names):
-    return {n for n in names if n in SKIP_ASSETS or n.endswith((".task", ".tflite")) or n.startswith(".")}
-
-
 def stage() -> Path:
     # A exclusão é limitada ao estágio conhecido, sem seguir junction/symlink.
     expected = STAGE_ROOT / "cartucho"
@@ -97,7 +93,10 @@ def stage() -> Path:
         shutil.rmtree(STAGE)
     STAGE.mkdir(parents=True)
     shutil.copytree(ROOT / "dobramundo", STAGE / "dobramundo", ignore=ignore_package)
-    shutil.copytree(ROOT / "assets", STAGE / "assets", ignore=ignore_assets)
+    for source, relative in runtime_assets(ROOT, console=True):
+        target = STAGE / "assets" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
     (STAGE / "ttea.toml").write_text(MANIFEST, encoding="utf-8")
     (STAGE / "pyproject.toml").write_text(PYPROJECT, encoding="utf-8")
     (STAGE / "CREDITOS.md").write_text(credits_text(), encoding="utf-8")

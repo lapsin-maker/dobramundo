@@ -8,7 +8,8 @@ dos objetos é dessaturado e escurecido, e objetos e avião ganham contorno espe
 
 from __future__ import annotations
 
-from typing import Iterator, List, Optional, Tuple
+import time
+from typing import Callable, List, Optional, Tuple
 
 import pygame
 
@@ -17,15 +18,15 @@ from ..content.biomes import Biome
 from ..util import Color, clamp, lerp_color
 from .accessible_view import screen_point, viewport
 from .assets import Assets
-from .cache import BoundedCache
-from .contracts import EntityView, FlightView, WorldStateView
+from .cache import DEFAULT_CACHE_BUDGET, BoundedCache
+from .contracts import EntityView, FlightView, RenderContext, WorldStateView
 from .contracts import PlaneLook as PlaneLook
 from .entity_layer import EntityLayer
-from .ground import GroundRenderer
+from .ground import GroundRenderer, compute_ground_rows
 from .paper_items import PaperItems
 from .plane_layer import PlaneLayer
 from .plane_skin import PlaneSkin
-from .sky import SkyRenderer
+from .sky import CLOUD_LAYOUT, SKYLINE_BACK, SKYLINE_FRONT, SkyRenderer
 from .sprites import SpriteCache, fog_level, project
 from .track_layer import TrackLayer
 from .watercolor import WatercolorWorld
@@ -46,9 +47,9 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         self.scenery = {}
         self._scenery_loaded = False
         self._biome_scenery_names = set()
-        self.waste = assets.folder("waste_sprites")
-        self.powerups = assets.folder("powerup_sprites")
-        self.fx = assets.folder("era_final_fx")
+        self.waste = {}
+        self.powerups = {}
+        self.fx = {}
         self.shadows = BoundedCache(400, 8 * 1024 * 1024)
         self.rotations = BoundedCache(ROTATION_CACHE_LIMIT, 40 * 1024 * 1024)
         self.font = font or pygame.font.SysFont("segoeui,verdana,dejavusans", 20, bold=True)
@@ -67,7 +68,13 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         self.player_rect = pygame.Rect(0, 0, 246, 180)
         self.reduce_motion = False
         self.show_hitboxes = False
-        self.warm_queue: Optional[Iterator] = None
+        self.warm_queue: List[Tuple[str, Callable[[], None]]] = []
+        self._warmup_index = 0
+        self.warmup_last_task_ms = 0.0
+        self.warmup_max_task_ms = 0.0
+        self.warmup_overruns = 0
+        self.warmup_timings = []
+        self._queued_looks = set()
 
     # ------------------------------------------------------------ preparo
     def set_biome(self, biome: Biome) -> None:
@@ -80,6 +87,8 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self.scenery = {}
             self._biome_scenery_names = self.scenery_names(biome)
             self.warm_queue = self.warm_tasks()
+            self._warmup_index = 0
+            self._queued_looks.clear()
 
     @staticmethod
     def scenery_names(biome: Biome) -> set:
@@ -98,6 +107,8 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         for table in (biome.industrial_obstacles, biome.solar_obstacles):
             for specs in table.values():
                 names.update(spec.sprite for spec in specs)
+        for layout in (biome.industrial_skyline, biome.green_skyline, biome.solar_skyline):
+            names.update(name for name, _height in layout)
         return names
 
     def ensure_scenery(self) -> None:
@@ -122,7 +133,8 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self._biome_scenery_names = set()
             self.biome = None
             self.world = None
-            self.warm_queue = None
+            self.warm_queue = []
+            self._warmup_index = 0
             self.sky.release_biome_cache()
         self.cache = SpriteCache()
         self.shadows.clear()
@@ -165,7 +177,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self.watercolor.route.cache.mips,
             self.watercolor.route.cache.outlines,
             route_ground.textures if route_ground else None,
-            route_ground.source_rows if route_ground else None,
+            route_ground.vertical_mips if route_ground else None,
             route_ground.line_buffers if route_ground else None,
             self.watercolor.life.frames,
             self.watercolor.life.cache.scaled,
@@ -209,62 +221,199 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             "unique_retained_surface_bytes": sum(owners.values()),
             "surface_bytes_by_owner": owners,
             "cache_items": cache_items,
+            "aggregate_cache_bytes": DEFAULT_CACHE_BUDGET.retained_bytes(),
+            "aggregate_cache_limit_bytes": DEFAULT_CACHE_BUDGET.byte_limit,
+            "aggregate_cache_metrics": DEFAULT_CACHE_BUDGET.metrics(),
             "estimate": (
-                "pitch*height unique by Surface object; shared pygame subsurfaces can be conservatively overcounted"
+                "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
             ),
         }
 
-    def warm_tasks(self) -> Iterator:
-        """Preparo incremental (mip dos sprites e silhuetas) para a partida não engasgar."""
-        if self.biome and self.watercolor.load(self.biome.key) and self.watercolor.route.ready(self.biome.key):
-            route = self.watercolor.route
-            if route.ground is not None:
-                yield from route.ground.warm_tasks()
-            for index, sprite in enumerate(route.load(self.biome.key)):
-                key = ("painted-bank", self.biome.key, index)
-                yield lambda s=sprite, k=key: route.cache.warm(s, k, (False, True))
-            return
-        for name in ("back", "front", "green", "city"):
-            yield lambda n=name: self.sky.skyline_base(n)
-        yield from self.ground.warm_tasks()
+    @property
+    def warmup_pending(self) -> bool:
+        return self._warmup_index < len(self.warm_queue)
+
+    @property
+    def warmup_progress(self) -> float:
+        total = len(self.warm_queue)
+        return 1.0 if total == 0 else self._warmup_index / total
+
+    @property
+    def warmup_status(self) -> str:
+        if not self.warmup_pending:
+            return "Pronto"
+        return self.warm_queue[self._warmup_index][0]
+
+    def warm_tasks(self) -> List[Tuple[str, Callable[[], None]]]:
+        """Build a side-effect-free queue of one-asset/preparation work units."""
         biome = self.biome
         if biome is None:
-            return
-        self.ensure_scenery()
-        names = set()
-        for specs in (
-            biome.industrial_mid,
-            biome.industrial_margin,
-            biome.green_mid,
-            biome.green_margin,
-            biome.restored,
-            biome.solar_mid,
-            biome.solar_margin,
-            [biome.landmark],
-        ):
-            names.update(n for n, _ in specs)
+            return []
+        tasks = []
+
+        def add(label, function):
+            tasks.append((label, function))
+
+        route = self.watercolor.route
+        prepared_backdrops = all(
+            self.assets.has("watercolor_prepared", f"{biome.key}_{stage}")
+            or self.assets.has("watercolor", f"{biome.key}_{stage}")
+            for stage in range(3)
+        )
+        ground_atlas = self.assets.has("watercolor", "terrain_tiles_v3") or self.assets.has(
+            "watercolor", "terrain_tiles"
+        )
+        painted_available = prepared_backdrops and ground_atlas and self.assets.has("watercolor", "banks_" + biome.key)
+
+        if painted_available:
+            # The active watercolor path does not render procedural sky, skyline,
+            # or fallback scenery; do not decode/warm those unused assets.
+            for stage in range(3):
+                add("Preparando paisagem", lambda s=stage: self.watercolor.prepare_backdrop(biome.key, s))
+            add("Preparando textura do percurso", route.prepare_ground)
+            for index in range(12):
+                add("Preparando margens", lambda i=index: route.prepare_bank(biome.key, i))
+            active_textures = ("green", "negro", "solimoes") if biome.river else ("soil",)
+            for name in active_textures:
+                for _level in range(6):
+                    add(
+                        "Suavizando textura do chão",
+                        lambda n=name: self._prepare_ground_mip(n),
+                    )
+            row_count = len(compute_ground_rows()[::3])
+            for name in active_textures:
+                for start in range(0, row_count, 16):
+                    add(
+                        "Alocando faixas do chão",
+                        lambda n=name, begin=start: self._prepare_ground_line_buffers(n, begin, begin + 16),
+                    )
+            add("Preparando fauna", self.watercolor.life.prepare)
+            regional_names = self.paper_items.regional_art_names(biome.key)
+            for name in regional_names:
+                add("Carregando elementos regionais", lambda n=name: self.scenery.update(self.assets.scenery_for((n,))))
+            add("Preparando obstáculos regionais", lambda: self.paper_items.set_region_scenery(biome.key, self.scenery))
+            return tasks
+
+        # Legacy rendering fallback: queue only the selected biome's resources.
+        add("Preparando céu", lambda: self.sky.prepare_atmosphere_asset("sky_panorama"))
+        add("Preparando nuvens", lambda: self.sky.prepare_atmosphere_asset("smog_cloud"))
+        for index in range(len(CLOUD_LAYOUT)):
+            add("Preparando nuvens", lambda i=index: self.sky.prepare_cloud(i))
+        add("Preparando cores do céu", self.sky.prepare_tinted_panorama)
+
+        skyline_names = {name for name, _height in SKYLINE_BACK + SKYLINE_FRONT}
+        for layout in (biome.industrial_skyline, biome.green_skyline, biome.solar_skyline):
+            skyline_names.update(name for name, _height in layout)
+        names = set(self._biome_scenery_names)
+        names.update(decor.sprite for decor in biome.sky_decor)
+        names.add(biome.horizon_vehicle[0])
+        names.update(skyline_names)
         for name in sorted(names):
-            sprite = self.scenery.get(name)
-            yield lambda s=sprite, n=name: self.cache.warm(s, ("scenery", n), (False, True))
-        for table in (biome.industrial_obstacles, biome.solar_obstacles):
-            for specs in table.values():
-                for spec in specs:
-                    yield lambda s=self.scenery.get(spec.sprite), n=spec.sprite: self.cache.warm(s, ("scenery", n))
-        for name, sprite in list(self.waste.items()) + list(self.powerups.items()):
-            yield lambda s=sprite, n=name: self.cache.warm(s, ("item", n))
+            add("Carregando cenário", lambda n=name: self.scenery.update(self.assets.scenery_for((n,))))
+        add("Finalizando cenário", self._mark_scenery_loaded)
+        decor_names = {decor.sprite for decor in biome.sky_decor}
+        decor_names.add(biome.horizon_vehicle[0])
+        for name in sorted(decor_names):
+            add("Carregando decoração", lambda n=name: self.sky.prepare_decor(n))
+        for name in sorted(skyline_names):
+            add("Carregando horizonte", lambda n=name: self.sky.prepare_skyline_sprite(n))
+        for name in ("back", "front", "green", "city"):
+            add("Compondo horizonte", lambda n=name: self.sky.skyline_base(n))
+
+        folders = (
+            ("waste_sprites", self.waste),
+            ("powerup_sprites", self.powerups),
+            ("era_final_fx", self.fx),
+        )
+        for folder, target in folders:
+            for name in self.assets.names(folder):
+                add("Carregando itens", lambda f=folder, n=name, store=target: self._load_sprite_into(f, n, store))
+        for name in sorted(names):
+            add(
+                "Preparando imagens de cenário",
+                lambda n=name: self.cache.warm(self.scenery.get(n), ("scenery", n), (False, True)),
+            )
+        for task in self.ground.warm_tasks():
+            add("Preparando faixas do chão", task)
+        return tasks
+
+    def prepare_look(self, look: PlaneLook) -> None:
+        """Queue only the selected flight look, keeping cold composition out of draw.
+
+        Atlas extraction, paint/pattern composition, pilot composition and final
+        mount are separate measured work units where the existing APIs allow it.
+        This deliberately does not warm the other selectable planes.
+        """
+        key = self.skin.look_key(look.plane, look.color, look.pattern, look.pilot)
+        if key in self._queued_looks and self.warmup_pending:
+            return
+        if not self.warmup_pending:
+            # The global budget may have evicted this look since the last flight.
+            # Queue cached lookups again; deduplicate only the work still pending.
+            self._queued_looks.clear()
+        self._queued_looks.add(key)
+        self.warm_queue.extend(
+            [
+                ("Preparando avião", lambda: self.skin.base(look.plane, "flight")),
+                (
+                    "Aplicando pintura",
+                    lambda: self.skin.painted(look.plane, "flight", look.color, look.pattern),
+                ),
+            ]
+        )
+        if look.pilot:
+            self.warm_queue.append(
+                (
+                    "Preparando piloto",
+                    lambda: self.skin.pilots.compose("flight", look.pilot, pose="back_seated"),
+                )
+            )
+        self.warm_queue.append(
+            (
+                "Montando visual do voo",
+                lambda: self.skin.surface(look.plane, "flight", look.color, look.pattern, look.pilot),
+            )
+        )
+
+    def _load_sprite_into(self, folder: str, name: str, target: dict) -> None:
+        sprite = self.assets.sprite(folder, name)
+        if sprite is not None:
+            target[name] = sprite
+
+    def _prepare_ground_mip(self, name: str) -> None:
+        ground = self.watercolor.route.ground
+        if ground is not None:
+            ground.prepare_vertical_mip(name)
+
+    def _prepare_ground_line_buffers(self, name: str, start: int, stop: int) -> None:
+        ground = self.watercolor.route.ground
+        if ground is not None:
+            ground.prepare_line_buffers(name, ground.rows[start:stop])
+
+    def _mark_scenery_loaded(self) -> None:
+        self._scenery_loaded = True
 
     def step_warm_up(self, budget_ms: float) -> None:
-        import time
-
-        if self.warm_queue is None:
+        if not self.warmup_pending or budget_ms <= 0:
             return
         start = time.perf_counter()
-        while (time.perf_counter() - start) * 1000.0 < budget_ms:
-            task = next(self.warm_queue, None)
-            if task is None:
-                self.warm_queue = None
-                return
+        budget_s = budget_ms / 1000.0
+        # Always execute at least one bounded unit for positive budgets. An
+        # indivisible image transform may overrun; record it rather than hiding it.
+        while self.warmup_pending:
+            label, task = self.warm_queue[self._warmup_index]
+            task_start = time.perf_counter()
             task()
+            elapsed_ms = (time.perf_counter() - task_start) * 1000.0
+            self.warmup_last_task_ms = elapsed_ms
+            self.warmup_max_task_ms = max(self.warmup_max_task_ms, elapsed_ms)
+            self.warmup_overruns += int(elapsed_ms > budget_ms)
+            self.warmup_timings.append((label, elapsed_ms))
+            if len(self.warmup_timings) > 64:
+                del self.warmup_timings[:-64]
+            self._warmup_index += 1
+            if time.perf_counter() - start >= budget_s:
+                break
 
     def update(self, dt: float) -> None:
         if not self.reduce_motion:
@@ -343,12 +492,26 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
     # ------------------------------------------------------------ quadro
     def background(self, screen: pygame.Surface, world: WorldStateView, cam: float) -> None:
         """Céu, chão, pista e margens (tudo o que fica atrás dos objetos)."""
+        context = RenderContext(
+            world=world,
+            camera_x=cam,
+            elapsed=self.elapsed,
+            high_contrast=self.high_contrast,
+            reduce_motion=self.reduce_motion,
+            contrast_scale=self.contrast_scale,
+        )
+        self.compose_background(screen, context)
+
+    def compose_background(self, screen: pygame.Surface, context: RenderContext) -> None:
+        """Compose background layers from a typed, immutable frame snapshot."""
+        world = context.world
+        cam = context.camera_x
         self.cam = cam
         self.set_biome(world.biome)
         self.world = world
-        if self.watercolor.draw(screen, world, cam, self.reduce_motion):
+        if self.watercolor.draw(screen, world, cam, context.reduce_motion):
             self.cache.fog_color = (231, 232, 217)
-            if self.high_contrast:
+            if context.high_contrast:
                 self.desaturate(screen)
             return
         a, b, t = world.visual_stage_pair()
@@ -357,10 +520,10 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         self.sky.update_atmosphere(world.visual, horizon, world.biome.polluted_haze)
         self.cache.fog_color = self.sky.fog_sprite_color
         solar = world.solar_share()
-        self.sky.draw(screen, top, horizon, cam, world.distance, solar, self.elapsed, world.challenge_theme)
+        self.sky.draw(screen, top, horizon, cam, world.distance, solar, context.elapsed, world.challenge_theme)
         pygame.draw.rect(screen, self.sky.fog_color, (0, C.HORIZON_Y, C.WIDTH, C.HEIGHT - C.HORIZON_Y))
         self.draw_track(screen, world, world.stage_flags())
-        if self.high_contrast:
+        if context.high_contrast:
             self.desaturate(screen)
 
     def desaturate(self, screen: pygame.Surface) -> None:
@@ -376,7 +539,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         pygame.transform.scale(screen, size, small)
         pygame.transform.grayscale(small, gray)
         gray.fill(HC_DIM, special_flags=pygame.BLEND_RGB_MULT)
-        pygame.transform.scale(gray, (w, h), screen)
+        pygame.transform.smoothscale(gray, (w, h), screen)
 
     def draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook, celebration: float = 0.0) -> None:
         """Quadro completo de um voo (sem HUD)."""
@@ -386,6 +549,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
                 self.accessible_canvas = pygame.Surface((C.WIDTH, C.HEIGHT)).convert()
             self._draw_run(self.accessible_canvas, run, look)
             self.viewport = viewport(self.contrast_scale, self.player_rect.center, self.player_rect.size)
+            self.draw_edge_threats(self.accessible_canvas, run.world, self.viewport)
             # A ampliação mantém contornos nítidos e evita filtrar o quadro inteiro
             # outra vez; o fundo já recebeu a suavização de alto contraste.
             pygame.transform.scale(self.accessible_canvas.subsurface(self.viewport), screen.get_size(), screen)
@@ -396,6 +560,63 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
     def screen_point(self, point: tuple) -> tuple:
         """Converte âncoras de setas/pictogramas pelo mesmo enquadramento do voo."""
         return screen_point(point, self.viewport)
+
+    def draw_edge_threats(self, screen, world: WorldStateView, view_rect: pygame.Rect) -> int:
+        """Mark clipped upcoming hitboxes at the crop edge in magnified view.
+
+        Indicators are derived from the real obstacle bounds, drawn inside the
+        same source viewport, and never change entity position or collision.
+        """
+        if view_rect.size == (C.WIDTH, C.HEIGHT):
+            return 0
+        margin = 15
+        inner = view_rect.inflate(-2 * margin, -2 * margin)
+        if inner.width <= 0 or inner.height <= 0:
+            return 0
+        marked = 0
+        for entity in world.entities:
+            if entity.kind not in ("low", "gate", "tower") or entity.hit or entity.passed or entity.dodged:
+                continue
+            if entity.z <= C.PLAYER_Z or entity.z > C.PLAYER_Z + 1300 or fog_level(entity.z) >= C.FOG_LEVELS:
+                continue
+            bounds = self.hitbox_rect(entity.hitbox())
+            if view_rect.contains(bounds):
+                continue
+            cx, cy = bounds.center
+            if bounds.left < view_rect.left:
+                point = (inner.left, int(clamp(cy, inner.top, inner.bottom)))
+            elif bounds.right > view_rect.right:
+                point = (inner.right, int(clamp(cy, inner.top, inner.bottom)))
+            elif bounds.top < view_rect.top:
+                point = (int(clamp(cx, inner.left, inner.right)), inner.top)
+            else:
+                point = (int(clamp(cx, inner.left, inner.right)), inner.bottom)
+            self._draw_edge_threat_marker(screen, point, entity.kind)
+            marked += 1
+        return marked
+
+    @staticmethod
+    def _draw_edge_threat_marker(screen, point: tuple, kind: str) -> None:
+        x, y = point
+        color = {"low": (214, 87, 43), "gate": (109, 69, 178), "tower": (22, 123, 132)}.get(kind, (214, 87, 43))
+        diamond = [(x, y - 13), (x + 13, y), (x, y + 13), (x - 13, y)]
+        pygame.draw.polygon(screen, (8, 20, 44), diamond)
+        pygame.draw.polygon(screen, (255, 255, 255), [(x, y - 10), (x + 10, y), (x, y + 10), (x - 10, y)])
+        pygame.draw.polygon(screen, color, [(x, y - 7), (x + 7, y), (x, y + 7), (x - 7, y)])
+        if kind == "low":
+            for offset in (-3, 0, 3):
+                pygame.draw.line(screen, (255, 255, 255), (x - 3, y + offset), (x + 3, y + offset), 1)
+        elif kind == "gate":
+            pygame.draw.lines(
+                screen,
+                (255, 255, 255),
+                False,
+                [(x - 3, y + 3), (x - 3, y - 2), (x + 3, y - 2), (x + 3, y + 3)],
+                1,
+            )
+        else:
+            pygame.draw.line(screen, (255, 255, 255), (x, y - 4), (x, y + 4), 2)
+            pygame.draw.line(screen, (255, 255, 255), (x - 3, y), (x + 3, y), 1)
 
     def _draw_run(self, screen: pygame.Surface, run: FlightView, look: PlaneLook) -> None:
         world = run.world

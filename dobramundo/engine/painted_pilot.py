@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import colorsys
 import math
 from typing import Mapping, Optional, Tuple
 
@@ -62,41 +61,6 @@ HAIR_FIT = {
     "raspado": (1.02, 0.0),
 }
 HAIR_BASE_COLOR = (112, 64, 39)
-
-
-def _multiply_color(color: Tuple[int, int, int], tint: Tuple[int, int, int]) -> Tuple[int, int, int]:
-    return tuple(max(0, min(255, round(a * b / 255))) for a, b in zip(color, tint))
-
-
-def _tint_by_key(
-    source: pygame.Surface,
-    base_color: Tuple[int, int, int],
-    target_color: Tuple[int, int, int],
-    tolerance: int = 46,
-) -> pygame.Surface:
-    """Recolor a watercolor swatch while preserving each pixel's pigment variation."""
-    if base_color == target_color:
-        return source.copy()
-    multipliers = tuple(min(255, round(target * 255 / max(1, base))) for base, target in zip(base_color, target_color))
-    tinted = source.copy()
-    tinted.fill((*multipliers, 255), special_flags=pygame.BLEND_RGBA_MULT)
-    threshold = (tolerance, tolerance, tolerance, 255)
-    mask = pygame.mask.from_threshold(source, (*base_color, 255), threshold)
-    selector = mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 0))
-    selector.blit(tinted, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-    result = source.copy()
-    result.blit(selector, (0, 0))
-    return result
-
-
-def _shift_hsv(pixel, base, target):
-    source_h, source_s, source_v = colorsys.rgb_to_hsv(*(value / 255 for value in pixel))
-    base_h, base_s, base_v = colorsys.rgb_to_hsv(*(value / 255 for value in base))
-    target_h, target_s, target_v = colorsys.rgb_to_hsv(*(value / 255 for value in target))
-    hue = (source_h + target_h - base_h) % 1.0
-    saturation = min(1.0, source_s * target_s / max(base_s, 0.05))
-    value = min(1.0, source_v * target_v / max(base_v, 0.05))
-    return tuple(round(c * 255) for c in colorsys.hsv_to_rgb(hue, saturation, value))
 
 
 def _palette_layers(source: pygame.Surface):

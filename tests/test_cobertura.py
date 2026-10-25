@@ -288,7 +288,7 @@ def relatorio(sprites=None, estagio: int = 2, detector: str = "ok") -> dict:
         sprites = {nome: 3 for nome in REQUIRED_SPRITES}
     return {
         "sprites": sprites,
-        "voos": {"amazonia": {"estagio": estagio}},
+        "voos": {"amazonia": {"estagio": estagio, "segundos_ativos": 20, "distancia": 3400}},
         "camera": {"detector": detector},
     }
 

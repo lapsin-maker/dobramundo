@@ -145,15 +145,16 @@ class PaintedPlanes:
         if view == "flight":
             # Em voo, a dobra cobre quadril e pernas: só cabeça, ombros e tronco
             # superior ficam à vista, como alguém sentado dentro da fuselagem.
-            visible_height = max(1, round(pilot.get_height() * 0.50))
+            visible_height = max(1, round(pilot.get_height() * 0.66))
             pilot = pilot.subsurface((0, 0, pilot.get_width(), visible_height)).copy()
         # O avião tem eixo longitudinal vertical; a cabeça fica perto do cockpit.
-        share = (0.20 if plane == "bis14" else 0.24) if view == "flight" else 0.30
+        share = (0.32 if plane == "bis14" else 0.36) if view == "flight" else 0.30
         target_h = max(12, round(plane_surface.get_height() * share))
         target_w = max(8, round(pilot.get_width() * target_h / max(1, pilot.get_height())))
         scaled = pygame.transform.smoothscale(pilot, (target_w, target_h))
         center_x = round(plane_surface.get_width() * 0.50)
-        top_y = round(plane_surface.get_height() * (0.12 if view == "flight" else 0.20))
+        flight_top = 0.24 if plane == "crane" else 0.12
+        top_y = round(plane_surface.get_height() * (flight_top if view == "flight" else 0.20))
         # Não deixa transparência do sprite do piloto expandir o canvas.
         out = plane_surface.copy()
         out.blit(scaled, (center_x - target_w // 2, top_y))

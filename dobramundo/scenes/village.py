@@ -491,7 +491,10 @@ class VillageScene(Scene):
         if plane is not None:
             key = ("vila", skin.look_key(profile.aviao, color, pattern, profile.piloto))
             backgrounds = self.watercolor_backgrounds
-            painted = any(backgrounds.get(name) is not None for name in ("village_start_v2", "village_start"))
+            painted = any(
+                backgrounds.get(name) is not None
+                for name in ("village_industrial_v3", "village_start_v2", "village_start")
+            )
             plane_size = (225, 150) if painted else (250, 170)
             img = self.scaled(plane, plane_size, key)
             bob = 0.0 if app.options.reduzir_movimento else math.sin(self.time * 2.2) * 6

@@ -21,6 +21,9 @@ from .sprites import SpriteCache, fog_level, project
 class PaintedGround(GroundRenderer):
     TILE_X = 1050.0
     TILE_Z = 1300.0
+    # Three output rows are sampled separately into a small source band, then
+    # scaled together. This avoids repeated nearest-expanded rows without
+    # tripling screen blits or transform calls.
     ROW_HEIGHT = 3
 
     def __init__(self, atlas: pygame.Surface) -> None:
@@ -37,32 +40,66 @@ class PaintedGround(GroundRenderer):
             for x, y in ((0, 0), (512, 0), (0, 512), (512, 512)):
                 tile.blit(pygame.transform.flip(small, bool(x), bool(y)), (x, y))
             self.textures[name] = tile
-        # Faixas de três pixels preservam perspectiva sem custar centenas de
-        # transformações extras; objetos/piloto continuam em resolução integral.
         self.rows = compute_ground_rows()[:: self.ROW_HEIGHT]
         self.fog_cache = {}
-        self.source_rows = {
-            name: tuple(tile.subsurface((0, v, 1024, 1)) for v in range(1024)) for name, tile in self.textures.items()
-        }
+        self.vertical_mips = {name: [tile] for name, tile in self.textures.items()}
         self.line_buffers = {}
 
     def warm_tasks(self):
-        # A textura já está preparada. Somente linhas de um pixel são reescaladas
-        # durante o voo; não há dezenas de cópias gigantes por grupo de escala.
-        return iter(())
+        # Each lower-resolution level is a separate bounded warm-up unit.
+        for name in self.textures:
+            for _level in range(6):
+                yield lambda n=name: self.prepare_vertical_mip(n)
+
+    def prepare_vertical_mip(self, name: str) -> None:
+        levels = self.vertical_mips[name]
+        source = levels[-1]
+        if source.get_height() <= 16:
+            return
+        target_size = (source.get_width(), max(1, source.get_height() // 2))
+        levels.append(pygame.transform.smoothscale(source, target_size))
+
+    def prepare_line_buffers(self, name: str, rows) -> None:
+        for y, _z, _group in rows:
+            middle_y = y + self.ROW_HEIGHT // 2
+            middle_z = C.CAMERA_HEIGHT * C.FOV / (middle_y + 0.5 - C.HORIZON_Y)
+            width = max(8, round(self.TILE_X * C.FOV / middle_z))
+            key = name, y
+            if key not in self.line_buffers:
+                band = display_format(pygame.Surface((1024, self.ROW_HEIGHT)))
+                line = display_format(pygame.Surface((width, self.ROW_HEIGHT)))
+                self.line_buffers[key] = [line, (), band]
 
     def queue_line(self, jobs, name, y, z, left, right, distance, cam):
+        depths = tuple(C.CAMERA_HEIGHT * C.FOV / (row_y + 0.5 - C.HORIZON_Y) for row_y in range(y, y + self.ROW_HEIGHT))
+        z = depths[self.ROW_HEIGHT // 2]
         width = max(8, round(self.TILE_X * C.FOV / z))
-        v = int((z + distance) / self.TILE_Z * 1024) % 1024
+        raw_vs = tuple((row_z + distance) / self.TILE_Z * 1024 for row_z in depths)
+        step = max(abs(raw_vs[0] - raw_vs[1]), abs(raw_vs[1] - raw_vs[2]))
+        mip_level = 0
+        while step / (2**mip_level) > 1.25 and mip_level < len(self.vertical_mips[name]) - 1:
+            mip_level += 1
+        texture = self.vertical_mips[name][mip_level]
+        mip_factor = 2**mip_level
+        indices = tuple(int(v / mip_factor) % texture.get_height() for v in raw_vs)
+        signature = mip_level, indices
         key = name, y
         buffer = self.line_buffers.get(key)
         if buffer is None:
-            buffer = [display_format(pygame.Surface((width, self.ROW_HEIGHT))), -1]
-            self.line_buffers[key] = buffer
+            self.prepare_line_buffers(name, ((y, z, 0),))
+            buffer = self.line_buffers[key]
         line = buffer[0]
-        if buffer[1] != v:
-            pygame.transform.scale(self.source_rows[name][v], (width, self.ROW_HEIGHT), line)
-            buffer[1] = v
+        band = buffer[2]
+        if buffer[1] != signature:
+            if indices[0] - indices[1] == 1 and indices[1] - indices[2] == 1:
+                source_band = texture.subsurface((0, indices[2], texture.get_width(), self.ROW_HEIGHT))
+                source_band = pygame.transform.flip(source_band, False, True)
+                pygame.transform.scale(source_band, (width, self.ROW_HEIGHT), line)
+            else:
+                for row, v in enumerate(indices):
+                    band.blit(texture, (0, row), (0, v, texture.get_width(), 1))
+                pygame.transform.scale(band, (width, self.ROW_HEIGHT), line)
+            buffer[1] = signature
         origin = cam * width / self.TILE_X - C.WIDTH / 2
         x, src = left, int(origin + left) % width
         while x < right:
@@ -109,15 +146,64 @@ class PaintedRoute:
     HEIGHTS = (170, 230, 235, 270, 170, 180, 230, 285, 190, 140, 180, 200)
 
     def __init__(self, assets: Assets) -> None:
-        atlas = assets.sprite("watercolor", "terrain_tiles_v3")
-        if atlas is None:
-            atlas = assets.sprite("watercolor", "terrain_tiles")
-        valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
-        self.ground = PaintedGround(atlas) if valid else None
-        assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
+        self.ground = None
+        self._ground_attempted = False
         self.banks = {}
         self.cache = SpriteCache()
         self.assets = assets
+        self._bank_atlas = None
+        self._bank_biome = None
+        self._bank_failed = False
+
+    def prepare_ground(self) -> None:
+        """Decode and prepare the ground atlas as one explicit warm-up unit."""
+        if self._ground_attempted:
+            return
+        self._ground_attempted = True
+        atlas = self.assets.sprite("watercolor", "terrain_tiles_v3")
+        if atlas is None:
+            atlas = self.assets.sprite("watercolor", "terrain_tiles")
+        valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
+        self.ground = PaintedGround(atlas) if valid else None
+        self.assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
+
+    def prepare_bank(self, biome: str, index: int) -> None:
+        """Extract one atlas cell; the 12 pieces are separate warm-up units."""
+        if isinstance(self.banks.get(biome), tuple):
+            return
+        if self._bank_biome != biome:
+            self._bank_biome = biome
+            self._bank_atlas = self.assets.sprite("watercolor", "banks_" + biome)
+            self._bank_failed = False
+            self.banks[biome] = []
+        atlas = self._bank_atlas
+        if self._bank_failed or atlas is None or atlas.get_width() < 4 or atlas.get_height() < 3:
+            self._bank_failed = True
+            self.banks[biome] = ()
+            self._finish_banks(biome)
+            return
+        w, h = atlas.get_size()
+        col, row = index % 4, index // 4
+        rect = pygame.Rect(
+            col * w // 4, row * h // 3, (col + 1) * w // 4 - col * w // 4, (row + 1) * h // 3 - row * h // 3
+        )
+        cell = atlas.subsurface(rect)
+        bounds = cell.get_bounding_rect(min_alpha=30)
+        if bounds.w == 0 or bounds.h == 0:
+            self._bank_failed = True
+            self.banks[biome] = ()
+            self._finish_banks(biome)
+            return
+        current = self.banks[biome]
+        if isinstance(current, list):
+            current.append(display_format(cell.subsurface(bounds).copy(), True))
+            if len(current) == 12:
+                self.banks[biome] = tuple(current)
+                self._finish_banks(biome)
+
+    def _finish_banks(self, biome: str) -> None:
+        self._bank_atlas = None
+        self.assets.release_folder("watercolor", ("banks_" + biome,))
 
     def load(self, biome: str) -> tuple:
         if biome not in self.banks:
@@ -142,10 +228,14 @@ class PaintedRoute:
 
     def release_biome(self, biome: str) -> None:
         self.banks.pop(biome, None)
+        if self._bank_biome == biome:
+            self._bank_atlas = None
+            self._bank_biome = None
+            self._bank_failed = False
         self.cache = SpriteCache()
 
     def ready(self, biome: str) -> bool:
-        return self.ground is not None and len(self.load(biome)) == 12
+        return self.ground is not None and len(self.banks.get(biome, ())) == 12
 
     @staticmethod
     def scenery_index(sequence: int, side: int, stage: int) -> int:
@@ -216,7 +306,9 @@ class PaintedRoute:
             image.set_alpha(255)
 
     def draw(self, screen, world, cam: float, reduced: bool, fog) -> bool:
-        sprites = self.load(world.biome.key)
+        if not self.ready(world.biome.key):
+            return False
+        sprites = self.banks.get(world.biome.key, ())
         if not self.ready(world.biome.key):
             return False
         self.ground.paint(screen, world.biome.key, world.distance, cam, fog)

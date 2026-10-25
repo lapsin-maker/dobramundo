@@ -24,7 +24,8 @@ ORANGE = rgb("ee7a3a")
 PAPER = rgb("f7f1e3")
 PAPER_DARK = rgb("e8dcc0")
 INK = rgb("1d2433")
-MUTED = rgb("6b7280")
+MUTED = rgb("525b68")
+MUTED_STRONG = rgb("3f4654")
 WHITE = (255, 255, 255)
 GREEN = rgb("2e9e44")
 RED = rgb("d64532")
@@ -34,7 +35,7 @@ FONT_NAMES = "segoeui,verdana,dejavusans,arial"  # reserva, se as fontes embutid
 # Fontes embutidas (assets/fonts, licença OFL): Fredoka (títulos e botões, arredondada e
 # amigável), Nunito (leitura) e Patrick Hand (legendas "escritas à mão" da abertura).
 FONT_FILES = {"bold": "Fredoka.ttf", "regular": "Nunito.ttf", "hand": "PatrickHand.ttf"}
-SIZES = {"small": 16, "body": 20, "label": 24, "title": 34, "hero": 46}
+SIZES = {"small": 18, "body": 20, "label": 24, "title": 34, "hero": 46}
 SHADOW = (31, 44, 80)  # sombra azulada dos cartões (tinta diluída)
 
 
@@ -292,6 +293,30 @@ def icon_surface(kind: str, size: int = 56, color: Color = NAVY) -> pygame.Surfa
     elif kind == "clock":
         pygame.draw.circle(surface, ink, (cx, cy), int(16 * s), max(2, int(3 * s)))
         pygame.draw.lines(surface, ink, False, points([(0, -10), (0, 0), (9, 5)]), max(2, int(3 * s)))
+    elif kind in {"sound", "audio"}:
+        pygame.draw.polygon(surface, ink, points([(-16, -7), (-7, -7), (5, -16), (5, 16), (-7, 7), (-16, 7)]))
+        pygame.draw.arc(
+            surface,
+            TEAL,
+            pygame.Rect(cx - int(5 * s), cy - int(13 * s), int(25 * s), int(26 * s)),
+            -0.9,
+            0.9,
+            max(2, int(3 * s)),
+        )
+        pygame.draw.arc(
+            surface,
+            ORANGE,
+            pygame.Rect(cx - int(1 * s), cy - int(20 * s), int(35 * s), int(40 * s)),
+            -0.9,
+            0.9,
+            max(2, int(3 * s)),
+        )
+    elif kind in {"accessibility", "inclusive"}:
+        pygame.draw.circle(surface, ink, points([(0, -13)])[0], max(3, int(5 * s)))
+        pygame.draw.line(surface, ink, points([(0, -7)])[0], points([(0, 8)])[0], max(3, int(4 * s)))
+        pygame.draw.line(surface, TEAL, points([(-13, -2)])[0], points([(13, -2)])[0], max(3, int(4 * s)))
+        pygame.draw.line(surface, ink, points([(0, 7)])[0], points([(-10, 17)])[0], max(3, int(4 * s)))
+        pygame.draw.line(surface, ink, points([(0, 7)])[0], points([(10, 17)])[0], max(3, int(4 * s)))
     elif kind == "back":
         pygame.draw.polygon(surface, ink, points([(17, -6), (-4, -6), (-4, -15), (-19, 0), (-4, 15), (-4, 6), (17, 6)]))
     elif kind == "plane":

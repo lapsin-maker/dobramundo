@@ -44,6 +44,7 @@ def test_opaque_conversion_preserves_interior_transparency(display, tmp_path, ho
 @pytest.mark.parametrize("city", ["amazonia", "caatinga"])
 def test_transition_culls_only_pixels_hidden_by_ground(display, city):
     painter = WatercolorWorld(Assets())
+    painter.route.prepare_ground()
     cutoff = painter.route.ground.rows[0][0]
     for visual in (34, 40, 47, 68, 73, 78):
         full = painter.backdrop(city, visual)

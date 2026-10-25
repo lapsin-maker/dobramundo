@@ -54,8 +54,8 @@ class EntityLayer:
         screen.blit(scaled, (int((x2 + x3) / 2 - size[0] / 2), int(y_far)))
 
     def draw_entity(self, screen: pygame.Surface, world: WorldStateView, entity: EntityView) -> None:
-        if self.watercolor.load(world.biome.key):
-            self.paper_items.draw(screen, entity, self.cam, self.high_contrast)
+        if self.watercolor.has_backdrop(world.biome.key):
+            self.paper_items.draw(screen, entity, self.cam, self.high_contrast, world.biome.key)
             if self.show_hitboxes:
                 pygame.draw.rect(screen, rgb("ff1744"), self.hitbox_rect(entity.hitbox()), 2)
             return

@@ -307,11 +307,55 @@ class PaperItems:
                 self.canonical[("obstacle", kind, solar)] = base
         self._scaled: BoundedCache = BoundedCache(cache_limit, 12 * 1024 * 1024)
         self._shadows: BoundedCache = BoundedCache(64, 2 * 1024 * 1024)
+        self.regional_skins = set()
         for kind in ("low", "gate", "tower"):
             for solar in (False, True):
                 key = ("obstacle", kind, solar)
                 warning = CORAL if solar else SUN
                 self.canonical[("obstacle-outline", kind, solar)] = _obstacle_outline(self.canonical[key], warning)
+
+    @staticmethod
+    def regional_art_names(biome: str) -> tuple[str, ...]:
+        if biome == "amazonia":
+            return "AM_Balsa", "AM_PassarelaPalafita", "AM_GuindastePorto"
+        if biome == "caatinga":
+            return "CA_Carroca", "CA_PorticoIrrigacao", "CA_Aerogerador"
+        return ()
+
+    def set_region_scenery(self, biome: str, scenery: dict) -> None:
+        """Add a local landmark detail inside unchanged obstacle silhouettes.
+
+        The obstacle kind, physical dimensions, and collision contract remain
+        owned by the game. This is a cached paper illustration detail only.
+        """
+        if biome in self.regional_skins:
+            return
+        names = dict(zip(("low", "gate", "tower"), self.regional_art_names(biome)))
+        for kind, name in names.items():
+            detail = scenery.get(name)
+            if detail is None:
+                continue
+            for solar in (False, True):
+                base = self.canonical[("obstacle", kind, solar)]
+                composite = base.copy()
+                # Keep the base category silhouette dominant; regional artwork
+                # sits within the opening/face and cannot extend the hitbox.
+                max_w = max(12, int(base.get_width() * (0.48 if kind == "gate" else 0.56)))
+                max_h = max(12, int(base.get_height() * (0.52 if kind == "gate" else 0.48)))
+                scale = min(max_w / detail.get_width(), max_h / detail.get_height())
+                size = max(1, int(detail.get_width() * scale)), max(1, int(detail.get_height() * scale))
+                icon = pygame.transform.smoothscale(detail, size).copy()
+                icon.set_alpha(224)
+                x = (base.get_width() - size[0]) // 2
+                y = int(base.get_height() * (0.43 if kind == "gate" else 0.46)) - size[1] // 2
+                composite.blit(icon, (x, max(0, min(base.get_height() - size[1], y))))
+                regional_key = ("obstacle-regional", biome, kind, solar)
+                self.canonical[regional_key] = composite
+                warning = CORAL if solar else SUN
+                self.canonical[("obstacle-regional-outline", biome, kind, solar)] = _obstacle_outline(
+                    composite, warning
+                )
+        self.regional_skins.add(biome)
 
     def _scale(self, key: Hashable, size: Size) -> pygame.Surface:
         size = (max(1, int(size[0])), max(1, int(size[1])))
@@ -363,7 +407,9 @@ class PaperItems:
         sprite = self._scale(key, (diameter, diameter))
         screen.blit(sprite, (int(sx - diameter / 2), int(sy - diameter / 2)))
 
-    def _draw_obstacle(self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool) -> None:
+    def _draw_obstacle(
+        self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool, biome: str = ""
+    ) -> None:
         spec = entity.spec
         if spec is None:
             return
@@ -389,14 +435,22 @@ class PaperItems:
         rect = pygame.Rect(int(sx - width / 2), int(sy_top), width, height)
         if rect.right < 0 or rect.left >= C.WIDTH or rect.bottom < 0 or rect.top >= C.HEIGHT:
             return
-        key = ("obstacle", kind, bool(entity.solar))
+        base_key = ("obstacle", kind, bool(entity.solar))
+        regional_key = ("obstacle-regional", biome, kind, bool(entity.solar))
+        key = regional_key if regional_key in self.canonical else base_key
         if high_contrast:
-            outline_key = ("obstacle-outline", kind, bool(entity.solar))
+            outline_key = (
+                ("obstacle-regional-outline", biome, kind, bool(entity.solar))
+                if key == regional_key
+                else ("obstacle-outline", kind, bool(entity.solar))
+            )
             screen.blit(self._scale(outline_key, (width, height)), rect.topleft)
         sprite = self._scale(key, (width, height))
         screen.blit(sprite, rect)
 
-    def draw(self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool = False) -> None:
+    def draw(
+        self, screen: pygame.Surface, entity: EntityView, cam: float, high_contrast: bool = False, biome: str = ""
+    ) -> None:
         """Desenha entidade no centro projetado, sem alterar seu tipo ou hitbox.
 
         Waste e power-ups usam o centro de sua hitbox (raios 30/28 do mundo);
@@ -405,4 +459,4 @@ class PaperItems:
         if entity.kind == "waste" or (entity.kind in POWERUP_KINDS and entity.spec is None):
             self._draw_token(screen, entity, cam, high_contrast)
         elif entity.spec is not None:
-            self._draw_obstacle(screen, entity, cam, high_contrast)
+            self._draw_obstacle(screen, entity, cam, high_contrast, biome)

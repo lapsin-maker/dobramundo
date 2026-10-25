@@ -140,9 +140,14 @@ def test_fauna_suprime_ameaca_e_reaparece_sem_salto_apos_poda(display):
 
 def test_watercolor_ground_line_buffers_have_a_fixed_bound(display):
     painter = WatercolorWorld(Assets())
+    painter.route.prepare_ground()
     ground = painter.route.ground
+    assert ground is not None
     world = World(BIOMES["caatinga"])
     ground.paint(display, world.biome.key, 0, 0, (230, 220, 190))
     assert len(ground.line_buffers) <= 4 * len(ground.rows)
-    memory_bytes = sum(buffer[0].get_pitch() * buffer[0].get_height() for buffer in ground.line_buffers.values())
+    memory_bytes = sum(
+        buffer[0].get_pitch() * buffer[0].get_height() + buffer[2].get_pitch() * buffer[2].get_height()
+        for buffer in ground.line_buffers.values()
+    )
     assert memory_bytes < 32 * 1024 * 1024

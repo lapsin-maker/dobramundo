@@ -99,6 +99,7 @@ def test_hud_missao_pictografica_e_resultado_desempenham(app, run):
     run.score = 250
     run.resources["papel"] = 4
     result = ResultScene(app, run)
+    result.enter()
     result.draw(app.canvas)
     assert app.profile.recursos["papel"] >= 4
     assert app.canvas.get_size() == (1100, 650)

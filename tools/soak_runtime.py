@@ -85,7 +85,21 @@ def main() -> int:
             scene.run.invincible = True  # render stress only; economy uses tools/balance.py
             scene.run.focus.enabled = False
             app.go(scene)
+            preparation = []
+            for _ in range(1800):
+                if app.scene is scene and not app.view.warmup_pending:
+                    break
+                tick = time.perf_counter()
+                app.step(dt, [])
+                preparation.append((time.perf_counter() - tick) * 1000)
+            else:
+                raise RuntimeError("O preparo do voo não terminou")
+            active_started = scene.run.flight_time
             for frame in range(args.frames):
+                # A carga de render deve durar o ciclo inteiro. Conclusão/economia
+                # são verificadas separadamente pelo balanço e testes de regras.
+                scene.run.complete = False
+                scene.run.complete_timer = 0.0
                 if frame in (args.frames // 3, 2 * args.frames // 3):
                     scene.run.add_restoration(34)
                 app.input.pressed = {pygame.K_LEFT if math.sin(frame / 50) < 0 else pygame.K_RIGHT}
@@ -93,6 +107,9 @@ def main() -> int:
                 app.step(dt, [])
                 samples.append((time.perf_counter() - tick) * 1000)
             entity_count = len(scene.run.world.entities)
+            scene_time = scene.run.flight_time - active_started
+            if app.scene is not scene or scene_time < (args.frames - 1) * dt:
+                failures.append(f"voo terminou antes do ensaio no ciclo {cycle}")
             if entity_count > 300:
                 failures.append(f"objetos sem poda no ciclo {cycle}: {entity_count}")
             app.input.pressed.clear()
@@ -112,6 +129,10 @@ def main() -> int:
                     "loaded_images": len(loaded),
                     "renderer_caches": app.view.cache_stats(),
                     "entities": entity_count,
+                    "preparation_frames": len(preparation),
+                    "preparation_frame_cost": stats(preparation),
+                    "interactive_frames": len(samples),
+                    "flight_simulated_seconds": round(scene_time, 3),
                     **stats(samples),
                 }
             )
@@ -122,7 +143,7 @@ def main() -> int:
                 flush=True,
             )
         report["wall_seconds"] = round(time.perf_counter() - started, 3)
-        report["simulated_seconds"] = round(args.cycles * (args.frames + 31) * dt, 3)
+        report["flight_simulated_seconds"] = round(sum(c["flight_simulated_seconds"] for c in report["cycles"]), 3)
         report["failures"] = failures
         report["status"] = "ok" if not failures else "failed"
         (args.out / "soak.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

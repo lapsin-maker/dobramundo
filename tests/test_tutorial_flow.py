@@ -200,7 +200,11 @@ def test_setas_verticais_ficam_fora_dos_paineis_de_titulo_e_botoes(app):
 
 
 def test_fluxo_de_inicializacao_nao_injeta_tutorial_antes_da_vila(app):
+    from dobramundo.scenes.intro import IntroScene
+
     app.profile.consentimento = True
     app.profile.piloto_montado = True
     app.profile.tutorial_visto = False
-    assert isinstance(first_scene(app), VillageScene)
+    intro = first_scene(app)
+    assert isinstance(intro, IntroScene)
+    assert isinstance(intro.next_scene, VillageScene)

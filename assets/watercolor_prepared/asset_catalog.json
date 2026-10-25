@@ -20,6 +20,10 @@
       {
         "file": "generation.json",
         "sha256": "7a889ef29780c7940d50c924152e354b751f5c2066bd434ce7ac4fe13e702578"
+      },
+      {
+        "file": "generation_v17_map.json",
+        "sha256": "aa8b41e6e475620060cfec8b1ac1f0b999faf496c0eeedf0e514b493c3c2917c"
       }
     ],
     "method": "project-integrated image generation; local metadata is recorded, but is not a pixel-level source map"
@@ -54,6 +58,10 @@
       1132,
       650
     ],
+    "map_pigment_v17": [
+      768,
+      768
+    ],
     "planes_flight_a": [
       768,
       512
@@ -81,6 +89,58 @@
     "planes_menu_c": [
       768,
       512
+    ],
+    "story_city": [
+      1100,
+      650
+    ],
+    "story_fold": [
+      1100,
+      650
+    ],
+    "story_launch": [
+      1100,
+      650
+    ],
+    "story_newspaper": [
+      1100,
+      650
+    ],
+    "travel_amazonia": [
+      1100,
+      650
+    ],
+    "travel_caatinga": [
+      1100,
+      650
+    ],
+    "village_clean": [
+      1100,
+      650
+    ],
+    "village_final": [
+      1100,
+      650
+    ],
+    "village_industrial_v3": [
+      1100,
+      650
+    ],
+    "village_intermediate": [
+      1100,
+      650
+    ],
+    "village_start": [
+      1100,
+      650
+    ],
+    "village_start_v2": [
+      1100,
+      650
+    ],
+    "village_transition_v3": [
+      1100,
+      650
     ]
   },
   "backdrop_target": [
@@ -324,6 +384,28 @@
       }
     },
     {
+      "file": "map_pigment_v17.png",
+      "sha256": "4fe0bd1711f5a764e890a2a424c01557908263fd7d442e8fa102605785c87231",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "source_bytes": 3421058,
+      "alpha_bounds": null,
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/map_pigment_v17.png",
+        "dimensions": [
+          768,
+          768
+        ],
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
+        "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
+        "sha256": "9aee4c7946eac65647afa6a8d55924ccac30b720e322643725c45ed85f7fb708",
+        "bytes": 1110998
+      }
+    },
+    {
       "file": "obstacles_refined.png",
       "sha256": "de3929f79a87144fd414bbd1da6dfa5584ab7ca52f096a265e3135034c173bb4",
       "dimensions": [
@@ -475,7 +557,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "bf6f242e6422a6f7771df0ee7266037c3db39d8870b804650d343ed586173688",
         "bytes": 491210
@@ -509,7 +591,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "a3b288864a3ae2cc8ba836046bb915f88082378586e15094783130bd4e721718",
         "bytes": 479609
@@ -543,7 +625,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "0f68853797723409dc569b53036edd23f69be69f79df4d6583bcdddd645d52f9",
         "bytes": 489038
@@ -577,7 +659,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "2c8e0ceee783655c6f7c6d0d308e370f7941c17fe35f0341ea9d0cf7d69c4027",
         "bytes": 451095
@@ -611,7 +693,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "812dc2746b003467bcfd7db25172f126bc9a46019eda2233bcff857c990240d2",
         "bytes": 534877
@@ -645,7 +727,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "2d567cc624db593f90bf00e339089dbeafe967a008fc83a20b11b33400941f5a",
         "bytes": 506630
@@ -679,7 +761,7 @@
           768,
           512
         ],
-        "pivot": "atlas cells preserve row-major order; cell pivot handled by runtime cropper",
+        "pivot": "atlas cells preserve row-major order; pivot handled by runtime cropper",
         "use": "aircraft atlas; 384×256 px cells, scaled from 768×512 originals",
         "sha256": "b37612b4146c0eba4e48a09396accdd32f3c8fb8e8c95ffb5988bdfc668d5f9b",
         "bytes": 496830
@@ -694,7 +776,18 @@
       ],
       "source_bytes": 3328924,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/story_city.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "3ba47f3bd16fb41f695478f53dd13772ad5be7907a7da06bd9f32eb1954ea4de",
+        "bytes": 1438940
+      }
     },
     {
       "file": "story_fold.png",
@@ -705,7 +798,18 @@
       ],
       "source_bytes": 2731740,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/story_fold.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "93f86ce2e81dc2dc5dfafafadad8aeaa99cadbb1eef1071279c525296af73dda",
+        "bytes": 1225833
+      }
     },
     {
       "file": "story_launch.png",
@@ -716,7 +820,18 @@
       ],
       "source_bytes": 2928390,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/story_launch.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "3e546f794a6d489beebc0378a5585beb80149dc80787810f7465b3a30162f04b",
+        "bytes": 1291179
+      }
     },
     {
       "file": "story_newspaper.png",
@@ -727,7 +842,18 @@
       ],
       "source_bytes": 3288084,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/story_newspaper.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "50b50d05a9162753b851109cd686ae1352a3026c528373c40f9cfc08cbb0f82b",
+        "bytes": 1423275
+      }
     },
     {
       "file": "terrain_tiles.png",
@@ -774,7 +900,18 @@
       ],
       "source_bytes": 3101371,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/travel_amazonia.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "1dae8d62d32f3971663aef69bb7493e42e3017d8aa81d1207137aa5c66f4bdfc",
+        "bytes": 1328005
+      }
     },
     {
       "file": "travel_caatinga.png",
@@ -785,7 +922,18 @@
       ],
       "source_bytes": 3401828,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/travel_caatinga.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "49f5bc28c18ac906d31da3376cb4e86c483d71bd86ddcff615ca090004d22af4",
+        "bytes": 1456693
+      }
     },
     {
       "file": "village_clean.png",
@@ -796,7 +944,18 @@
       ],
       "source_bytes": 3095653,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_clean.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "a03d495fcb1bde9e8b228cf066df900960d6ea5a6fd74fcc6ad06ea1cbb38cbc",
+        "bytes": 1349110
+      }
     },
     {
       "file": "village_final.png",
@@ -807,7 +966,18 @@
       ],
       "source_bytes": 3329833,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_final.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "1cd41cd5446bd5e8f03e7ea9cbf2ac88862a341d8bf41aaa2269b2c3bea68c8e",
+        "bytes": 1445337
+      }
     },
     {
       "file": "village_industrial_v3.png",
@@ -818,7 +988,18 @@
       ],
       "source_bytes": 3237767,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_industrial_v3.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "73abef2b3a1125c3e299c6f5f471609183519ba6426d4d1e9fea2b3593234dcb",
+        "bytes": 1415118
+      }
     },
     {
       "file": "village_intermediate.png",
@@ -829,7 +1010,18 @@
       ],
       "source_bytes": 3164562,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_intermediate.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "dff4df9ee895cde3ad98c8c9cbd45390616f932dc8c84c277b391bc2b4a43602",
+        "bytes": 1396269
+      }
     },
     {
       "file": "village_props.png",
@@ -863,7 +1055,18 @@
       ],
       "source_bytes": 3184460,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_start.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "b31dbfe537a017681cbdbce8b5cd0557aefc0202db9b14a295de1904db625062",
+        "bytes": 1351642
+      }
     },
     {
       "file": "village_start_v2.png",
@@ -874,7 +1077,18 @@
       ],
       "source_bytes": 3175159,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_start_v2.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "e1d8dd4b3233305b1eb8d52a95ecfaa1c0f70f62e48880011044dbe292a1a20b",
+        "bytes": 1388417
+      }
     },
     {
       "file": "village_transition_v3.png",
@@ -885,7 +1099,18 @@
       ],
       "source_bytes": 3226916,
       "alpha_bounds": null,
-      "atlas": null
+      "atlas": null,
+      "runtime_variant": {
+        "file": "watercolor_prepared/village_transition_v3.png",
+        "dimensions": [
+          1100,
+          650
+        ],
+        "pivot": null,
+        "use": "flight backdrop; logical canvas plus 32 px parallax overscan",
+        "sha256": "e79aefd287c9324970e3cb9ceea7ce33ceb85920895125cdb55b67f8f253d612",
+        "bytes": 1433170
+      }
     },
     {
       "file": "villagers_sprint3.png",

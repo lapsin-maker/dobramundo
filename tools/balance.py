@@ -15,7 +15,7 @@ import json
 import random
 import sys
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -126,6 +126,8 @@ def simulate(
     latency_s: float = 0.25,
     exploration: bool = False,
     assistance: bool = False,
+    city_restoration: float = C.START_RESTORATION,
+    starting_stars: int = 0,
 ) -> dict:
     """Roda um cenário sintético com a dinâmica de posição e colisões reais do jogo."""
     rng = random.Random(seed ^ 0xB41A6CE)
@@ -139,6 +141,8 @@ def simulate(
         session_limit_s=session_limit_s,
         exploration=exploration,
         predictable_assistance=assistance,
+        city_restoration=city_restoration,
+        starting_stars=starting_stars,
     )
     stage_times = []
     counts = {"decisoes_perdidas": 0, "sem_rota_simplificada": 0, "nao_tentadas": 0, "alvos_de_coleta": 0}
@@ -195,6 +199,9 @@ def simulate(
         "max_player_displacement": round(max_displacement, 3),
         "stage_times_s": [round(value, 3) for value in stage_times],
         "restoration": round(run.restoration, 2),
+        "city_restoration_at_start": round(run.city_restoration_at_start, 2),
+        "local_restoration": round(run.local_restoration, 2),
+        "stars": run.stars,
         "resources": dict(run.resources),
         "resource_total": sum(run.resources.values()),
         "collected": run.waste_collected,
@@ -225,6 +232,25 @@ def collection_costs() -> Dict[str, int]:
     return costs
 
 
+def first_build_timeline(records: List[dict], mode: str) -> List[dict]:
+    """Quando a trajetória persistente consegue pagar obras na ordem da vila."""
+    wallet = {key: 0 for key in WASTE_KEYS}
+    upgrades = iter(VILLAGE_UPGRADES)
+    next_upgrade = next(upgrades, None)
+    bought = []
+    for record in (item for item in records if item["mode"] == mode):
+        for key, amount in record["resources"].items():
+            wallet[key] = wallet.get(key, 0) + amount
+        while next_upgrade is not None and all(
+            wallet.get(key, 0) >= amount for key, amount in next_upgrade.cost.items()
+        ):
+            for key, amount in next_upgrade.cost.items():
+                wallet[key] -= amount
+            bought.append({"upgrade": next_upgrade.key, "flight_index": record["trajectory_index"]})
+            next_upgrade = next(upgrades, None)
+    return bought
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--coleta", type=float, default=0.4, help="chance de tentar alinhar com cada resíduo")
@@ -240,6 +266,11 @@ def main() -> None:
     parser.add_argument("--latencia", type=float, default=0.25, help="atraso sintético até aplicar o comando")
     parser.add_argument("--exploracao", action="store_true", help="modo que não elimina após as vidas")
     parser.add_argument("--assistencia", action="store_true", help="cinco vidas e 2 s de proteção após batida")
+    parser.add_argument(
+        "--apoio-escolhido",
+        action="store_true",
+        help="a pessoa já escolheu Sem apoio; desliga o apoio padrão dos três primeiros voos",
+    )
     parser.add_argument("--voos", type=int, default=10)
     parser.add_argument("--seed-inicial", type=int, default=1)
     parser.add_argument("--bioma", choices=tuple(BIOMES), default="amazonia")
@@ -251,24 +282,46 @@ def main() -> None:
     if args.voos <= 0 or min(args.pausa, args.interromper, args.reacao, args.latencia) < 0:
         parser.error("--voos deve ser positivo; tempos não podem ser negativos")
 
-    records = [
-        simulate(
-            mode,
-            args.coleta,
-            args.seed_inicial + i,
-            biome=args.bioma,
-            error_rate=args.erro,
-            pause_per_minute=args.pausa,
-            interrupt_after=args.interromper,
-            session_limit_s=args.limite,
-            reaction_s=args.reacao,
-            latency_s=args.latencia,
-            exploration=args.exploracao,
-            assistance=args.assistencia,
-        )
-        for mode in ("normal", "dificil")
-        for i in range(args.voos)
-    ]
+    records = []
+    city_completion = {}
+    for mode in ("normal", "dificil"):
+        city = C.START_RESTORATION
+        stars = 0
+        active_before_completion = 0.0
+        completed_at = None
+        for index in range(args.voos):
+            flight_assistance = args.assistencia or (not args.apoio_escolhido and index < 3)
+            record = simulate(
+                mode,
+                args.coleta,
+                args.seed_inicial + index,
+                biome=args.bioma,
+                error_rate=args.erro,
+                pause_per_minute=args.pausa,
+                interrupt_after=args.interromper,
+                session_limit_s=args.limite,
+                reaction_s=args.reacao,
+                latency_s=args.latencia,
+                exploration=args.exploracao,
+                assistance=flight_assistance,
+                city_restoration=city,
+                starting_stars=stars,
+            )
+            record["trajectory_index"] = index + 1
+            record["default_assistance"] = flight_assistance and not args.assistencia and not args.apoio_escolhido
+            if completed_at is None:
+                active_before_completion += record["seconds_active"]
+                if record["completed"]:
+                    completed_at = index + 1
+            city = record["restoration"]
+            stars = max(stars, record["stars"])
+            records.append(record)
+        city_completion[mode] = {
+            "flight_index": completed_at,
+            "active_minutes_until_complete": round(active_before_completion / 60, 2) if completed_at else None,
+            "city_after_sequence": round(city, 2),
+            "sequence_flights": args.voos,
+        }
     costs = collection_costs()
     means = {
         mode: {
@@ -295,11 +348,14 @@ def main() -> None:
             "input_latency_seconds": args.latencia,
             "exploration": args.exploracao,
             "assistance": args.assistencia,
+            "assistance_choice_already_made": args.apoio_escolhido,
             "flight_count_per_mode": args.voos,
             "seed_start": args.seed_inicial,
         },
         "collection_costs": costs,
         "mean_resources_by_mode": means,
+        "city_completion_by_mode": city_completion,
+        "first_builds_by_mode": {mode: first_build_timeline(records, mode) for mode in ("normal", "dificil")},
         "runs": records,
     }
     if args.out:
@@ -323,6 +379,20 @@ def main() -> None:
                 f"game over {game_overs}, interrupções {interruptions}, batidas médias {hits:.1f}"
             )
             print(f"  média de recursos por voo: {resource_text}")
+            completion = city_completion[mode]
+            if completion["flight_index"] is None:
+                print(f"  transformação persistente: {completion['city_after_sequence']:.1f}% após {args.voos} voos")
+            else:
+                print(
+                    f"  cidade chega a 100% no voo {completion['flight_index']} "
+                    f"({completion['active_minutes_until_complete']:.2f} min ativos acumulados)"
+                )
+            builds = report["first_builds_by_mode"][mode][:2]
+            if builds:
+                labels = ", ".join(f"{item['upgrade']} no voo {item['flight_index']}" for item in builds)
+                print("  primeiras obras: " + labels)
+            else:
+                print("  nenhuma das duas primeiras obras financiada na sequência")
     if args.out:
         print(f"Relatório JSON: {args.out}")
 

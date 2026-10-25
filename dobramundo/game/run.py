@@ -45,6 +45,9 @@ class FlightRun:
         predictable_assistance: bool = False,
         community_challenge: bool = False,
         mission_preferred_waste: Optional[str] = None,
+        city_restoration: float = C.START_RESTORATION,
+        starting_stars: int = 0,
+        spawn_enabled: bool = True,
     ) -> None:
         self.biome = biome
         self.mode = mode
@@ -63,7 +66,9 @@ class FlightRun:
             mode,
             random.Random(self.seed),
             self.intro,
+            restoration=city_restoration,
             challenge_seed=self.seed if community_challenge else None,
+            spawn_enabled=spawn_enabled,
         )
         self.community_challenge = self.world.challenge_theme is not None
         self.focus = FocusMoment(mode, focus)
@@ -97,6 +102,8 @@ class FlightRun:
         self.invincible = False  # modo de demonstração do supervisor (F2)
         self.game_over = False
         self.complete = False
+        self.city_restoration_at_start = self.world.restoration
+        self.local_restoration = C.START_RESTORATION
         # Um voo interrompido guarda as recompensas obtidas, mas não conclui a fase.
         self.interrupted = False
         self.finished = False  # pronto para a tela de resultado
@@ -104,7 +111,7 @@ class FlightRun:
         self.settlement = None
         self.settlement_callback_sent = False
         self.complete_timer = 0.0
-        self.stars = 0
+        self.stars = min(3, max(0, int(starting_stars)))
         self.stage = self.world.stage
         self.beams: List[Beam] = []
         self.floating: List[FloatingText] = []
@@ -133,7 +140,7 @@ class FlightRun:
         factor = C.NORMAL_SPEED_FACTOR if self.mode == "normal" else 1.0
         return (
             C.BASE_SPEED
-            + self.world.restoration * C.RESTORATION_SPEED_GAIN
+            + self.local_restoration * C.RESTORATION_SPEED_GAIN
             + self.world.difficulty * C.DIFFICULTY_SPEED_GAIN
         ) * factor
 
@@ -146,9 +153,12 @@ class FlightRun:
         events, self.events = self.events, []
         return events
 
-    def add_restoration(self, amount: float) -> None:
+    def add_restoration(self, amount: float, speed_amount: Optional[float] = None) -> None:
         """Transforma a cidade e publica mudança de estágio, estrelas e fase completa."""
+        previous = self.world.restoration
         self.world.add_restoration(amount)
+        speed_gain = amount if speed_amount is None else speed_amount
+        self.local_restoration = min(100.0, self.local_restoration + max(0.0, speed_gain))
         stage = self.world.stage
         if stage > self.stage:
             self.stage = stage
@@ -157,7 +167,7 @@ class FlightRun:
         while self.stars < stars:
             self.stars += 1
             self.emit("star", self.stars)
-        if self.world.restoration >= 100.0 and not self.complete:
+        if previous < 100.0 <= self.world.restoration and not self.complete:
             self.complete = True
             self.emit("complete", self.stars)
 
@@ -172,8 +182,12 @@ class FlightRun:
         self.resources[entity.sprite] = self.resources.get(entity.sprite, 0) + RESOURCES_PER_WASTE[self.mode]
         if normal:
             gain = C.NORMAL_RESTORATION_PER_TRASH
+            speed_gain = C.NORMAL_SPEED_RESTORATION_PER_TRASH
         else:
             gain = C.RESTORATION_PER_TRASH + (C.RESTORATION_COMBO_BONUS if self.combo >= C.COMBO_BONUS_FROM else 0.0)
+            speed_gain = C.DIFFICULT_SPEED_RESTORATION_PER_TRASH + (
+                C.RESTORATION_COMBO_BONUS if self.combo >= C.COMBO_BONUS_FROM else 0.0
+            )
         self.streak += 1
         self.combo_timer = C.COMBO_WINDOW_S
         if not normal and self.streak % C.COMBO_STEP == 0:  # Normal: pontos fixos, sem combo
@@ -182,7 +196,7 @@ class FlightRun:
         self.floating.append(FloatingText(f"+{value}", entity.x, entity.y + 35.0))
         self.emit("collect", entity.sprite)
         self.mission_event("coletar", entity.sprite)
-        self.add_restoration(gain)
+        self.add_restoration(gain, speed_gain)
 
     def collect_powerup(self, entity: Entity) -> None:
         if entity.collected:

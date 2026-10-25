@@ -128,10 +128,11 @@ class Scene:
         return self.app.options.permanencia
 
     def title(self, screen: pygame.Surface, title: str, subtitle: str = "") -> None:
+        subtitle_size = max(T.SIZES["small"], 18)
         width = (
             max(
                 self.font("title", True).size(title)[0],
-                self.font("small").size(subtitle)[0],
+                self.font(subtitle_size).size(subtitle)[0],
             )
             + 70
         )
@@ -139,7 +140,7 @@ class Scene:
         T.panel(screen, bar, T.PAPER, T.NAVY, 240, 18)
         self.text.blit(screen, title, (24, 6), T.SIZES["title"], T.NAVY, True)
         if subtitle:
-            self.text.blit(screen, subtitle, (26, 50), T.SIZES["small"], T.MUTED)
+            self.text.blit(screen, subtitle, (26, 50), subtitle_size, T.MUTED_STRONG)
 
     def resource_bar(
         self, screen: pygame.Surface, right: int = C.WIDTH - 20, top: int = 12, values: Optional[dict] = None

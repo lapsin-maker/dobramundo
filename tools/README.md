@@ -17,7 +17,7 @@ python tools/capture_release.py --out build/capturas
 
 `benchmark_camera` separa até 15 segundos de preparação da janela de amostragem; exige pelo menos cinco resultados publicados e encerramento confirmado. Falta de amostras ou erro retorna código 2. Essas ferramentas salvam métricas; apenas `--screenshots` grava imagens sintéticas do jogo, nunca da webcam ou dos pontos do corpo.
 
-`check_routes` verifica sementes reproduzíveis, diversidade, auditoria completa de uma amostra, continuidade após avanço e tempos de inserção/geração. O contrato geométrico não substitui testes de controle corporal e conforto com a pessoa. Veja [condições e validação](../docs/ENTREGA_1_5.md).
+`check_routes` verifica sementes reproduzíveis, diversidade, auditoria completa de uma amostra, continuidade após avanço e tempos de inserção/geração. O contrato geométrico não substitui testes de controle corporal e conforto com a pessoa. Veja [condições e validação](../docs/historico/ENTREGA_1_5.md).
 
 No benchmark, `--paced` cede CPU entre quadros para mirar 60 fps, excluindo esse sono dos tempos de processamento. Sem a opção, a execução é um teste de estresse sem limite de quadros. Registre a modalidade ao comparar resultados.
 
@@ -51,7 +51,7 @@ Os scripts desta pasta criam parte dos arquivos de `assets/` que o jogo carrega.
 
 A direção visual principal está em `assets/watercolor/`: fundos, terreno, margens, vila, piloto, aviões e objetos pintados. Esses PNGs foram gerados por IA e estão versionados; `build_assets.py` e `stylize.py` não recriam esse conjunto. Prompts e identificadores das saídas estão em `generation.json`, `generation-sprint2.json` e `generation-pilot-sprint2.json`, na mesma pasta, junto de `CREDITOS.txt`.
 
-O jogo recorta os atlases, aplica cores e estampas e projeta as peças em Pygame. Não gera imagens nem acessa serviços de IA durante a execução. Os geradores low-poly abaixo mantêm os sprites procedurais de reserva. Para revisar os novos PNGs, preserve a disposição dos atlases e confira os recortes em `painted_route.py`, `painted_pilot.py`, `painted_planes.py`, `paper_items.py` e `village_art.py`. Os testes correspondentes e o self-test estão descritos em [DIRECAO_AQUARELA.md](../docs/DIRECAO_AQUARELA.md).
+O jogo recorta os atlases, aplica cores e estampas e projeta as peças em Pygame. Não gera imagens nem acessa serviços de IA durante a execução. Os geradores low-poly abaixo mantêm os sprites procedurais de reserva. Para revisar os novos PNGs, preserve a disposição dos atlases e confira os recortes em `painted_route.py`, `painted_pilot.py`, `painted_planes.py`, `paper_items.py` e `village_art.py`. Os testes correspondentes e o self-test estão descritos em [DIRECAO_AQUARELA.md](../docs/historico/DIRECAO_AQUARELA.md).
 
 A pasta tem duas partes:
 
@@ -160,13 +160,13 @@ python tools/balance.py --coleta 0.4 --erro 0.15 --pausa 10 --voos 10 --out buil
 python tools/balance.py --exploracao --assistencia --limite 120 --voos 10 --out build/exploracao.json
 ```
 
-O teste `test_fase_dura_alguns_minutos` (em `tests/test_gameplay.py`) trava a duração da fase entre 2,5 e 6 minutos.
+A ferramenta acumula a transformação entre voos, como o perfil do jogo, e informa em qual voo a cidade chega a 100%. Use sementes iniciais diferentes para trajetórias independentes. `--apoio-escolhido` representa um perfil que já decidiu manualmente sobre apoio; sem essa opção, os três primeiros voos recebem o apoio inicial. Recursos e preços continuam medidos separadamente do percentual visual.
 
 O agente sintético não representa uma criança nem mede conforto motor. Interprete os resultados como regressão de economia e interrupções, junto ao aceite presencial.
 
 ## Preparação de imagens
 
-`python tools/prepare_assets.py` produz seis fundos na resolução de uso e sete atlas de aviões em `assets/watercolor_prepared/`. Mantém os originais e registra tamanho, SHA-256, vista, grade e pivô no manifesto. `python tools/audit_assets.py` confere o inventário. O runtime prefere os PNG preparados e conserva os originais como fallback; não há conversão de codec presumida compatível com o console.
+`python tools/prepare_assets.py` produz fundos de voo, história e vila, atlas de aviões e pigmento do mapa na resolução de uso em `assets/watercolor_prepared/`. Mantém os originais no repositório e registra tamanho, SHA-256, vista, grade e pivô no manifesto. `python tools/audit_assets.py` confere o inventário. `runtime_assets.py` é compartilhado por desktop e cartucho: escolhe a variante verificada, sem duplicar o original, ou inclui o original quando a variante está ausente. Imagens de menus preparadas conservam o caminho lógico usado pelas cenas. Não há conversão de codec presumida compatível com o console.
 
 ## Medições e entrega
 
@@ -175,10 +175,18 @@ Execute benchmarks em processos novos e sem builds ou testes concorrentes. O pad
 ```powershell
 python tools/benchmark_runtime.py --out build/benchmark --frames 600
 python tools/benchmark_runtime.py --out build/benchmark-camera --frames 600 --camera --paced
+python tools/benchmark_runtime.py --out build/controle-real --frames 600 --camera-control --window
+python tools/benchmark_runtime.py --out build/entrada-fria --frames 30 --biome amazonia --contrast no
 python tools/soak_runtime.py --out build/soak --cycles 30 --frames 2400
 python tools/capture_release.py --out build/capturas
 ```
 
-O benchmark com câmera mede processamento concorrente e a idade do último resultado disponível; não demonstra precisão dos gestos nem latência física de sensor/projetor. O soak alterna biomas, contraste, aparências e menus usando perfis sintéticos. Ele usa invencibilidade apenas para manter a carga de renderização; a economia é medida separadamente por `balance.py`, com colisões.
+`--camera` mede processamento concorrente; `--camera-control` liga efetivamente a leitura da cabeça e registra a sequência consumida até canvas/apresentação, incluindo quantos quadros eram utilizáveis. Nenhum desses modos demonstra precisão física dos gestos ou atraso do sensor/projetor. Tempos exclusivos descontam componentes instrumentados filhos; os inclusivos não devem ser somados. A preparação é separada dos quadros interativos e suas tarefas têm tempos próprios.
+
+O soak alterna biomas, contraste, aparências e menus usando perfis sintéticos. O preparo não conta como tempo ativo; invencibilidade e supressão do encerramento por conclusão mantêm a carga de desenho pelo ciclo inteiro. A economia é medida separadamente por `balance.py`, com colisões e término normal.
+
+Para validar os arquivos isolados do cartucho: `python tools/build_cartridge.py --so-montar` seguido de `python tools/verify_cartridge.py --stage build/cartucho --out build/cartucho-render.json`. O CI executa esse percurso e compara menus capturados com referências revisadas. Isso complementa, sem substituir, `tsdk check`, `tsdk build` e o teste no console físico.
+
+Para fechar uma release, use `python tools/package_release.py --help`. A rotina exige os dois artefatos nativos, relatório JSON da CI completa, commits de build/release com árvores iguais, cartucho válido e diretório de saída. Ela gera downloads, `release-manifest.json` e `SHA256SUMS.txt`; não publica automaticamente. Nunca inclua perfis reais na galeria ou nos pacotes.
 
 `build_desktop.py` constrói o pacote nativo, invalida resultados antigos e roda o executável com `--self-test 1200 --exigir-camera` em diretório temporário. A CI gera Windows e Linux, publica cobertura e preserva a permissão de execução do Linux em `.tar.gz`. Linux requer `libegl1 libgles2` (Debian/Ubuntu); a CI verifica as dependências de `libmediapipe.so` com `ldd` antes de empacotar. O diagnóstico manual só de Linux não substitui a matriz completa de testes e builds.

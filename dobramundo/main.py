@@ -51,6 +51,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import pygame
 
     from .core import first_scene
+    from .instance_lock import InstanceBusyError, InstanceLock
     from .log import setup_logging
 
     setup_logging()
@@ -63,9 +64,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             return run_self_test(frames, require_camera="--exigir-camera" in argv)
         from .app import App
 
-        app = App(audio="--sem-som" not in argv)
-        app.run(first_scene(app))
+        with InstanceLock(user_data_dir()):
+            app = App(audio="--sem-som" not in argv)
+            app.run(first_scene(app))
         return 0
+    except InstanceBusyError as exc:
+        show_message(APP_NAME, str(exc))
+        return 2
     except KeyboardInterrupt:
         return 0
     except Exception:

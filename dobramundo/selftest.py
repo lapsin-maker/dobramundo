@@ -90,6 +90,8 @@ def check_report(report: dict, require_camera: bool) -> List[str]:
     for biome, flight in report["voos"].items():
         if flight["estagio"] < 2:
             failures.append(f"o voo em {biome} não chegou ao estágio 3")
+        if flight.get("segundos_ativos", 0) <= 0 or flight.get("distancia", 0) <= 0:
+            failures.append(f"o voo em {biome} não avançou após o preparo")
     if require_camera and report["camera"]["detector"] != "ok":
         failures.append(f"detector de pose: {report['camera']['detector']}")
     return failures
@@ -170,9 +172,21 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
         scene = FlightScene(app, biome)
         scene.run.invincible = True  # o teste não termina em game over
         app.go(scene)
+        preparation_frames = 0
+        for _ in range(1800):
+            if app.scene is scene and not app.view.warmup_pending:
+                break
+            app.step(0.0, [])
+            preparation_frames += 1
+        else:
+            raise RuntimeError(f"O preparo do voo em {biome} não terminou")
         times: List[float] = []
         per_stage = max(1, frames // 3)
         for frame in range(frames):
+            # Mantém a carga de desenho pelos N quadros; conclusão e recompensas
+            # têm testes de regras e capturas de resultado separados.
+            scene.run.complete = False
+            scene.run.complete_timer = 0.0
             if frame % per_stage == 0 and frame:  # força a passagem pelos três estágios
                 scene.run.add_restoration(100.0 / 3.0)
             if frame % 40 == 0:
@@ -184,6 +198,10 @@ def run_self_test(frames: int, require_camera: bool = False) -> int:
         run = scene.run
         flights[biome] = {
             "quadros": frames,
+            "quadros_preparo": preparation_frames,
+            "segundos_ativos": round(run.flight_time, 3),
+            "distancia": round(run.world.distance, 3),
+            "carga_sintetica": "invencivel; encerramento por conclusao desativado",
             "transformacao": round(run.restoration, 1),
             "estrelas": run.stars,
             "estagio": run.stage,

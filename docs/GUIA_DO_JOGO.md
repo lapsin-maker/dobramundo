@@ -8,7 +8,7 @@ O Dobramundo é um jogo de voo com atividade corporal e tema de sustentabilidade
 
 O jogo atende ao console T-TEA, com projeção no chão e controle pelos pés, mas não se restringe a ele: pode ser projetado em mesas e paredes ou exibido em monitores, e o controle pode ser feito pelos pés, pelo tronco, por uma das mãos ou pela cabeça. Destina-se a crianças neurodiversas e com deficiências motoras, visuais, sensoriais ou do neurodesenvolvimento, oferecendo a cada uma um modo de interação compatível.
 
-Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.6.0.
+Projeto da Liga de Psiquiatria e Neurociências – CENSUPEG, desenvolvido para a 3ª ExerGame JAM LARVA/UDESC 2026. Versão 1.7.0.
 
 ### Tema e objetivo
 
@@ -52,7 +52,7 @@ Cada partida segue o ciclo **vila-base, mapa, voo e resultado**. Na vila, a cria
 
 ### Primeira execução
 
-Na primeira execução, o **aviso ao supervisor** e a **calibração corporal**, quando necessários, preparam a interação. Um treino opcional ensina mirar, esperar e sair do alvo. A criança então começa com um **piloto neutro**, escolhe sua aparência e chega à **vila**. Na primeira decolagem pelo mapa, outro treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. Ambos podem ser pulados ou repetidos em Opções. A história fica disponível em Opções, e o personagem pode ser modificado pelo botão Piloto da vila. No desktop, a tela **Pilotos** permite criar e selecionar slots locais independentes; nomes e perfis pessoais não são solicitados.
+Na primeira execução, o **aviso ao supervisor** e a **calibração corporal**, quando necessários, preparam a interação. Um treino opcional ensina mirar, esperar e sair do alvo. A criança começa com um **piloto neutro de papel**, escolhe sua aparência, acompanha a **história do jornal** e chega à **vila**. O botão **Pular** permite seguir imediatamente; a história pode ser revista em Opções. Na primeira decolagem pelo mapa, outro treino opcional ensina movimento, coleta e os três desvios com pictogramas e prática sem perda de vidas. Ambos podem ser pulados ou repetidos em Opções. O personagem pode ser modificado pelo botão Piloto da vila. No desktop, **Pilotos** permite criar e selecionar perfis locais independentes; nomes e dados pessoais não são solicitados.
 
 A abertura é um livro ilustrado de quatro páginas: uma cidade industrial colorida, com fumaça e resíduos; uma criança que encontra um jornal na rua; a dobradura do avião sobre uma mesa de trabalho, com setas e legenda de cada dobra; e o lançamento, com um rastro de aquarela nas cores da logo.
 
@@ -89,17 +89,17 @@ Só conta o movimento feito depois que a seta aparece. Os momentos ocorrem no m�
 
 ### Vidas
 
-A criança tem três vidas. Cada colisão consome uma delas, seguida de 1,25 segundo de invulnerabilidade, e zera o combo. Sem vidas, o voo termina.
+Sem apoio, a criança tem três vidas e 1,25 segundo de proteção após cada colisão. Com apoio, tem cinco vidas e 2 segundos de proteção. Os três primeiros voos oferecem apoio automaticamente, a menos que o jogador ou supervisor já tenha escolhido o contrário. Cada colisão consome uma vida e zera o combo. Sem vidas, o voo termina no modo Com vidas; Explorar permite continuar.
 
 ### Transformação e estrelas
 
-A transformação da cidade vai de 0% a 100%, começando em 5%. Ao atingir os limiares, a criança ganha estrelas:
+A transformação de uma cidade nova começa em 5% e fica guardada no perfil ao terminar ou encerrar um voo. A próxima decolagem continua desse percentual, com vidas e velocidade inicial renovadas. A posição do avião e os obstáculos da partida anterior não são retomados. Ao atingir os limiares, a criança ganha estrelas:
 
 - 1 estrela aos 33,3%, no despertar ecológico;
 - 2 estrelas aos 66,7%, na cidade solarpunk;
 - 3 estrelas com a cidade completa (100%), desde que as peças exigidas pela fase estejam instaladas no avião. Sem elas, a conclusão rende 2 estrelas, e a tela de resultado indica quais peças faltam.
 
-Ao chegar a 100%, o avião segue planando por 3 segundos para a criança ver a cidade.
+Ao chegar pela primeira vez a 100%, o avião segue planando por 3 segundos para a criança ver a cidade. É possível voltar a visitar a cidade já transformada: ela permanece solarpunk e o voo não termina imediatamente. Instalar as peças que faltavam permite conquistar a terceira estrela numa nova coleta.
 
 ### Modos de jogo
 
@@ -110,11 +110,11 @@ A dificuldade é a primeira escolha do mapa, em dois cartões grandes: **Normal*
 | Velocidade | Metade da velocidade-base (170 unidades/s) | Velocidade plena (340 unidades/s) |
 | Resíduos | 1 a cada 4 sorteados | Todos |
 | Pontos por resíduo | 65, fixos | 15 vezes o combo |
-| Transformação por coleta | 1,18 ponto percentual | 0,115, mais 0,013 com combo de 4 ou mais |
+| Transformação por coleta | 4,5 pontos percentuais | 1,5, mais 0,013 com combo de 4 ou mais |
 | Recursos por coleta | 4 | 1 |
 | Combo | Não há | Sobe a cada 4 coletas seguidas, até 8 vezes |
 
-O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 240 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 30 unidades/s no Difícil (metade no Normal); a transformação acrescenta até mais 30.
+O combo zera se a criança passar 2,2 segundos sem coletar ou ao colidir. Nos dois modos, a dificuldade cresce ao longo de 240 segundos: a frequência de obstáculos aumenta e a velocidade sobe até 30 unidades/s no Difícil (metade no Normal). A rampa adicional de velocidade usa um contador local de cada voo, que cresce 1,18 por coleta no Normal e 0,115 no Difícil, com o pequeno bônus de combo. O ganho visual maior e a cidade já transformada não aceleram essa rampa.
 
 O tempo e o número de voos para completar o conteúdo variam com a coleta, assistência, exploração, pausas e modo. A simulação em `tools/balance.py` é sintética e não prevê o tempo individual. Em **Opções → Preparar**, a sessão pode ser livre ou limitada a 120, 180 ou 240 segundos; ao atingir o limite, o voo termina com resultado parcial. **Exploração** mantém o voo após esgotar vidas; colisões continuam registradas. **Assistência previsível** oferece regras de ajuda estáveis durante o voo. As opções são independentes da dificuldade.
 

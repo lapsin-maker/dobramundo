@@ -188,10 +188,20 @@ class InputHub:
         """Marca o fim da composição para a leitura corporal consumida."""
         if self.body is None:
             return None
+
         try:
             return self.body.note_rendered()
         except AttributeError:
             # Compatibilidade com controles simples usados por hosts/fixtures antigos.
+            return None
+
+    def note_presented(self):
+        """Associar apresentação à mesma sequência já consumida pelo controle."""
+        if self.body is None:
+            return None
+        try:
+            return self.body.note_presented()
+        except AttributeError:
             return None
 
     def update(self, dt: float) -> None:

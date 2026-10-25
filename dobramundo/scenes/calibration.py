@@ -159,11 +159,7 @@ class CalibrationScene(Scene):
             message, detail = "Não estou vendo o segmento", "Entre na área da câmera."
         else:
             message, detail = segment.hint if segment else "Fique parado", "Fique parado assim um instante..."
-        size = (
-            T.SIZES["title"]
-            if self.text.font(T.SIZES["title"], True).size(message)[0] < card.width - 60
-            else T.SIZES["label"]
-        )
+        size = T.SIZES["title"] if self.font("title", True).size(message)[0] < card.width - 60 else T.SIZES["label"]
         self.text.blit(screen, message, (card.centerx, card.top + 24), size, T.NAVY, True, "midtop")
         self.text.blit(screen, detail, (card.centerx, card.top + 74), T.SIZES["label"], T.INK, anchor="midtop")
         center = (card.left + 250, card.top + 270)
