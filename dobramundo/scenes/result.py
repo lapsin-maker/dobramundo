@@ -57,6 +57,7 @@ class ResultScene(Scene):
         self.run = run
         self.summary = apply_run(app.profile, run)
         app.save()
+        app.on_flight(app.profile.historico[-1])
         biome = run.biome
         facts = texts.BIOME_FACTS.get(biome.key, ())
         self.fact = facts[app.profile.voos % len(facts)] if facts else ""

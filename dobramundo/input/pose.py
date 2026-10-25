@@ -1,7 +1,7 @@
 """Controle corporal por qualquer segmento, a partir dos 33 pontos do corpo.
 
 Os pontos vêm de uma fonte (a webcam do executável, em input/camera.py, ou o
-rastreamento do console T-TEA, em input/ttea.py). O segmento escolhido (pés,
+rastreamento do console T-TEA, em input/console.py). O segmento escolhido (pés,
 tronco em pé ou sentado, uma das mãos ou cabeça) vira um ponto; depois da
 calibração da postura neutra (cerca de 2 s parado), o deslocamento em relação a
 ela vira dois eixos de -1 a 1, que movem o avião e o cursor dos menus.

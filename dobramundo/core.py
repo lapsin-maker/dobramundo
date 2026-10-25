@@ -31,6 +31,19 @@ from .persistence import Profile, save_profile
 from .ui.theme import Text
 
 
+def first_scene(app):
+    """Abertura (1ª vez) -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
+    from .scenes import make_scene
+
+    scene = make_scene(app, "vila")
+    if app.input.uses_body:
+        scene = make_scene(app, "calibracao", return_to=scene)
+    if not app.profile.consentimento:
+        scene = make_scene(app, "aviso", scene)
+    # A abertura completa aparece na primeira vez; depois fica em Opções > "Ver a abertura".
+    return scene if app.profile.abertura_vista else make_scene(app, "abertura", scene)
+
+
 class GameCore:
     platform = "desktop"  # "ttea" no console: as cenas escondem o que é só do executável
 
@@ -90,6 +103,9 @@ class GameCore:
 
     def toggle_fullscreen(self) -> None:
         """Só o executável tem janela própria; no console não faz nada."""
+
+    def on_flight(self, summary: dict) -> None:
+        """Voo terminado (resumo do histórico); o console o registra na sessão do jogador."""
 
     def backdrop(
         self, screen: pygame.Surface, dt: float, biome_key: Optional[str] = None, restoration: Optional[float] = None

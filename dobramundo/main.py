@@ -14,19 +14,6 @@ from . import APP_NAME  # noqa: E402
 from .paths import user_data_dir  # noqa: E402
 
 
-def first_scene(app):
-    """Abertura (1ª vez) -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
-    from .scenes import make_scene
-
-    scene = make_scene(app, "vila")
-    if app.input.uses_body:
-        scene = make_scene(app, "calibracao", return_to=scene)
-    if not app.profile.consentimento:
-        scene = make_scene(app, "aviso", scene)
-    # A abertura completa aparece na primeira vez; depois fica em Opções > "Ver a abertura".
-    return scene if app.profile.abertura_vista else make_scene(app, "abertura", scene)
-
-
 def show_message(title: str, text: str) -> None:
     """Mensagem simples ao usuário (sem traceback)."""
     if sys.platform.startswith("win"):
@@ -63,6 +50,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     import pygame
 
+    from .core import first_scene
     from .log import setup_logging
 
     setup_logging()

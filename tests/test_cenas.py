@@ -8,7 +8,7 @@ from test_controle import CAL_READINGS, FakeSource
 
 from dobramundo import config as C
 from dobramundo.content.progress import VILLAGE_BY_KEY
-from dobramundo.main import first_scene
+from dobramundo.core import first_scene
 from dobramundo.scenes.about import AboutScene
 from dobramundo.scenes.calibration import CalibrationScene
 from dobramundo.scenes.consent import ConsentScene

@@ -104,6 +104,16 @@ class Audio:
         channel.set_volume(self.effective_music())
         channel.play(sound, loops=-1, fade_ms=MUSIC_FADE_MS)
 
+    def pause_music(self) -> None:
+        if self.enabled:
+            for channel in self.channels:
+                channel.pause()
+
+    def resume_music(self) -> None:
+        if self.enabled:
+            for channel in self.channels:
+                channel.unpause()
+
     def stop(self) -> None:
         if self.enabled:
             for channel in self.channels:

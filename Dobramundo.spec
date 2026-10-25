@@ -45,7 +45,8 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     # matplotlib e unittest ficam: o MediaPipe os importa ao carregar o detector de pose.
-    excludes=["tkinter", "pytest", "soundfile"],
+    # o cartucho do console T-TEA (dobramundo.cartridge) não entra no executável
+    excludes=["tkinter", "pytest", "soundfile", "ttea", "dobramundo.cartridge"],
     noarchive=False,
 )
 # O jogo só captura a webcam; a DLL do FFmpeg do OpenCV (~29 MB) serve para arquivos de vídeo.
