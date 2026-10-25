@@ -29,7 +29,7 @@ tools/lowpoly/  (modelos por código: kit, mesh, raster, models_*)
                                      (depende de assets/plane_sprites e plane_menu, do legado)
 
 make_audio.py -------------------> assets/audio/ (musica_*.ogg, sfx_*.ogg)
-make_logo.py  -------------------> assets/ui/logo.png, icone.png, assets/icon.ico
+make_logo.py  -------------------> assets/ui/logo.png, icone.png, assets/icon.ico, docs/logo.jpg
 make_grass_texture.py -----------> assets/ground/grass.png
 make_ground_textures.py ---------> assets/ground/dry_soil.png, agreste.png
                                    (importa make_grass_texture.py)
@@ -47,7 +47,7 @@ build_cartridge.py --------------> build/cartucho/ e dist/dobramundo-1.3.0.ttea
 | `build_assets.py` | 48 sprites de fase e vila em `assets/biome_sprites/` (prefixos AM_, CA_ e VL_) e os 4 resíduos em `assets/waste_sprites/` | `python tools/build_assets.py [--only NOME ...] [--prefix AM_] [--sheet folha.png]` | numpy, Pillow | Renderiza os modelos registrados em `lowpoly/`. `--sheet` grava também uma folha de contato para conferência |
 | `build_assets.py --pilot` | Camadas do piloto em `assets/pilot_layers/` (`<vista>__<camada>.png`) e `anchors.json` | `python tools/build_assets.py --pilot` | numpy, Pillow | O `anchors.json` é medido a partir de `assets/plane_sprites` e `assets/plane_menu` (sprites `__riding` e `__none`), que vêm do estúdio legado |
 | `make_audio.py` | 7 trilhas (`musica_vila`, `musica_amazonia_1` a `_3`, `musica_caatinga_1` a `_3`) e 15 efeitos (`sfx_*`) em `assets/audio/` | `python tools/make_audio.py [--out PASTA] [--only musica\|sfx]` | numpy; soundfile para gravar OGG | Síntese determinística (semente fixa). Sem soundfile, grava WAV de 16 bits com o mesmo nome |
-| `make_logo.py` | `assets/ui/logo.png` (900 px de largura, fundo transparente), `assets/ui/icone.png` e `assets/icon.ico` | `python tools/make_logo.py ARTE.png [--out assets]` | numpy, Pillow | Recebe a arte original (o repositório traz `docs/logo_original.webp`). Remove o branco do papel por desmistura da cor |
+| `make_logo.py` | `assets/ui/logo.png` (900 px de largura, fundo transparente), `assets/ui/icone.png`, `assets/icon.ico` e `docs/logo.jpg` (logo sobre fundo branco para o README) | `python tools/make_logo.py ARTE.png [--out assets]` | numpy, Pillow | Recebe a arte original (o repositório traz `docs/logo_original.webp`). Remove o branco do papel por desmistura da cor |
 | `make_grass_texture.py` | `assets/ground/grass.png` | `python tools/make_grass_texture.py [--out assets/ground/grass.png] [--seed 7]` | numpy, Pillow | Textura de grama contínua nas bordas, para repetição sem emenda |
 | `make_ground_textures.py` | `assets/ground/dry_soil.png` (despertar do sertão) e `agreste.png` (Petrolina solarpunk) | `python tools/make_ground_textures.py [--out assets/ground]` | numpy, Pillow | Importa `make_grass_texture.py`, que deve estar na mesma pasta |
 | `measure_obstacles.py` | Nada gravado. Imprime, para cada obstáculo de cada fase, a medida usada no jogo ao lado da medida medida no sprite | `python tools/measure_obstacles.py` | numpy, Pillow, pygame | Usa a altura visual e o alfa dos sprites. Ajuda a calibrar `low`, `gate` e `tower` em `content/items.py` e `content/biomes.py` |
