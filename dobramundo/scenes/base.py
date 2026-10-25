@@ -15,6 +15,30 @@ if TYPE_CHECKING:
     from ..app import App
 
 
+class Toast:
+    """Aviso curto no rodapé da tela (compra feita, faltam recursos...)."""
+
+    def __init__(self, seconds: float = 3.0) -> None:
+        self.seconds = seconds
+        self.text = ""
+        self.time_left = 0.0
+
+    def show(self, text: str) -> None:
+        self.text, self.time_left = text, self.seconds
+
+    def update(self, dt: float) -> None:
+        self.time_left = max(0.0, self.time_left - dt)
+
+    def draw(self, screen: pygame.Surface, text: T.Text, center, width: int = 640) -> None:
+        if self.time_left <= 0 or not self.text:
+            return
+        box = pygame.Rect(0, 0, width, 54)
+        box.center = center
+        T.panel(screen, box, T.PAPER, T.ORANGE, 250, 14, 3)
+        size = T.SIZES["body"] if text.font(T.SIZES["body"], True).size(self.text)[0] < width - 30 else T.SIZES["small"]
+        text.blit(screen, self.text, box.center, size, T.INK, True, "center")
+
+
 class Scene:
     music: Optional[str] = "musica_vila"
     idle_warm_up = True  # usa a folga do quadro para preparar sprites
@@ -22,8 +46,10 @@ class Scene:
     def __init__(self, app: App) -> None:
         self.app = app
         self.menu = Menu()
-        self.menu.on_focus = lambda: None
         self.time = 0.0
+        self.last_dt = 1.0 / C.FPS  # dt do último quadro (o cenário de fundo anda com ele)
+        self.toast = Toast()
+        self.menu.on_focus = lambda: app.audio.play("sfx_foco", 0.5)  # tique suave ao mirar um botão
 
     # ----------------------------------------------------------- ciclo
     def enter(self) -> None:
@@ -37,7 +63,25 @@ class Scene:
         """Monta os botões da tela (chamado ao entrar e quando algo muda)."""
 
     def back(self) -> None:
-        """ESC / Backspace."""
+        """ESC / Backspace: a maioria das telas volta para a vila."""
+        self.goto("vila")
+
+    def fly(self, biome_key: str) -> None:
+        """Decola: voo direto ou, com controle corporal ainda não calibrado, a calibração antes."""
+        from . import make_scene
+
+        flight = make_scene(self.app, "voo", biome_key)
+        body = self.app.input.body
+        if body is not None and body.error is None and not body.calibrated:
+            flight = make_scene(self.app, "calibracao", return_to=flight)
+        self.app.save()
+        self.app.go(flight)
+
+    def goto(self, name: str, *args, **kwargs) -> None:
+        """Troca para a cena registrada com esse nome (ver scenes/__init__.py)."""
+        from . import make_scene
+
+        self.app.go(make_scene(self.app, name, *args, **kwargs))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
@@ -49,6 +93,8 @@ class Scene:
 
     def update(self, dt: float) -> None:
         self.time += dt
+        self.last_dt = dt
+        self.toast.update(dt)
         if self.menu.update(dt, self.app.input.pointer(), self.app.options.permanencia):
             self.app.audio.play("sfx_selecao")
 
@@ -108,7 +154,12 @@ class Scene:
         return max(1, int(surface.get_width() * ratio)), max(1, int(surface.get_height() * ratio))
 
     def scaled(self, surface: pygame.Surface, size, key=None) -> pygame.Surface:
-        """Cópia reduzida em cache (miniaturas dos menus); key identifica imagens que mudam."""
+        """Cópia reduzida em cache (miniaturas dos menus).
+
+        Sem key, a imagem é identificada pelo id(): use só com imagens dos assets, que
+        vivem o jogo inteiro. Imagens montadas na hora (avião pintado, piloto) precisam de
+        key, porque o cache delas descarta e um id() poderia se repetir em outra imagem.
+        """
         key = (key if key is not None else id(surface), size)
         cache = self.app.view.cache
         hit = cache.scaled.get(("menu",) + key)

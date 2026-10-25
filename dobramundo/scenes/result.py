@@ -10,9 +10,8 @@ from ..content.items import WASTE_TYPES
 from ..content.progress import PART_BY_KEY, parts_ok
 from ..game.run import FlightRun
 from ..ui import theme as T
-from ..ui.widgets import row
+from ..ui.widgets import row, star
 from .base import Scene
-from .flight import draw_star
 
 
 def apply_run(profile, run: FlightRun) -> dict:
@@ -48,27 +47,17 @@ class ResultScene(Scene):
         self.menu.set_buttons(
             [
                 self.button(rects[0], texts.UI["tentar_de_novo"] if self.run.game_over else "Voar de novo", self.again),
-                self.button(rects[1], "Voltar à vila", self.village),
+                self.button(rects[1], "Voltar à vila", lambda: self.goto("vila")),
             ],
             keep_focus=False,
         )
 
     def again(self) -> None:
-        from .flight import flight_or_calibration
-
-        self.app.go(flight_or_calibration(self.app, self.run.biome.key))
-
-    def village(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
-
-    def back(self) -> None:
-        self.village()
+        self.fly(self.run.biome.key)
 
     def draw(self, screen: pygame.Surface) -> None:
         run = self.run
-        self.app.backdrop(screen, 1 / 60, run.biome.key, min(100.0, run.restoration))
+        self.app.backdrop(screen, self.last_dt, run.biome.key, min(100.0, run.restoration))
         T.veil(screen, (10, 18, 40), 120)
         card = pygame.Rect(C.WIDTH // 2 - 440, 40, 880, 490)
         T.panel(screen, card, T.PAPER, T.NAVY, 248, 24, 4)
@@ -82,7 +71,7 @@ class ResultScene(Scene):
         # estrelas surgem uma a uma
         shown = min(run.stars, int(self.time / 0.5))
         for i in range(3):
-            draw_star(screen, (card.centerx - 110 + i * 110, card.top + 128), 44, i < shown)
+            star(screen, (card.centerx - 110 + i * 110, card.top + 128), 44, i < shown)
         if run.complete and run.stars < 3 and not parts_ok(run.biome.required_parts, run.parts):
             need = ", ".join(PART_BY_KEY[k].name for k in run.biome.required_parts)
             self.text.blit(

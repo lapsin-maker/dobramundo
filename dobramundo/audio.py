@@ -12,6 +12,7 @@ from typing import Dict, Optional
 
 import pygame
 
+from .log import log
 from .paths import find_asset_file
 
 MUSIC_FADE_MS = 1600
@@ -43,7 +44,8 @@ class Audio:
             pygame.mixer.set_reserved(2)
             self.channels = [pygame.mixer.Channel(0), pygame.mixer.Channel(1)]
             self.enabled = True
-        except pygame.error:
+        except pygame.error as exc:
+            log.warning("sem dispositivo de áudio: %s", exc)
             self.enabled = False
 
     def apply(self, options) -> None:
@@ -66,7 +68,8 @@ class Audio:
             if path is not None and self.enabled:
                 try:
                     sound = pygame.mixer.Sound(str(path))
-                except pygame.error:
+                except pygame.error as exc:
+                    log.warning("som não carregou: %s (%s)", path, exc)
                     sound = None
             self.sounds[name] = sound
         return self.sounds[name]
@@ -88,14 +91,13 @@ class Audio:
         if not self.enabled or name == self.current:
             return
         self.current = name
-        old = self.channels[self.active]
-        old.fadeout(MUSIC_FADE_MS)
+        self.channels[self.active].fadeout(MUSIC_FADE_MS)
+        self.active = 1 - self.active  # a próxima trilha nunca usa o canal que ainda está sumindo
         if name is None:
             return
         sound = self.sound(name)
         if sound is None:
             return
-        self.active = 1 - self.active
         channel = self.channels[self.active]
         channel.set_volume(self.effective_music())
         channel.play(sound, loops=-1, fade_ms=MUSIC_FADE_MS)

@@ -51,7 +51,30 @@ def pose_check() -> dict:
     return result
 
 
-def run_self_test(frames: int) -> int:
+REQUIRED_SPRITES = (
+    "biome_sprites",
+    "era_final_sprites",
+    "waste_sprites",
+    "plane_sprites",
+    "plane_menu",
+    "pilot_layers",
+    "ui",
+    "ground",
+)
+
+
+def check_report(report: dict, require_camera: bool) -> List[str]:
+    """Critérios de aprovação: sprites carregados, voos que avançam e (no build) câmera."""
+    failures = [f"pasta de sprites vazia: {name}" for name in REQUIRED_SPRITES if not report["sprites"].get(name)]
+    for biome, flight in report["voos"].items():
+        if flight["estagio"] < 2:
+            failures.append(f"o voo em {biome} não chegou ao estágio 3")
+    if require_camera and report["camera"]["detector"] != "ok":
+        failures.append(f"detector de pose: {report['camera']['detector']}")
+    return failures
+
+
+def run_self_test(frames: int, require_camera: bool = False) -> int:
     from .app import App
     from .scenes.about import AboutScene
     from .scenes.flight import FlightScene
@@ -143,10 +166,12 @@ def run_self_test(frames: int) -> int:
         }
     report["voos"] = flights
     report["camera"] = pose_check()
-    report["status"] = "ok"
-    app.input.stop_body()
+    failures = check_report(report, require_camera)
+    report["falhas"] = failures
+    report["status"] = "ok" if not failures else "falhou"
+    app.input.stop_camera()
     path = user_data_dir() / "self_test.json"
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     if sys.stdout is not None:
         print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if not failures else 1

@@ -11,6 +11,7 @@ from ..content import texts
 from ..input.pose import SEGMENTS
 from ..persistence import CONTROL_SEGMENTS, SURFACES
 from ..ui import theme as T
+from . import make_scene
 from .base import Scene
 
 SEGMENT_LABELS = {"teclado": "Teclado e mouse", **{k: s.label for k, s in SEGMENTS.items()}}
@@ -27,8 +28,6 @@ GAP = 10
 
 class OptionsScene(Scene):
     def build(self) -> None:
-        from .village import VillageScene
-
         o = self.app.options
         profile = self.app.profile
         left, right = 24, 566
@@ -154,11 +153,7 @@ class OptionsScene(Scene):
         toggle(right, y, "contraste", texts.UI["alto_contraste"], o.alto_contraste, lambda: self.flip("alto_contraste"))
         y += ROW_H + GAP
         toggle(right, y, "tela", "Tela cheia (F11)", o.tela_cheia, self.fullscreen)
-        buttons.append(
-            self.button(
-                (24, 570, 300, 64), texts.UI["voltar"], lambda: self.app.go(VillageScene(self.app)), key="voltar"
-            )
-        )
+        buttons.append(self.button((24, 570, 300, 64), texts.UI["voltar"], lambda: self.goto("vila"), key="voltar"))
         buttons.append(self.button((340, 570, 300, 64), "Ver a abertura", self.intro, key="abertura"))
         self.menu.set_buttons(buttons)
 
@@ -194,22 +189,13 @@ class OptionsScene(Scene):
         self.changed()
 
     def calibrate(self) -> None:
-        from .calibration import CalibrationScene
-
-        self.app.go(CalibrationScene(self.app, return_to=OptionsScene(self.app)))
+        self.goto("calibracao", return_to=make_scene(self.app, "opcoes"))
 
     def intro(self) -> None:
-        from .intro import IntroScene
-
-        self.app.go(IntroScene(self.app))
-
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
+        self.goto("abertura")
 
     def draw(self, screen: pygame.Surface) -> None:
-        self.app.backdrop(screen, 1 / 60, None, 50.0)
+        self.app.backdrop(screen, self.last_dt, None, 50.0)
         T.veil(screen, (10, 18, 40), 140)
         self.title(screen, texts.UI["opcoes"], "Ajustes para o supervisor e para a criança")
         self.text.blit(screen, "Controle e superfície", (24, 92), T.SIZES["label"], T.WHITE, True)

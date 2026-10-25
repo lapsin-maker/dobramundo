@@ -13,6 +13,7 @@ from typing import Dict, Iterable, Optional
 
 import pygame
 
+from ..log import log
 from ..paths import asset_dir_candidates
 
 # Pastas de cenário que formam um único espaço de nomes (os nomes não se repetem).
@@ -24,7 +25,8 @@ SpriteSet = Dict[str, pygame.Surface]
 def load_image(path: Path, alpha: bool = True) -> Optional[pygame.Surface]:
     try:
         image = pygame.image.load(str(path))
-    except (OSError, pygame.error):
+    except (OSError, pygame.error) as exc:
+        log.warning("imagem não carregou: %s (%s)", path, exc)
         return None
     if pygame.display.get_surface() is None:
         return image

@@ -76,9 +76,7 @@ class IntroScene(Scene):
         if self.next_scene is not None:
             self.app.go(self.next_scene)
         else:
-            from .village import VillageScene
-
-            self.app.go(VillageScene(self.app))
+            self.goto("vila")
 
     def back(self) -> None:
         self.finish()
@@ -124,7 +122,7 @@ class IntroScene(Scene):
     def draw(self, screen: pygame.Surface) -> None:
         t = self.time
         restoration = 5.0 if t < LAUNCH_END else lerp(5.0, 95.0, (t - LAUNCH_END) / 2.6)
-        self.app.backdrop(screen, 1 / 60, "amazonia", restoration)
+        self.app.backdrop(screen, self.last_dt, "amazonia", restoration)
         T.veil(screen, (20, 14, 10), int(90 * (1.0 - clamp((t - LAUNCH_END) / 3.0, 0.0, 1.0))) // 10 * 10)
         center = (C.WIDTH // 2, 330)
         if 3.0 <= t < LAUNCH_START + 0.4:

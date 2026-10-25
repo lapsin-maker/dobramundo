@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pygame
 
@@ -15,7 +15,7 @@ from ..content.planes import load_maneuvers
 from ..content.progress import PART_BY_KEY, STAR_THRESHOLDS, parts_ok
 from ..game.run import FlightRun
 from ..ui import theme as T
-from ..ui.widgets import row
+from ..ui.widgets import row, star
 from ..util import lerp_color
 from .base import Scene
 
@@ -28,20 +28,6 @@ def maneuvers():
     if _maneuvers is None:
         _maneuvers = load_maneuvers()
     return _maneuvers
-
-
-def draw_star(
-    screen: pygame.Surface, center: Tuple[int, int], radius: int, filled: bool, color=T.SUN, outline=T.NAVY_DARK
-) -> None:
-    cx, cy = center
-    points = []
-    for i in range(10):
-        r = radius if i % 2 == 0 else radius * 0.45
-        angle = -math.pi / 2 + i * math.pi / 5
-        points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
-    if filled:
-        pygame.draw.polygon(screen, color, points)
-    pygame.draw.polygon(screen, outline, points, 3)
 
 
 class Banner:
@@ -67,16 +53,22 @@ class FlightScene(Scene):
         self.cam_surface: Optional[pygame.Surface] = None
         self.cam_bytes: Optional[bytes] = None
         self.music = self.stage_music(0)
+        self.started = False
 
     def stage_music(self, stage: int) -> str:
         return f"musica_{self.biome.music}_{stage + 1}"
 
     def enter(self) -> None:
+        """Também é chamado ao voltar da recalibração: a trilha segue o estágio atual e a
+        decolagem (som e aviso da cidade) só acontece na primeira entrada."""
+        self.music = self.stage_music(self.run.stage)
         super().enter()
-        self.app.audio.play("sfx_decolagem")
         self.app.view.set_biome(self.biome)
         self.app.input.resync_keys()
-        self.banners.append(Banner(f"{self.biome.city} — {self.biome.name}", texts.STAGE_MESSAGES[0], T.WHITE, 3.2))
+        if not self.started:
+            self.started = True
+            self.app.audio.play("sfx_decolagem")
+            self.banners.append(Banner(f"{self.biome.city} — {self.biome.name}", texts.STAGE_MESSAGES[0], T.WHITE, 3.2))
 
     # ------------------------------------------------------------- pausa
     def build(self) -> None:
@@ -108,14 +100,10 @@ class FlightScene(Scene):
         self.build()
 
     def recalibrate(self) -> None:
-        from .calibration import CalibrationScene
-
-        self.app.go(CalibrationScene(self.app, return_to=self))
+        self.goto("calibracao", return_to=self)
 
     def quit_to_village(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
+        self.goto("vila")
 
     def back(self) -> None:
         if self.paused:
@@ -164,9 +152,7 @@ class FlightScene(Scene):
         self.banners = [b for b in self.banners if b.ttl > 0]
         self.flash = max(0.0, self.flash - dt)
         if self.run.finished:
-            from .result import ResultScene
-
-            self.app.go(ResultScene(self.app, self.run))
+            self.goto("resultado", self.run)
 
     def handle_run_events(self) -> None:
         audio = self.app.audio
@@ -224,7 +210,7 @@ class FlightScene(Scene):
         pygame.draw.rect(screen, lerp_color(accent, T.GREEN, 0.3), fill, border_radius=8)
         for limit in STAR_THRESHOLDS:
             x = bar.left + int(bar.width * limit / 100.0) - (8 if limit >= 100 else 0)
-            draw_star(
+            star(
                 screen, (x, bar.centery), 12, run.restoration >= limit - 1e-6 and (limit < 100 or run.stars >= 3), T.SUN
             )
         # recursos do voo
@@ -285,7 +271,7 @@ class FlightScene(Scene):
         T.panel(screen, rect, T.PAPER, T.ORANGE, int(235 * fade), 18, 3)
         left = rect.centerx - (title.get_width() + icons) // 2
         for i in range(banner.stars):
-            draw_star(screen, (left + 14 + i * 34, rect.top + 30), 14, True)
+            star(screen, (left + 14 + i * 34, rect.top + 30), 14, True)
         screen.blit(title, (left + icons, rect.top + 10))
         if banner.subtitle:
             self.text.blit(
@@ -337,14 +323,3 @@ class FlightScene(Scene):
         tip = texts.TIPS[int(self.time // 6) % len(texts.TIPS)]
         self.text.blit(screen, tip, (card.centerx, card.top + 206), T.SIZES["body"], T.MUTED, anchor="midtop")
         self.draw_menu(screen)
-
-
-def flight_or_calibration(app, biome_key: str) -> Scene:
-    """Voo direto ou, com controle corporal ainda não calibrado, a calibração antes."""
-    scene = FlightScene(app, biome_key)
-    body = app.input.body
-    if body is not None and body.error is None and not body.calibrated:
-        from .calibration import CalibrationScene
-
-        return CalibrationScene(app, return_to=scene)
-    return scene

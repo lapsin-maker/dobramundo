@@ -14,8 +14,8 @@ from .. import config as C
 from ..content import texts
 from ..content.biomes import BIOME_MAP_COLORS, BIOME_ORDER, BIOMES, LOCKED_BIOMES
 from ..ui import theme as T
+from ..ui.widgets import star
 from .base import Scene
-from .flight import draw_star, flight_or_calibration
 
 LonLat = Tuple[float, float]
 BRAZIL: List[LonLat] = [
@@ -176,8 +176,6 @@ CITY_TOP = 246
 
 class MapScene(Scene):
     def build(self) -> None:
-        from .village import VillageScene
-
         app = self.app
         profile = app.profile
         buttons = []
@@ -211,7 +209,7 @@ class MapScene(Scene):
                     color=BIOME_MAP_COLORS[key],
                 )
             )
-        buttons.append(self.button((640, 560, 420, 70), texts.UI["voltar"], lambda: app.go(VillageScene(app))))
+        buttons.append(self.button((640, 560, 420, 70), texts.UI["voltar"], lambda: self.goto("vila")))
         self.menu.set_buttons(buttons)
 
     def set_mode(self, mode: str) -> None:
@@ -220,18 +218,12 @@ class MapScene(Scene):
         self.build()
 
     def start(self, key: str) -> None:
-        self.app.save()
-        self.app.go(flight_or_calibration(self.app, key))
-
-    def back(self) -> None:
-        from .village import VillageScene
-
-        self.app.go(VillageScene(self.app))
+        self.fly(key)
 
     def draw(self, screen: pygame.Surface) -> None:
         focused = self.menu.focused
         key = focused.key if focused is not None and focused.key in BIOMES else BIOME_ORDER[0]
-        self.app.backdrop(screen, 1 / 60, key, 5.0)
+        self.app.backdrop(screen, self.last_dt, key, 5.0)
         T.veil(screen, (10, 18, 40), 110)
         T.panel(screen, MAP_RECT.inflate(20, 20), T.PAPER, T.NAVY, 240, 22, 3)
         screen.blit(brazil_map(), (0, 0))
@@ -244,7 +236,7 @@ class MapScene(Scene):
             pygame.draw.circle(screen, T.ORANGE if active else T.NAVY, (x, y), radius)
             self.text.blit(screen, biome.city, (x + 18, y - 14), T.SIZES["label"], T.NAVY_DARK, True)
             for i in range(3):
-                draw_star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
+                star(screen, (x + 30 + i * 22, y + 26), 9, i < self.app.profile.estrelas.get(k, 0))
         self.title(screen, "Mapa dos biomas", "Escolha a cidade do próximo voo")
         self.text.blit(screen, "Como você quer voar?", (642, 82), T.SIZES["label"], T.WHITE, True)
         legend_y = 446
@@ -265,7 +257,7 @@ class MapScene(Scene):
         for button in self.menu.buttons:
             if button.key in BIOMES and button.enabled:
                 for i in range(3):
-                    draw_star(
+                    star(
                         screen,
                         (button.rect.right - 80 + i * 26, button.rect.top + 22),
                         10,

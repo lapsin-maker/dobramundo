@@ -54,7 +54,7 @@ DATA_DIR="${DOBRAMUNDO_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/Dobramundo
 REPORT="$DATA_DIR/self_test.json"
 rm -f "$REPORT"
 
-if ! SDL_VIDEODRIVER=dummy "$EXE" --self-test 90; then
+if ! SDL_VIDEODRIVER=dummy "$EXE" --self-test 90 --exigir-camera; then
     die "o self-test falhou (codigo de saida diferente de 0)."
 fi
 [ -f "$REPORT" ] || die "o self-test nao gerou o relatorio em $REPORT."

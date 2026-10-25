@@ -273,3 +273,23 @@ def grid(
 
 def row(rect: pygame.Rect, count: int, gap: int = 14) -> List[pygame.Rect]:
     return grid(rect, count, count, gap)
+
+
+def star(
+    screen: pygame.Surface,
+    center: Tuple[int, int],
+    radius: int,
+    filled: bool,
+    color: Color = T.SUN,
+    outline: Color = T.NAVY_DARK,
+) -> None:
+    """Estrela de cinco pontas (cheia ou só o contorno)."""
+    cx, cy = center
+    points = []
+    for i in range(10):
+        r = radius if i % 2 == 0 else radius * 0.45
+        angle = -math.pi / 2 + i * math.pi / 5
+        points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+    if filled:
+        pygame.draw.polygon(screen, color, points)
+    pygame.draw.polygon(screen, outline, points, 3)

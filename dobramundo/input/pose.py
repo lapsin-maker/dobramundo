@@ -19,6 +19,8 @@ import time
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
+from ..log import log
+
 Point = Tuple[float, float]  # posição normalizada (0..1 na imagem)
 Landmark = Tuple[float, float, float]  # x, y, visibilidade
 MIN_VISIBILITY = 0.5
@@ -192,7 +194,12 @@ class PoseCameraSource:
         self._landmarks: Optional[List[Landmark]] = None
         self._preview: Optional[bytes] = None
         if model_path is None or not Path(model_path).is_file():
-            self.error = "modelo de pose não encontrado"
+            self.fail("modelo de pose não encontrado")
+
+    def fail(self, message: str) -> None:
+        """Registra a falha da câmera (aparece nas opções e na calibração, e no log)."""
+        self.error = message
+        log.warning("câmera: %s", message)
 
     @property
     def running(self) -> bool:
@@ -205,10 +212,14 @@ class PoseCameraSource:
         self._thread = threading.Thread(target=self._run, name="webcam-pose", daemon=True)
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 1.5) -> None:
+        """Pede para a thread parar; a referência só é solta quando ela termina de fato."""
         self._stop.set()
-        if self._thread is not None and self._thread is not threading.current_thread():
-            self._thread.join(timeout=3.0)
+        thread = self._thread
+        if thread is not None and thread is not threading.current_thread():
+            thread.join(timeout=timeout)
+            if thread.is_alive():
+                return  # ainda liberando a câmera: running segue True e impede outra captura
         self._thread = None
 
     def snapshot(self) -> Tuple[int, Optional[List[Landmark]], Optional[bytes]]:
@@ -228,16 +239,16 @@ class PoseCameraSource:
 
             landmarker = create_landmarker(self.model_path)
         except ImportError:
-            self.error = "instale mediapipe e opencv para usar a câmera"
+            self.fail("instale mediapipe e opencv para usar a câmera")
             return
         except Exception as exc:  # modelo corrompido, runtime etc.
-            self.error = f"modelo de pose não carregou ({exc.__class__.__name__})"
+            self.fail(f"modelo de pose não carregou ({exc.__class__.__name__})")
             return
         capture = cv2.VideoCapture(self.camera_index)
         if not capture.isOpened():
             capture.release()
             landmarker.close()
-            self.error = "não foi possível abrir a webcam"
+            self.fail("não foi possível abrir a webcam")
             return
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_SIZE[0])
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_SIZE[1])
@@ -246,7 +257,7 @@ class PoseCameraSource:
             while not self._stop.is_set():
                 ok, frame = capture.read()
                 if not ok:
-                    self.error = "a webcam não envia imagem"
+                    self.fail("a webcam não envia imagem")
                     break
                 frame = cv2.flip(frame, 1)  # espelho: direita do jogador = direita da tela
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -259,7 +270,7 @@ class PoseCameraSource:
                 preview = cv2.resize(rgb, PREVIEW_SIZE, interpolation=cv2.INTER_AREA).tobytes()
                 self._publish(points, preview)  # só a miniatura fica na memória; nada é gravado
         except Exception as exc:
-            self.error = f"erro na câmera ({exc.__class__.__name__})"
+            self.fail(f"erro na câmera ({exc.__class__.__name__})")
         finally:
             capture.release()
             landmarker.close()
@@ -268,8 +279,8 @@ class PoseCameraSource:
 class BodyControl:
     """Liga a fonte da câmera ao mapeador do segmento escolhido.
 
-    ``source`` precisa ter start(), stop(), snapshot() -> (seq, pontos, miniatura) e
-    ``error`` (os testes usam uma fonte falsa com essa forma).
+    ``source`` precisa ter snapshot() -> (seq, pontos, miniatura) e ``error``; quem a
+    liga e desliga é o InputHub (os testes usam uma fonte falsa com essa forma).
     """
 
     def __init__(self, source, segment: Segment, sensitivity: float = 1.0, dead_scale: float = 1.0) -> None:
@@ -299,12 +310,6 @@ class BodyControl:
     @property
     def progress(self) -> float:
         return self.mapper.progress
-
-    def start(self) -> None:
-        self.source.start()
-
-    def stop(self) -> None:
-        self.source.stop()
 
     def recalibrate(self) -> None:
         self.mapper.reset()

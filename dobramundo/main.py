@@ -1,4 +1,4 @@
-"""Ponto de entrada: python -m dobramundo [--self-test [N]] [--sem-som]."""
+"""Ponto de entrada: python -m dobramundo [--self-test [N] [--exigir-camera]] [--sem-som]."""
 
 from __future__ import annotations
 
@@ -16,18 +16,15 @@ from .paths import user_data_dir  # noqa: E402
 
 def first_scene(app):
     """Abertura (1ª vez) -> aviso ao supervisor (1ª vez) -> calibração (controle corporal) -> vila."""
-    from .scenes.calibration import CalibrationScene
-    from .scenes.consent import ConsentScene
-    from .scenes.intro import IntroScene
-    from .scenes.village import VillageScene
+    from .scenes import make_scene
 
-    scene = VillageScene(app)
+    scene = make_scene(app, "vila")
     if app.input.uses_body:
-        scene = CalibrationScene(app, return_to=scene)
+        scene = make_scene(app, "calibracao", return_to=scene)
     if not app.profile.consentimento:
-        scene = ConsentScene(app, scene)
+        scene = make_scene(app, "aviso", scene)
     # A abertura completa aparece na primeira vez; depois fica em Opções > "Ver a abertura".
-    return scene if app.profile.abertura_vista else IntroScene(app, scene)
+    return scene if app.profile.abertura_vista else make_scene(app, "abertura", scene)
 
 
 def show_message(title: str, text: str) -> None:
@@ -66,12 +63,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     import pygame
 
+    from .log import setup_logging
+
+    setup_logging()
     try:
         if "--self-test" in argv:
             from .selftest import run_self_test
 
             value = arg_value(argv, "--self-test")
-            return run_self_test(int(value) if value and value.isdigit() else 240)
+            frames = int(value) if value and value.isdigit() else 240
+            return run_self_test(frames, require_camera="--exigir-camera" in argv)
         from .app import App
 
         app = App(audio="--sem-som" not in argv)

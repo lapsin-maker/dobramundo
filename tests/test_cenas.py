@@ -12,7 +12,7 @@ from dobramundo.main import first_scene
 from dobramundo.scenes.about import AboutScene
 from dobramundo.scenes.calibration import CalibrationScene
 from dobramundo.scenes.consent import ConsentScene
-from dobramundo.scenes.flight import FlightScene, flight_or_calibration
+from dobramundo.scenes.flight import FlightScene
 from dobramundo.scenes.hangar import HangarScene
 from dobramundo.scenes.intro import IntroScene, fold_pose
 from dobramundo.scenes.map import MapScene
@@ -91,7 +91,7 @@ def test_compra_sem_recursos_nao_acontece(app):
     from dobramundo.content.progress import PART_BY_KEY
 
     scene.buy_part(PART_BY_KEY["leme"])
-    assert app.profile.pecas["leme"] == 0 and scene.message
+    assert app.profile.pecas["leme"] == 0 and scene.toast.text
 
 
 def test_comprar_padrao_usa_pontos(app):
@@ -151,7 +151,9 @@ def test_controle_corporal_sem_calibrar_pede_calibracao(app):
     app.input.source_factory = lambda: source
     app.profile.controle = "tronco_sentado"
     app.apply_options()
-    assert isinstance(flight_or_calibration(app, "amazonia"), CalibrationScene)
+    show(app, MapScene(app)).fly("amazonia")
+    app.step(1 / 60, [])
+    assert isinstance(app.scene, CalibrationScene)
 
 
 def test_fim_do_voo_vai_para_o_resultado(app):
@@ -194,3 +196,33 @@ def test_self_test_completo(data_dir):
 def test_abertura_so_na_primeira_vez(app):
     app.profile.abertura_vista = True
     assert isinstance(first_scene(app), VillageScene)
+
+
+def test_voltar_da_recalibracao_nao_reinicia_o_voo(app):
+    scene = show(app, FlightScene(app, "amazonia"))
+    scene.run.add_restoration(70.0)
+    scene.run.take_events()
+    banners = len(scene.banners)
+    app.go(CalibrationScene(app, return_to=scene))
+    app.step(1 / 60, [])
+    app.go(scene)
+    app.step(1 / 60, [])
+    assert scene.music == "musica_amazonia_3"
+    assert len(scene.banners) <= banners
+
+
+def test_esc_na_vila_pergunta_antes_de_sair(app):
+    scene = show(app, VillageScene(app))
+    key(app, pygame.K_ESCAPE)
+    assert scene.confirm_exit and app.running and isinstance(app.scene, VillageScene)
+    key(app, pygame.K_ESCAPE)
+    assert not scene.confirm_exit
+
+
+def test_falha_ao_salvar_aparece_na_vila(app, monkeypatch):
+    import dobramundo.app as app_module
+
+    monkeypatch.setattr(app_module, "save_profile", lambda profile: False)
+    app.save()
+    show(app, VillageScene(app))
+    assert app.save_failed

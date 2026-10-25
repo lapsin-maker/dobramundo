@@ -87,7 +87,7 @@ if errorlevel 1 goto :fail_copy
 
 if exist "%REPORT%" del /q "%REPORT%"
 set "SDL_VIDEODRIVER=dummy"
-"%EXE%" --self-test 90
+"%EXE%" --self-test 90 --exigir-camera
 set "TEST_RC=%ERRORLEVEL%"
 set "SDL_VIDEODRIVER="
 if not "%TEST_RC%"=="0" goto :fail_selftest
