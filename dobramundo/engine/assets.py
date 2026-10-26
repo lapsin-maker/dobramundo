@@ -59,20 +59,7 @@ class Assets:
     def folder(self, name: str, names: Optional[Iterable[str]] = None) -> SpriteSet:
         """Todos os PNGs da pasta (ou só os nomes pedidos, se informados)."""
         names = None if names is None else tuple(names)
-        key = name if names is None else f"{name}|{','.join(sorted(names))}"
-        wanted = None if names is None else set(names)
-        paths = self._folders.get(key)
-        if paths is None:
-            by_name = {}
-            # Do pacote para o lado do executável: a pasta de maior prioridade sobrescreve.
-            for directory in reversed(asset_dir_candidates(name)):
-                if not directory.is_dir():
-                    continue
-                for path in sorted(directory.glob("*.png")):
-                    if wanted is None or path.stem in wanted:
-                        by_name[path.stem] = str(path)
-            paths = tuple(sorted(by_name.items()))
-            self._folders[key] = paths
+        paths = self._paths(name, names)
         sprites: SpriteSet = {}
         for stem, path in paths:
             image = self._loaded.get(path)
@@ -83,6 +70,32 @@ class Assets:
             if image is not None:
                 sprites[stem] = image
         return sprites
+
+    def _paths(self, name: str, names: Optional[Iterable[str]] = None):
+        names = None if names is None else tuple(names)
+        key = name if names is None else f"{name}|{','.join(sorted(names))}"
+        paths = self._folders.get(key)
+        if paths is None:
+            wanted = None if names is None else set(names)
+            by_name = {}
+            # Do pacote para o lado do executável: a pasta de maior prioridade sobrescreve.
+            for directory in reversed(asset_dir_candidates(name)):
+                if not directory.is_dir():
+                    continue
+                for path in sorted(directory.glob("*.png")):
+                    if wanted is None or path.stem in wanted:
+                        by_name[path.stem] = str(path)
+            paths = tuple(sorted(by_name.items()))
+            self._folders[key] = paths
+        return paths
+
+    def names(self, folder: str) -> tuple[str, ...]:
+        """List image stems without decoding pixels; useful for task-wise warm-up."""
+        return tuple(stem for stem, _path in self._paths(folder))
+
+    def has(self, folder: str, name: str) -> bool:
+        """Check an image's indexed presence without decoding its pixels."""
+        return any(stem == name for stem, _path in self._paths(folder, (name,)))
 
     def sprite(self, folder: str, name: str) -> Optional[pygame.Surface]:
         return self.folder(folder, names=(name,)).get(name)

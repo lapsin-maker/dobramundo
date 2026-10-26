@@ -1,0 +1,424 @@
+{
+  "version": "1.7.0",
+  "conditions": "CPU; SDL dummy; no camera; 1100x650; fresh process; 60 warmup frames per case",
+  "pacing": "uncapped stress",
+  "python": "3.12.10",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "camera_clock_resolution_ms": 15.625,
+  "startup_ms": 788.24,
+  "rss_before_bytes": 41111552,
+  "rss_after_bytes": 100724736,
+  "rss_delta_bytes": 59613184,
+  "startup_watercolor_count": 0,
+  "startup_watercolor_bytes": 0,
+  "seed": 7,
+  "pilot": "customized synthetic avatar",
+  "flights": {
+    "caatinga_normal": {
+      "frame": {
+        "median_ms": 9.406,
+        "p95_ms": 11.914,
+        "p99_ms": 13.35,
+        "max_ms": 13.35
+      },
+      "scene_setup_ms": 6.744,
+      "warmup": {
+        "median_ms": 7.073,
+        "p95_ms": 11.412,
+        "p99_ms": 38.382,
+        "max_ms": 38.382
+      },
+      "first_preparation_frame_ms": 56.626,
+      "first_interactive_frame_ms": 38.382,
+      "preparation_frames": 25,
+      "preparation_frame_cost": {
+        "median_ms": 7.75,
+        "p95_ms": 60.529,
+        "p99_ms": 61.216,
+        "max_ms": 61.216
+      },
+      "time_until_first_interactive_ms": 475.511,
+      "preparation_tasks": [
+        [
+          "Preparando paisagem",
+          19.56229998904746
+        ],
+        [
+          "Preparando paisagem",
+          21.121400000993162
+        ],
+        [
+          "Preparando paisagem",
+          20.528099994407967
+        ],
+        [
+          "Preparando textura do percurso",
+          60.46490000153426
+        ],
+        [
+          "Preparando margens",
+          59.91199999698438
+        ],
+        [
+          "Preparando margens",
+          0.4393999988678843
+        ],
+        [
+          "Preparando margens",
+          0.41059999784920365
+        ],
+        [
+          "Preparando margens",
+          0.43620000360533595
+        ],
+        [
+          "Preparando margens",
+          0.3848000051220879
+        ],
+        [
+          "Preparando margens",
+          0.4600000102072954
+        ],
+        [
+          "Preparando margens",
+          0.3507000074023381
+        ],
+        [
+          "Preparando margens",
+          0.36249999538995326
+        ],
+        [
+          "Preparando margens",
+          0.5070999905001372
+        ],
+        [
+          "Preparando margens",
+          0.5438999942271039
+        ],
+        [
+          "Preparando margens",
+          0.6483000033767894
+        ],
+        [
+          "Preparando margens",
+          0.9123999916482717
+        ],
+        [
+          "Preparando detalhes industriais",
+          5.965100004686974
+        ],
+        [
+          "Preparando detalhes industriais",
+          6.525200005853549
+        ],
+        [
+          "Preparando detalhes industriais",
+          5.88939999579452
+        ],
+        [
+          "Preparando detalhes industriais",
+          7.423000002745539
+        ],
+        [
+          "Preparando detalhes industriais",
+          5.887000006623566
+        ],
+        [
+          "Suavizando textura do chão",
+          1.371700011077337
+        ],
+        [
+          "Suavizando textura do chão",
+          0.6698999932268634
+        ],
+        [
+          "Suavizando textura do chão",
+          0.344899992342107
+        ],
+        [
+          "Suavizando textura do chão",
+          0.18180000188294798
+        ],
+        [
+          "Suavizando textura do chão",
+          0.06679999933112413
+        ],
+        [
+          "Suavizando textura do chão",
+          0.03480000304989517
+        ],
+        [
+          "Alocando faixas do chão",
+          0.2852000034181401
+        ],
+        [
+          "Alocando faixas do chão",
+          0.2643999905558303
+        ],
+        [
+          "Alocando faixas do chão",
+          0.29660000291187316
+        ],
+        [
+          "Alocando faixas do chão",
+          0.3372999926796183
+        ],
+        [
+          "Alocando faixas do chão",
+          0.35519999801181257
+        ],
+        [
+          "Alocando faixas do chão",
+          0.4231999919284135
+        ],
+        [
+          "Alocando faixas do chão",
+          0.4520999937085435
+        ],
+        [
+          "Alocando faixas do chão",
+          0.523299997439608
+        ],
+        [
+          "Alocando faixas do chão",
+          0.3580999909900129
+        ],
+        [
+          "Preparando fauna",
+          51.88579999958165
+        ],
+        [
+          "Carregando elementos regionais",
+          6.416499993065372
+        ],
+        [
+          "Carregando elementos regionais",
+          7.102999996277504
+        ],
+        [
+          "Carregando elementos regionais",
+          5.318099996657111
+        ],
+        [
+          "Preparando obstáculos regionais",
+          7.9698999907122925
+        ],
+        [
+          "Preparando avião",
+          17.19569999841042
+        ],
+        [
+          "Aplicando pintura",
+          0.007000009645707905
+        ],
+        [
+          "Preparando piloto",
+          22.173699995619245
+        ],
+        [
+          "Montando visual do voo",
+          0.3377000102773309
+        ],
+        [
+          "Preparando primeira vista",
+          20.478299993555993
+        ]
+      ],
+      "frames_measured": 30,
+      "within_60fps_budget_fraction": 1.0,
+      "components": {
+        "input": {
+          "median_ms": 0.001,
+          "p95_ms": 0.001,
+          "p99_ms": 0.002,
+          "max_ms": 0.002
+        },
+        "rules_update": {
+          "median_ms": 0.076,
+          "p95_ms": 0.156,
+          "p99_ms": 1.851,
+          "max_ms": 1.851
+        },
+        "horizon": {
+          "median_ms": 1.28,
+          "p95_ms": 1.727,
+          "p99_ms": 1.893,
+          "max_ms": 1.893
+        },
+        "ground": {
+          "median_ms": 2.246,
+          "p95_ms": 2.836,
+          "p99_ms": 2.998,
+          "max_ms": 2.998
+        },
+        "route_and_banks": {
+          "median_ms": 5.271,
+          "p95_ms": 6.119,
+          "p99_ms": 6.317,
+          "max_ms": 6.317
+        },
+        "background": {
+          "median_ms": 6.397,
+          "p95_ms": 7.891,
+          "p99_ms": 8.071,
+          "max_ms": 8.071
+        },
+        "plane": {
+          "median_ms": 0.117,
+          "p95_ms": 0.483,
+          "p99_ms": 0.575,
+          "max_ms": 0.575
+        },
+        "entities_and_effects": {
+          "median_ms": 7.297,
+          "p95_ms": 9.003,
+          "p99_ms": 9.36,
+          "max_ms": 9.36
+        },
+        "world": {
+          "median_ms": 7.302,
+          "p95_ms": 9.01,
+          "p99_ms": 9.365,
+          "max_ms": 9.365
+        },
+        "hud": {
+          "median_ms": 0.286,
+          "p95_ms": 0.44,
+          "p99_ms": 0.486,
+          "max_ms": 0.486
+        },
+        "scene": {
+          "median_ms": 9.021,
+          "p95_ms": 10.973,
+          "p99_ms": 11.535,
+          "max_ms": 11.535
+        },
+        "canvas": {
+          "median_ms": 9.135,
+          "p95_ms": 11.628,
+          "p99_ms": 12.88,
+          "max_ms": 12.88
+        },
+        "present": {
+          "median_ms": 0.252,
+          "p95_ms": 0.444,
+          "p99_ms": 0.461,
+          "max_ms": 0.461
+        }
+      },
+      "components_exclusive": {
+        "input": {
+          "median_ms": 0.001,
+          "p95_ms": 0.001,
+          "p99_ms": 0.002,
+          "max_ms": 0.002
+        },
+        "rules_update": {
+          "median_ms": 0.076,
+          "p95_ms": 0.156,
+          "p99_ms": 1.851,
+          "max_ms": 1.851
+        },
+        "horizon": {
+          "median_ms": 1.28,
+          "p95_ms": 1.727,
+          "p99_ms": 1.893,
+          "max_ms": 1.893
+        },
+        "ground": {
+          "median_ms": 2.246,
+          "p95_ms": 2.836,
+          "p99_ms": 2.998,
+          "max_ms": 2.998
+        },
+        "route_and_banks": {
+          "median_ms": 2.982,
+          "p95_ms": 3.76,
+          "p99_ms": 4.03,
+          "max_ms": 4.03
+        },
+        "background": {
+          "median_ms": 0.356,
+          "p95_ms": 0.58,
+          "p99_ms": 0.582,
+          "max_ms": 0.582
+        },
+        "plane": {
+          "median_ms": 0.117,
+          "p95_ms": 0.483,
+          "p99_ms": 0.575,
+          "max_ms": 0.575
+        },
+        "entities_and_effects": {
+          "median_ms": 0.681,
+          "p95_ms": 1.015,
+          "p99_ms": 1.697,
+          "max_ms": 1.697
+        },
+        "world": {
+          "median_ms": 0.005,
+          "p95_ms": 0.006,
+          "p99_ms": 0.026,
+          "max_ms": 0.026
+        },
+        "hud": {
+          "median_ms": 0.286,
+          "p95_ms": 0.44,
+          "p99_ms": 0.486,
+          "max_ms": 0.486
+        },
+        "scene": {
+          "median_ms": 1.524,
+          "p95_ms": 1.909,
+          "p99_ms": 2.446,
+          "max_ms": 2.446
+        },
+        "canvas": {
+          "median_ms": 0.032,
+          "p95_ms": 0.06,
+          "p99_ms": 0.089,
+          "max_ms": 0.089
+        },
+        "present": {
+          "median_ms": 0.252,
+          "p95_ms": 0.444,
+          "p99_ms": 0.461,
+          "max_ms": 0.461
+        }
+      },
+      "rss_bytes": 240545792,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 149802208,
+        "surface_bytes_by_owner": {
+          "assets": 19497088,
+          "scene_sprites": 0,
+          "world_sprite_cache": 581628,
+          "world_transient": 1069832,
+          "sky": 0,
+          "ground": 917504,
+          "watercolor": 87879516,
+          "plane_skin": 27015716,
+          "paper_items": 12840924
+        },
+        "cache_items": {
+          "scaled": 1,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 7,
+          "ground_groups": 0,
+          "asset_images": 41
+        },
+        "aggregate_cache_bytes": 74878164,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 10376,
+          "get_misses": 1184,
+          "evictions": 171,
+          "live_caches": 16
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      }
+    }
+  },
+  "status": "ok"
+}

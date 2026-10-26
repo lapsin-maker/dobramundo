@@ -246,6 +246,8 @@ def test_balance_pause_is_wall_time_not_flight_time():
         interrupt_after=61.0,
         exploration=True,
         assistance=True,
+        # Revisiting a restored city keeps the flight open past the scheduled pause.
+        city_restoration=100.0,
     )
     assert record["pause_count"] == 1
     assert record["pause_seconds"] == 2.0

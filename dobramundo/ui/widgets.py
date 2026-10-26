@@ -79,8 +79,9 @@ class Button:
                     screen,
                     self.sublabel,
                     (rect.centerx, rect.top + 14 + self.size + 4),
-                    T.SIZES["small"],
-                    T.MUTED,
+                    max(T.SIZES["small"], 18 if rect.height >= 54 else T.SIZES["small"]),
+                    T.MUTED_STRONG,
+                    True,
                     anchor="midtop",
                 )
         elif self.label:
@@ -91,8 +92,9 @@ class Button:
                         screen,
                         self.sublabel,
                         (rect.centerx, rect.centery + 13),
-                        T.SIZES["small"],
-                        T.MUTED,
+                        max(T.SIZES["small"], 18 if rect.height >= 54 else T.SIZES["small"]),
+                        T.MUTED_STRONG,
+                        True,
                         anchor="center",
                     )
                 else:
@@ -102,7 +104,13 @@ class Button:
                 if self.sublabel:
                     text.blit(screen, self.label, (left, rect.centery - 10), self.size, color, True, "midleft")
                     text.blit(
-                        screen, self.sublabel, (left, rect.centery + 12), T.SIZES["small"], T.MUTED, anchor="midleft"
+                        screen,
+                        self.sublabel,
+                        (left, rect.centery + 12),
+                        max(T.SIZES["small"], 18 if rect.height >= 54 else T.SIZES["small"]),
+                        T.MUTED_STRONG,
+                        True,
+                        anchor="midleft",
                     )
                 else:
                     text.blit(screen, self.label, (left, rect.centery), self.size, color, True, "midleft")

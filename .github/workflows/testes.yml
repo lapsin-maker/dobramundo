@@ -46,10 +46,25 @@ jobs:
         run: ruff check .
       - name: Formatação
         run: ruff format --check .
+      - name: Contratos tipados de perfil, render e telemetria
+        run: python -m mypy
       - name: Testes
         run: python -m pytest -q -ra --cov=dobramundo --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml
       - name: Self-test
         run: python -m dobramundo --self-test 60
+      - name: Inventário do cartucho e regressão visual
+        if: matrix.python-version == '3.12'
+        run: |
+          python tools/build_cartridge.py --so-montar
+          python tools/verify_cartridge.py --stage build/cartucho --out build/cartucho-render.json
+          python tools/capture_release.py --out build/capturas --reference
+          python tools/visual_regression.py --reference docs/visual-reference/v170 --actual build/capturas
+      - name: Capturas de regressão
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-${{ github.sha }}
+          path: build/capturas/*.png
       - name: Cobertura por comportamento (sem meta artificial de percentual)
         uses: actions/upload-artifact@v4
         with:

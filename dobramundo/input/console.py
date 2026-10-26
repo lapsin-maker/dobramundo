@@ -17,9 +17,53 @@ from __future__ import annotations
 import math
 from typing import List, Optional, Sequence, Tuple
 
+from .floor import expand_reach, offset_reach
 from .pose import Landmark, Point
 
 RawPoint = Tuple[float, float, Optional[float]]  # x, y e visibilidade (None: o modelo não informa)
+
+
+def floor_position(tracking) -> Optional[Point]:
+    """Posição dos pés para o jogo, incluindo a folga que a API do console reserva.
+
+    Um pé pode passar da borda enquanto o centro entre os dois ainda indica um
+    alvo válido. A API padrão deixa de retornar a média quando qualquer pé sai
+    da área; aqui conservamos o centro enquanto os dois pés ainda são rastreados
+    e descartamos apenas quando ambos estão fora.
+    """
+    if tracking is None or tracking.missing or tracking.stale:
+        return None
+    feet = tracking.feet
+    left, right = feet.get("left"), feet.get("right")
+    if left is None or right is None:
+        return None
+    outside = tracking.out_of_area
+    if outside.get("left") and outside.get("right"):
+        return None
+
+    center = (left.x + right.x) / 2.0, (left.y + right.y) / 2.0
+    if not all(math.isfinite(value) for value in center):
+        return None
+    try:
+        target_active = tracking.control_target_active
+        target = tracking.control_target
+    except AttributeError:
+        # Compatibilidade com TSDKs anteriores ao marcador control_target.
+        target_active, target = False, None
+    if target_active:
+        if target is None or not (math.isfinite(target.x) and math.isfinite(target.y)):
+            return None
+        offset = target.x - center[0], target.y - center[1]
+    else:
+        offset = (0.0, 0.0)
+    return offset_reach(expand_reach(center), offset)
+
+
+def floor_indicator_position(body) -> Optional[Point]:
+    """Retorna o cursor de voo apenas enquanto a leitura corporal está visível."""
+    if body is None or body.error is not None or not body.visible:
+        return None
+    return body.position()
 
 
 def body_points(raw: Optional[Sequence[RawPoint]], mirror: bool = True) -> Optional[List[Landmark]]:

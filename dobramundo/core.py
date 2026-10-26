@@ -32,11 +32,12 @@ from .ui.theme import Text
 
 
 def first_scene(app):
-    """Aviso -> calibração -> treino de permanência -> piloto -> vila na primeira vez."""
+    """Aviso e calibração levam ao piloto, à história pulável e então à vila."""
     scene = app.create_scene("vila")
-    if not app.profile.piloto_montado:  # a primeira coisa: a criança monta o personagem da história
-        pilot = app.create_scene("piloto", first_time=True, return_to=scene)
-        scene = app.create_scene("dwell_treino", next_scene=pilot, return_to=pilot)
+    if not app.profile.abertura_vista:
+        scene = app.create_scene("abertura", next_scene=scene)
+    if not app.profile.piloto_montado:
+        scene = app.create_scene("piloto", first_time=True, return_to=scene)
     if app.input.uses_body:
         scene = app.create_scene("calibracao", return_to=scene)
     if not app.profile.consentimento:
@@ -126,9 +127,7 @@ class GameCore:
         key = biome_key or BIOME_ORDER[0]
         world = self.backdrop_world
         if world is None or world.biome.key != key:
-            world = World(BIOMES[key], "normal", random.Random(7))
-            world.entities.clear()
-            world.spawn_pattern = lambda z: None  # type: ignore[assignment]
+            world = World(BIOMES[key], "normal", random.Random(7), spawn_enabled=False)
             self.backdrop_world = world
         if restoration is not None and abs(world.restoration - restoration) > 0.5:
             world.set_restoration(restoration)

@@ -9,6 +9,8 @@ O pacote declara Python >=3.8; a matriz de CI da entrega cobre 3.8/3.12 quando e
 ```text
 python -m pytest -q
 ruff check .
+ruff format --check .
+python -m mypy
 python -m dobramundo --self-test 1200 --exigir-camera
 ```
 
@@ -31,4 +33,6 @@ O lint ativo exclui `tools/legado`. Não formate todo o repositório dentro de u
 
 Mantenha originais e procedência. O runtime usa PNGs locais, sem geração por IA durante o jogo. Não converter formatos sem testar o suporte no console. Pintado → papel → lógico é uma cadeia de fallback, não código duplicado para apagar automaticamente.
 
-Confira `__version__`, self-test do executável, check/build do TSDK e hashes dos pacotes antes da release. A versão do código é 1.6.0; isso, por si só, não confirma build nem publicação. Registre o commit do código usado no build e substitua apenas os campos explicitamente pendentes em `docs/ENTREGA_1_6.md` após produzir evidência. Preserve releases históricas, branches compartilhadas e histórico Git sem limpeza destrutiva não solicitada.
+Confira `__version__`, self-test do executável, check/build do TSDK e hashes dos pacotes antes da release. Use `tools/runtime_assets.py` para selecionar os arquivos do jogo e `tools/package_release.py` para fechar a distribuição a partir de CI aprovada; o script verifica commits, árvores, detector e integridade. Uma mudança de número no código não confirma publicação. Preserve releases históricas e branches compartilhadas; remova branches concluídas somente após conferir seus commits e a autorização.
+
+O mypy verifica inicialmente modelo/migração, contratos do desenho e telemetria. Amplie esse limite gradualmente; não use `Any` para esconder contratos incorretos. Referências visuais de menus ficam em `docs/visual-reference/`; atualizá-las exige abrir as imagens novas e justificar a mudança, além de rodar `tools/visual_regression.py`.

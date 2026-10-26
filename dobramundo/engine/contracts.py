@@ -7,6 +7,7 @@ Não copiar todo o mundo a cada quadro; os contratos descrevem uma leitura.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Optional, Protocol, Sequence, Tuple
 
 from ..content.biomes import Biome
@@ -33,6 +34,7 @@ class EntityView(Protocol):
     solar: bool
     collected: bool
     hit: bool
+    passed: bool
     dodged: bool
 
     def hitbox(self) -> BoundsView: ...
@@ -97,6 +99,18 @@ class FlightView(Protocol):
     magnet_timer: float
     beams: Sequence[BeamView]
     floating: Sequence[FloatingTextView]
+
+
+@dataclass(frozen=True)
+class RenderContext:
+    """Immutable inputs shared by the renderer's background layer composition."""
+
+    world: WorldStateView
+    camera_x: float
+    elapsed: float
+    high_contrast: bool
+    reduce_motion: bool
+    contrast_scale: float
 
 
 class PlaneLook:

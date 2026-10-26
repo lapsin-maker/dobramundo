@@ -9,11 +9,21 @@ from dobramundo.engine.watercolor import WatercolorWorld
 from dobramundo.game.world import World
 
 
+def prepare_mobile(painter, biome):
+    for stage in range(3):
+        painter.prepare_backdrop(biome, stage)
+    painter.route.prepare_ground()
+    for index in range(12):
+        painter.route.prepare_bank(biome, index)
+    painter.life.prepare()
+
+
 @pytest.mark.parametrize("biome", ["amazonia", "caatinga"])
 @pytest.mark.parametrize("reduced", [False, True])
 def test_large_ground_area_moves_without_any_entities(display, biome, reduced):
     painter = WatercolorWorld(Assets())
     world = World(BIOMES[biome])
+    prepare_mobile(painter, biome)
     world.entities.clear()
     painter.draw(display, world, 0, reduced)
     before = [display.get_at((x, y)) for y in range(300, 650, 5) for x in range(200, 900, 5)]
@@ -43,10 +53,12 @@ def test_pause_freezes_route_and_drawing_does_not_change_game_state(display):
     assert original == (world.distance, list(world.entities), world.visual)
 
 
-def test_ground_rescales_only_single_rows_never_full_images_in_flight(display, monkeypatch):
+def test_ground_rescales_only_small_bands_never_full_images_in_flight(display, monkeypatch):
     painter = WatercolorWorld(Assets())
     world = World(BIOMES["caatinga"])
+    painter.route.prepare_ground()
     ground = painter.route.ground
+    assert ground is not None
     ground.paint(display, world.biome.key, 0, 0, (230, 220, 190))
 
     def forbidden(*args, **kwargs):
@@ -54,11 +66,11 @@ def test_ground_rescales_only_single_rows_never_full_images_in_flight(display, m
 
     original_scale = pygame.transform.scale
 
-    def scale_row(source, size, dest=None):
-        assert source.get_height() == 1 and size[1] <= 3
+    def scale_band(source, size, dest=None):
+        assert source.get_width() == 1024 and source.get_height() == 3 and size[1] == 3
         return original_scale(source, size, dest)
 
-    monkeypatch.setattr(pygame.transform, "scale", scale_row)
+    monkeypatch.setattr(pygame.transform, "scale", scale_band)
     monkeypatch.setattr(pygame.transform, "smoothscale", forbidden)
     monkeypatch.setattr(pygame.image, "load", forbidden)
     for distance in (1, 2, 100, 1300, 10000):

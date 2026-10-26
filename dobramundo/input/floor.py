@@ -20,8 +20,35 @@ from ..engine.orientation import unrotate_point
 from .pose import MIN_VISIBILITY, Landmark, Point
 
 TARGETS: Tuple[Point, ...] = ((0.15, 0.15), (0.85, 0.15), (0.85, 0.85), (0.15, 0.85))
+REACH_INSET = 0.15  # margem física dos marcadores/apoios em relação ao centro dos pés
+REACH_SPAN = 1.0 - 2.0 * REACH_INSET
 HEEL_TOE = ((29, 31), (30, 32))  # (calcanhar, ponta) do pé esquerdo e do direito no MediaPipe Pose
 Matrix = Tuple[Tuple[float, float, float], ...]
+
+
+def expand_reach(point: Point) -> Point:
+    """Expande a zona confortável do centro dos pés (15–85%) para a tela inteira.
+
+    Os quatro alvos de calibração ficam afastados das bordas para serem visíveis e
+    alcançáveis. A média dos pés, porém, não chega às bordas quando uma pegada está
+    próxima do limite; esta camada de alcance compensa essa folga sem alterar a
+    homografia nem o centro neutro.
+    """
+
+    def axis(value: float) -> float:
+        return min(1.0, max(0.0, (value - REACH_INSET) / REACH_SPAN))
+
+    return axis(point[0]), axis(point[1])
+
+
+def offset_reach(point: Point, offset: Point) -> Point:
+    """Aplica offsets de mira com atenuação nas bordas para preservar os cantos."""
+
+    def axis(value: float, shift: float) -> float:
+        edge_weight = min(1.0, max(0.0, 4.0 * value * (1.0 - value)))
+        return min(1.0, max(0.0, value + shift * edge_weight))
+
+    return axis(point[0], offset[0]), axis(point[1], offset[1])
 
 
 def is_convex(points: Sequence[Point]) -> bool:
@@ -118,9 +145,9 @@ class FloorMap:
             if image is None:
                 return None
             x, y = unrotate_point(image[0], image[1], rotation, mirrored)
-            y -= lead  # o cursor fica à frente dos dedos, visível, e não sob o corpo
             if not (-0.05 <= x <= 1.05 and -0.05 <= y <= 1.05):
                 return None  # fora da projeção
-            return min(1.0, max(0.0, x)), min(1.0, max(0.0, y))
+            position = expand_reach((x, y))
+            return offset_reach(position, (0.0, -lead))
 
         return locate

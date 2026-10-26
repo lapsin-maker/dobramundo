@@ -9,6 +9,15 @@ from dobramundo.engine.watercolor import WatercolorWorld
 from dobramundo.game.world import World
 
 
+def prepare_mobile(painter, biome):
+    for stage in range(3):
+        painter.prepare_backdrop(biome, stage)
+    painter.route.prepare_ground()
+    for index in range(12):
+        painter.route.prepare_bank(biome, index)
+    painter.life.prepare()
+
+
 @pytest.mark.parametrize("biome", ["amazonia", "caatinga"])
 def test_each_city_has_three_distinct_complete_stages(biome, display):
     painter = WatercolorWorld(Assets())
@@ -24,6 +33,7 @@ def test_reduced_motion_keeps_essential_forward_navigation(display):
     painter = WatercolorWorld(Assets())
     world = World(BIOMES["amazonia"])
     world.set_restoration(12)
+    prepare_mobile(painter, "amazonia")
     assert painter.draw(display, world, 0, True)
     original = pygame.image.tostring(display, "RGB")
     world.distance += 400

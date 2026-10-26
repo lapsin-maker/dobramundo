@@ -1,0 +1,42 @@
+{
+  "status": "ok",
+  "python": "3.14.8",
+  "pygame": "pygame-ce 2.5.8",
+  "real_sdk_types": true,
+  "physical_camera": false,
+  "cases": [
+    {
+      "edge": "right",
+      "position": [
+        1.0,
+        0.5
+      ],
+      "sdk_marker_matches": true
+    },
+    {
+      "edge": "left",
+      "position": [
+        0.0,
+        0.5
+      ],
+      "sdk_marker_matches": true
+    },
+    {
+      "edge": "top",
+      "position": [
+        0.5,
+        0.0
+      ],
+      "sdk_marker_matches": true
+    },
+    {
+      "edge": "bottom",
+      "position": [
+        0.5,
+        1.0
+      ],
+      "sdk_marker_matches": true
+    }
+  ],
+  "invisible_floor_marker_hidden": true
+}

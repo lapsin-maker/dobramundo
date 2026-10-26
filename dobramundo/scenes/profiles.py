@@ -135,5 +135,5 @@ class ProfilesScene(Scene):
         if self.error:
             box = pygame.Rect(80, C.HEIGHT - 54, C.WIDTH - 160, 42)
             T.panel(screen, box, T.PAPER, T.ORANGE, 245, 12, 3)
-            label, size = T.fit_text(self.text, self.error, box.width - 24, T.SIZES["small"], bold=True)
+            label, size = T.fit_text(self.text, self.error, box.width - 24, size=20, minimum=18, bold=True)
             self.text.blit(screen, label, box.center, size, T.INK, True, "center")

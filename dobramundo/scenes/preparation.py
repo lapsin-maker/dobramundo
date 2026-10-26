@@ -107,7 +107,7 @@ class PreparationScene(Scene):
                 (384, 160, 332, 230),
                 "Explorar" if o.modo_exploracao else "Com vidas",
                 lambda: self.set_option("modo_exploracao", not o.modo_exploracao),
-                sublabel="Sem eliminação · batidas contam" if o.modo_exploracao else "Vidas normais · 3 corações",
+                sublabel="Sem eliminação · batidas contam" if o.modo_exploracao else "3 vidas",
                 size=T.SIZES["title"],
                 key="exploracao",
                 selected=o.modo_exploracao,
@@ -143,6 +143,7 @@ class PreparationScene(Scene):
             self.app.options.modo_exploracao = bool(value)
         elif name == "assistencia_previsivel":
             self.app.options.assistencia_previsivel = bool(value)
+            self.app.profile.apoio_escolhido = True
         elif name == "semente_desafio":
             self.app.options.semente_desafio = int(value)
         else:

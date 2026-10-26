@@ -21,6 +21,9 @@ from .sprites import SpriteCache, fog_level, project
 class PaintedGround(GroundRenderer):
     TILE_X = 1050.0
     TILE_Z = 1300.0
+    # Three output rows are sampled separately into a small source band, then
+    # scaled together. This avoids repeated nearest-expanded rows without
+    # tripling screen blits or transform calls.
     ROW_HEIGHT = 3
 
     def __init__(self, atlas: pygame.Surface) -> None:
@@ -37,32 +40,78 @@ class PaintedGround(GroundRenderer):
             for x, y in ((0, 0), (512, 0), (0, 512), (512, 512)):
                 tile.blit(pygame.transform.flip(small, bool(x), bool(y)), (x, y))
             self.textures[name] = tile
-        # Faixas de três pixels preservam perspectiva sem custar centenas de
-        # transformações extras; objetos/piloto continuam em resolução integral.
         self.rows = compute_ground_rows()[:: self.ROW_HEIGHT]
         self.fog_cache = {}
-        self.source_rows = {
-            name: tuple(tile.subsurface((0, v, 1024, 1)) for v in range(1024)) for name, tile in self.textures.items()
-        }
+        self.vertical_mips = {name: [tile] for name, tile in self.textures.items()}
         self.line_buffers = {}
+        # Geometry is invariant over time and biome. Cache it once per available
+        # mip count so direct/partial renderer use remains compatible with the
+        # normal staged warm-up path.
+        self.row_geometry = {}
 
     def warm_tasks(self):
-        # A textura já está preparada. Somente linhas de um pixel são reescaladas
-        # durante o voo; não há dezenas de cópias gigantes por grupo de escala.
-        return iter(())
+        # Each lower-resolution level is a separate bounded warm-up unit.
+        for name in self.textures:
+            for _level in range(6):
+                yield lambda n=name: self.prepare_vertical_mip(n)
+
+    def prepare_vertical_mip(self, name: str) -> None:
+        levels = self.vertical_mips[name]
+        source = levels[-1]
+        if source.get_height() <= 16:
+            return
+        target_size = (source.get_width(), max(1, source.get_height() // 2))
+        levels.append(pygame.transform.smoothscale(source, target_size))
+
+    def prepare_line_buffers(self, name: str, rows) -> None:
+        for y, _z, _group in rows:
+            _depths, _middle_z, width, _mip_level = self._geometry(name, y)
+            key = name, y
+            if key not in self.line_buffers:
+                band = display_format(pygame.Surface((1024, self.ROW_HEIGHT)))
+                line = display_format(pygame.Surface((width, self.ROW_HEIGHT)))
+                self.line_buffers[key] = [line, (), band]
+
+    def _geometry(self, name: str, y: int):
+        key = name, y, len(self.vertical_mips[name])
+        geometry = self.row_geometry.get(key)
+        if geometry is None:
+            depths = tuple(
+                C.CAMERA_HEIGHT * C.FOV / (row_y + 0.5 - C.HORIZON_Y) for row_y in range(y, y + self.ROW_HEIGHT)
+            )
+            middle_z = depths[self.ROW_HEIGHT // 2]
+            width = max(8, round(self.TILE_X * C.FOV / middle_z))
+            sample_rows = tuple(row_z / self.TILE_Z * 1024 for row_z in depths)
+            step = max(abs(sample_rows[0] - sample_rows[1]), abs(sample_rows[1] - sample_rows[2]))
+            mip_level = 0
+            while step / (2**mip_level) > 1.25 and mip_level < len(self.vertical_mips[name]) - 1:
+                mip_level += 1
+            geometry = depths, middle_z, width, mip_level
+            self.row_geometry[key] = geometry
+        return geometry
 
     def queue_line(self, jobs, name, y, z, left, right, distance, cam):
-        width = max(8, round(self.TILE_X * C.FOV / z))
-        v = int((z + distance) / self.TILE_Z * 1024) % 1024
+        depths, _middle_z, width, mip_level = self._geometry(name, y)
+        raw_vs = tuple((row_z + distance) / self.TILE_Z * 1024 for row_z in depths)
+        texture = self.vertical_mips[name][mip_level]
+        mip_factor = 2**mip_level
+        indices = tuple(int(v / mip_factor) % texture.get_height() for v in raw_vs)
+        signature = mip_level, indices
         key = name, y
         buffer = self.line_buffers.get(key)
         if buffer is None:
-            buffer = [display_format(pygame.Surface((width, self.ROW_HEIGHT))), -1]
-            self.line_buffers[key] = buffer
+            self.prepare_line_buffers(name, ((y, z, 0),))
+            buffer = self.line_buffers[key]
         line = buffer[0]
-        if buffer[1] != v:
-            pygame.transform.scale(self.source_rows[name][v], (width, self.ROW_HEIGHT), line)
-            buffer[1] = v
+        band = buffer[2]
+        if buffer[1] != signature:
+            # Copy the three exact source rows into a reusable band. This also
+            # handles wrapped/non-contiguous indices and avoids a temporary
+            # subsurface plus vertical-flip allocation for the common case.
+            for row, v in enumerate(indices):
+                band.blit(texture, (0, row), (0, v, texture.get_width(), 1))
+            pygame.transform.scale(band, (width, self.ROW_HEIGHT), line)
+            buffer[1] = signature
         origin = cam * width / self.TILE_X - C.WIDTH / 2
         x, src = left, int(origin + left) % width
         while x < right:
@@ -109,15 +158,65 @@ class PaintedRoute:
     HEIGHTS = (170, 230, 235, 270, 170, 180, 230, 285, 190, 140, 180, 200)
 
     def __init__(self, assets: Assets) -> None:
-        atlas = assets.sprite("watercolor", "terrain_tiles_v3")
-        if atlas is None:
-            atlas = assets.sprite("watercolor", "terrain_tiles")
-        valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
-        self.ground = PaintedGround(atlas) if valid else None
-        assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
+        self.ground = None
+        self._ground_attempted = False
         self.banks = {}
         self.cache = SpriteCache()
         self.assets = assets
+        self.industrial_art = {}
+        self._bank_atlas = None
+        self._bank_biome = None
+        self._bank_failed = False
+
+    def prepare_ground(self) -> None:
+        """Decode and prepare the ground atlas as one explicit warm-up unit."""
+        if self._ground_attempted:
+            return
+        self._ground_attempted = True
+        atlas = self.assets.sprite("watercolor", "terrain_tiles_v3")
+        if atlas is None:
+            atlas = self.assets.sprite("watercolor", "terrain_tiles")
+        valid = atlas is not None and min(atlas.get_size()) >= 2 and atlas.get_bounding_rect().w > 0
+        self.ground = PaintedGround(atlas) if valid else None
+        self.assets.release_folder("watercolor", ("terrain_tiles_v3", "terrain_tiles"))
+
+    def prepare_bank(self, biome: str, index: int) -> None:
+        """Extract one atlas cell; the 12 pieces are separate warm-up units."""
+        if isinstance(self.banks.get(biome), tuple):
+            return
+        if self._bank_biome != biome:
+            self._bank_biome = biome
+            self._bank_atlas = self.assets.sprite("watercolor", "banks_" + biome)
+            self._bank_failed = False
+            self.banks[biome] = []
+        atlas = self._bank_atlas
+        if self._bank_failed or atlas is None or atlas.get_width() < 4 or atlas.get_height() < 3:
+            self._bank_failed = True
+            self.banks[biome] = ()
+            self._finish_banks(biome)
+            return
+        w, h = atlas.get_size()
+        col, row = index % 4, index // 4
+        rect = pygame.Rect(
+            col * w // 4, row * h // 3, (col + 1) * w // 4 - col * w // 4, (row + 1) * h // 3 - row * h // 3
+        )
+        cell = atlas.subsurface(rect)
+        bounds = cell.get_bounding_rect(min_alpha=30)
+        if bounds.w == 0 or bounds.h == 0:
+            self._bank_failed = True
+            self.banks[biome] = ()
+            self._finish_banks(biome)
+            return
+        current = self.banks[biome]
+        if isinstance(current, list):
+            current.append(display_format(cell.subsurface(bounds).copy(), True))
+            if len(current) == 12:
+                self.banks[biome] = tuple(current)
+                self._finish_banks(biome)
+
+    def _finish_banks(self, biome: str) -> None:
+        self._bank_atlas = None
+        self.assets.release_folder("watercolor", ("banks_" + biome,))
 
     def load(self, biome: str) -> tuple:
         if biome not in self.banks:
@@ -142,14 +241,24 @@ class PaintedRoute:
 
     def release_biome(self, biome: str) -> None:
         self.banks.pop(biome, None)
+        self.industrial_art.clear()
+        if self._bank_biome == biome:
+            self._bank_atlas = None
+            self._bank_biome = None
+            self._bank_failed = False
         self.cache = SpriteCache()
 
     def ready(self, biome: str) -> bool:
-        return self.ground is not None and len(self.load(biome)) == 12
+        return self.ground is not None and len(self.banks.get(biome, ())) == 12
 
     @staticmethod
     def scenery_index(sequence: int, side: int, stage: int) -> int:
         slot = (sequence + (3 if side > 0 else 0)) % 8
+        if stage == 0:
+            # O trecho industrial mostra primeiro porto e moradias sobre palafitas.
+            # Só dois slots mantêm vegetação de margem; os outros destacam
+            # atividade portuária e estruturas da cidade.
+            return (0, 2, 0, 1, 0, 1, 2, 1)[slot]
         if slot in (1, 3, 6):
             return (2, 6, 7)[slot % 3]  # flora em todos os estágios
         if slot == 7:
@@ -170,27 +279,82 @@ class PaintedRoute:
                     continue
                 index = self.scenery_index(sequence, side, stage)
                 if biome == "amazonia" and index == 3:
-                    # O Teatro é um marco único no horizonte: não reaparece como
-                    # cópias de um prédio a cada volta do percurso.
-                    index = 7
+                    # O Teatro é um marco único no horizonte; a margem industrial
+                    # mantém o porto em vez de repetir sua fachada.
+                    index = 1
                 x = side * (530 + (sequence % 3) * 64)
                 if z >= C.NEAR_CLIP_Z:
                     result.append((z, x, index, side))
                 if not reduced and sequence % 2 == 0 and C.NEAR_CLIP_Z <= z + 95 <= C.FOG_END:
-                    result.append((z + 95, side * 1030, 2 if sequence % 4 else 7, side))
+                    detail = (0 if sequence % 4 else 1) if stage == 0 else (2 if sequence % 4 else 7)
+                    result.append((z + 95, side * 1030, detail, side))
         return sorted(result, reverse=True)
 
     @staticmethod
     def stage_blend(visual: float, z: float) -> tuple:
         """Transformação contínua, chegando do horizonte à margem próxima."""
         delay = 4.0 * (1.0 - clamp(z / C.FOG_END, 0.0, 1.0))
-        if visual < C.ERA_SPAN + delay:
+        first_start = 5.0 + delay
+        first_end = C.ERA_SPAN + delay
+        second_start = first_end
+        second_end = 2 * C.ERA_SPAN + delay
+        if visual < first_start:
             return 0, 0, 0.0
-        if visual < 2 * C.ERA_SPAN + delay:
-            mix = smoothstep(clamp((visual - C.ERA_SPAN - delay) / 16.0, 0.0, 1.0))
+        if visual < first_end:
+            mix = smoothstep(clamp((visual - first_start) / (first_end - first_start), 0.0, 1.0))
             return (1, 1, 0.0) if mix >= 1 else (0, 1, mix)
-        mix = smoothstep(clamp((visual - 2 * C.ERA_SPAN - delay) / 12.0, 0.0, 1.0))
-        return (2, 2, 0.0) if mix >= 1 else (1, 2, mix)
+        if visual < second_end:
+            mix = smoothstep(clamp((visual - second_start) / (second_end - second_start), 0.0, 1.0))
+            return (2, 2, 0.0) if mix >= 1 else (1, 2, mix)
+        return 2, 2, 0.0
+
+    INDUSTRIAL_ART_NAMES = (
+        "steam_pipe_straight",
+        "steam_pipe_corner",
+        "industrial_chimney",
+        "tubos_valvula",
+        "pressure_tank",
+    )
+
+    def prepare_industrial_art(self, name: str) -> None:
+        """Decode one decorative margin element during the named warm-up queue."""
+        if name not in self.INDUSTRIAL_ART_NAMES or name in self.industrial_art:
+            return
+        self.industrial_art[name] = self.assets.scenery_for((name,)).get(name)
+
+    def _draw_industrial_margin(self, screen, world, cam: float) -> None:
+        """Paint cached, non-colliding pipes and stacks outside the flight lane."""
+        progress = smoothstep(clamp((world.visual - 5.0) / (C.ERA_SPAN - 5.0), 0.0, 1.0))
+        opacity = round(255 * (1.0 - progress))
+        if opacity <= 0:
+            return
+        first = math.floor(world.distance / self.SPACING) - 1
+        for sequence in range(first, first + 14):
+            if sequence % 3 != 0:
+                continue
+            name = self.INDUSTRIAL_ART_NAMES[(sequence // 3) % len(self.INDUSTRIAL_ART_NAMES)]
+            sprite = self.industrial_art.get(name)
+            if sprite is None:
+                continue
+            for side in (-1, 1):
+                z = sequence * self.SPACING + 55 - world.distance
+                if not C.NEAR_CLIP_Z + 60 <= z <= C.FOG_END:
+                    continue
+                x = side * (790 + ((sequence // 3) % 2) * 70)
+                sx, sy, scale = project(x, 0.0, z, cam)
+                base_height = 360.0 if name == "industrial_chimney" else 190.0
+                height = max(6, round(base_height * scale / 3) * 3)
+                width = max(6, round(height * sprite.get_width() / sprite.get_height()))
+                if sx + width / 2 < 0 or sx - width / 2 > C.WIDTH:
+                    continue
+                key = ("industrial-margin", name)
+                image = self.cache.get(sprite, key, (width, height), side > 0)
+                level = fog_level(z)
+                if level:
+                    image = self.cache.fogged(image, (key, (width, height), side > 0), level)
+                image.set_alpha(opacity)
+                screen.blit(image, (round(sx - width / 2), round(sy - height)))
+                image.set_alpha(255)
 
     def _bank(self, screen, sprites, biome, placement, cam, opacity=1.0):
         z, x, index, side = placement
@@ -216,11 +380,16 @@ class PaintedRoute:
             image.set_alpha(255)
 
     def draw(self, screen, world, cam: float, reduced: bool, fog) -> bool:
-        sprites = self.load(world.biome.key)
+        if not self.ready(world.biome.key):
+            return False
+        sprites = self.banks.get(world.biome.key, ())
         if not self.ready(world.biome.key):
             return False
         self.ground.paint(screen, world.biome.key, world.distance, cam, fog)
         self.cache.fog_color = fog
+        # Tubos e chaminés ficam fora da faixa jogável e desaparecem conforme a
+        # cidade muda; não compartilham ícones nem hitboxes de resíduos.
+        self._draw_industrial_margin(screen, world, cam)
         # A posição de cada peça é estável em todos os estágios; só sua forma
         # se dissolve para a seguinte. Desenhar não avança relógios ou o mundo.
         stages = [self.placements(world.distance, stage, reduced, world.biome.key) for stage in range(3)]

@@ -85,24 +85,23 @@ def test_inicio_passa_pelo_aviso_na_primeira_vez(app):
     app.profile.piloto_montado = True
     consent = first_scene(app)
     assert isinstance(consent, ConsentScene)
-    assert isinstance(consent.next_scene, VillageScene)
+    assert isinstance(consent.next_scene, IntroScene)
+    assert isinstance(consent.next_scene.next_scene, VillageScene)
 
 
-def test_a_primeira_tela_e_montar_o_piloto(app):
-    """Aviso e treino de permanência precedem a primeira personalização."""
+def test_primeiro_uso_segue_piloto_historia_e_vila(app):
+    """Consentimento, piloto, abertura pulável e vila compõem a primeira cadeia."""
     from dobramundo.scenes.pilot import PilotScene
-    from dobramundo.scenes.tutorial import DwellPracticeScene
 
     app.profile.consentimento = False
     app.profile.piloto_montado = False
     app.profile.abertura_vista = False
     first = first_scene(app)
     assert isinstance(first, ConsentScene)
-    practice = first.next_scene
-    assert isinstance(practice, DwellPracticeScene)
-    pilot = practice.next_scene
+    pilot = first.next_scene
     assert isinstance(pilot, PilotScene) and pilot.first_time
-    assert isinstance(pilot.return_to, VillageScene)
+    assert isinstance(pilot.return_to, IntroScene)
+    assert isinstance(pilot.return_to.next_scene, VillageScene)
     pilot.finish()
     assert app.profile.piloto_montado
     assert app.next_scene is pilot.return_to
@@ -112,7 +111,9 @@ def test_historia_nao_bloqueia_primeiro_uso(app):
     app.profile.piloto_montado = True
     app.profile.consentimento = True
     app.profile.abertura_vista = False
-    assert isinstance(first_scene(app), VillageScene)
+    scene = first_scene(app)
+    assert isinstance(scene, IntroScene)
+    assert isinstance(scene.next_scene, VillageScene)
 
 
 def test_comprar_melhoria_da_vila_desconta_recursos(app):
@@ -141,13 +142,10 @@ def test_comprar_padrao_usa_pontos(app):
     assert "galaxia" not in app.profile.owned_patterns
 
 
-def test_mapa_bloqueia_a_caatinga_sem_estrela(app):
+def test_mapa_disponibiliza_a_caatinga_sem_estrela(app):
     scene = show(app, MapScene(app))
     caatinga = next(b for b in scene.menu.buttons if b.key == "caatinga")
-    assert not caatinga.enabled
-    app.profile.estrelas["amazonia"] = 1
-    scene.build()
-    assert next(b for b in scene.menu.buttons if b.key == "caatinga").enabled
+    assert caatinga.enabled
 
 
 def test_pausa_do_supervisor(app):
@@ -237,6 +235,9 @@ def test_controle_corporal_sem_calibrar_pede_calibracao(app):
 
 def test_fim_do_voo_vai_para_o_resultado(app):
     scene = show(app, FlightScene(app, "caatinga"))
+    while app.view.warmup_pending:
+        app.view.step_warm_up(100.0)
+    app.step(1 / 60, [])
     scene.run.add_restoration(100.0)
     for _ in range(60 * 4):
         app.step(1 / 60, [])

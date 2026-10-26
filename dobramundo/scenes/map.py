@@ -6,6 +6,7 @@ O contorno do Brasil e as manchas dos biomas são aproximações simplificadas
 
 from __future__ import annotations
 
+import random
 from typing import List, Optional, Tuple
 
 import pygame
@@ -188,12 +189,13 @@ def _part_icon(key: str, size: int = 36) -> pygame.Surface:
 
 
 _map_cache: Optional[pygame.Surface] = None
+_map_cache_texture: Optional[pygame.Surface] = None
 
 
-def brazil_map() -> pygame.Surface:
-    """Mapa pintado uma vez: Cerrado como fundo e os demais biomas recortados pelo contorno."""
-    global _map_cache
-    if _map_cache is not None:
+def brazil_map(texture: Optional[pygame.Surface] = None) -> pygame.Surface:
+    """Mapa geográfico com pigmento aquarelado recortado pelo contorno e cacheado."""
+    global _map_cache, _map_cache_texture
+    if _map_cache is not None and _map_cache_texture is texture:
         return _map_cache
     size = (C.WIDTH, C.HEIGHT)
     regions = pygame.Surface(size, pygame.SRCALPHA)
@@ -203,9 +205,29 @@ def brazil_map() -> pygame.Surface:
         pygame.draw.polygon(regions, BIOME_MAP_COLORS[key], [to_screen(p) for p in polygon])
     mask = pygame.Surface(size, pygame.SRCALPHA)
     pygame.draw.polygon(mask, (255, 255, 255, 255), outline)
+    pigment = pygame.Surface(MAP_RECT.size)
+    pigment.fill((255, 255, 255))
+    if texture is not None:
+        wash = pygame.transform.smoothscale(texture, MAP_RECT.size)
+        wash.set_alpha(76)
+        pigment.blit(wash, (0, 0))
+    else:
+        # Fallback sem asset: manchas sobrepostas em pequenas lavagens, com
+        # semente fixa e sem tocar nos limites geográficos.
+        rng = random.Random(1804)
+        for _ in range(260):
+            x = rng.randint(0, MAP_RECT.width)
+            y = rng.randint(0, MAP_RECT.height)
+            radius = rng.randint(5, 19)
+            tint = rng.choice(((252, 239, 207), (225, 240, 238), (221, 230, 235), (252, 227, 198)))
+            pygame.draw.circle(pigment, tint, (x, y), radius)
+    # Multiplicar uma lavagem clara preserva os tons do bioma e o alpha da
+    # máscara do país, em vez de substituir a geografia pela textura raster.
+    regions.blit(pigment, MAP_RECT.topleft, special_flags=pygame.BLEND_RGB_MULT)
     regions.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
     pygame.draw.polygon(regions, T.NAVY_DARK, outline, 3)
     _map_cache = regions
+    _map_cache_texture = texture
     return regions
 
 
@@ -307,7 +329,10 @@ class MapScene(Scene):
         self.app.backdrop(screen, self.last_dt, key, 5.0)
         T.veil(screen, (10, 18, 40), 110)
         T.panel(screen, MAP_RECT.inflate(20, 20), T.PAPER, T.NAVY, 240, 22, 3)
-        screen.blit(brazil_map(), (0, 0))
+        pigment = self.app.assets.sprite("watercolor_prepared", "map_pigment_v17")
+        if pigment is None:
+            pigment = self.app.assets.sprite("watercolor", "map_pigment_v17")
+        screen.blit(brazil_map(pigment), (0, 0))
         # A rota de aventura é uma pincelada sobre o mapa geográfico existente.
         city_a, city_b = [to_screen(BIOMES[key].map_point) for key in BIOME_ORDER]
         route = [
@@ -354,16 +379,23 @@ class MapScene(Scene):
                         pygame.Rect(rect.left + 12, rect.top + 14, 140, 72),
                         border_radius=14,
                     )
-            color = T.NAVY if button.enabled else T.MUTED
+            label_color = T.NAVY_DARK
             self.text.blit(
-                screen, biome.city, (rect.left + 178, rect.top + 14), T.SIZES["label"], color, True, "topleft"
+                screen,
+                biome.city,
+                (rect.left + 178, rect.top + 9),
+                T.SIZES["label"],
+                label_color,
+                True,
+                "topleft",
             )
             self.text.blit(
                 screen,
                 biome.name,
-                (rect.left + 178, rect.top + 48),
-                T.SIZES["small"],
-                color,
+                (rect.left + 178, rect.top + 43),
+                max(T.SIZES["small"], 18),
+                label_color,
+                True,
                 anchor="topleft",
             )
             for star_index in range(3):
@@ -390,25 +422,25 @@ class MapScene(Scene):
                     screen,
                     "3ª",
                     (rect.left + 208, rect.top + 81),
-                    T.SIZES["small"],
+                    max(T.SIZES["small"], 18),
                     T.NAVY,
                     True,
                     "midleft",
                 )
                 x = rect.left + 239
                 for part_key, level in biome.required_parts.items():
-                    icon = _part_icon(part_key, 36)
-                    screen.blit(icon, (x, rect.top + 66))
+                    icon = _part_icon(part_key, 30)
+                    screen.blit(icon, (x, rect.top + 68))
                     self.text.blit(
                         screen,
                         str(level),
-                        (x + 37, rect.top + 84),
-                        T.SIZES["small"],
+                        (x + 32, rect.top + 84),
+                        max(T.SIZES["small"], 18),
                         T.NAVY,
                         True,
                         "midleft",
                     )
-                    x += 70
+                    x += 64
 
     def _draw_future_biomes(self, screen: pygame.Surface) -> None:
         # Os biomas futuros ficam em duas colunas dentro de um painel legível.

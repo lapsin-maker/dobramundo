@@ -12,8 +12,8 @@ Executável Windows, galeria portátil e instruções de instalação: [entrega 
 - Pausar congela o percurso. Movimento reduzido mantém o avanço necessário à navegação, reduz a densidade das margens e suprime paralaxe decorativa, balanço, tremores, clarões e respingos.
 - O motor continua Pygame/CPU. Não há GPU, geração de imagens nem chamadas de rede durante a partida.
 
-![Manaus em movimento: quadro real](screenshots/sprint2-manaus.png)
-![Petrolina: quadro real](screenshots/sprint2-petrolina.png)
+![Manaus em movimento: quadro real](../screenshots/sprint2-manaus.png)
+![Petrolina: quadro real](../screenshots/sprint2-petrolina.png)
 
 ## Piloto, avião e leitura do voo
 
@@ -35,9 +35,9 @@ A vila começa alegre e colorida, com lixo, água suja e infraestrutura a diesel
 
 O resultado oferece acesso à próxima obra. A prévia mostra a estrutura no próprio terreno; após a compra, os materiais se deslocam até o local e a obra aparece. No modo de movimento reduzido, um comparativo estático mostra terreno vazio antes e obra instalada depois. A compra é idempotente: confirmar duas vezes não cobra duas vezes.
 
-![Vila inicial](screenshots/sprint2-vila-inicial.png)
-![Vila solarpunk](screenshots/sprint2-vila-final.png)
-![Antes e depois sem animação](screenshots/sprint2-obra.png)
+![Vila inicial](../screenshots/sprint2-vila-inicial.png)
+![Vila solarpunk](../screenshots/sprint2-vila-final.png)
+![Antes e depois sem animação](../screenshots/sprint2-obra.png)
 
 ## Integração e procedência
 
@@ -48,7 +48,7 @@ O resultado oferece acesso à próxima obra. A prévia mostra a estrutura no pr�
 - `scenes/tutorial.py`: prática isolada da progressão real; `upgrades.py` registra a transformação da obra.
 - `Assets` carrega os PNGs pedidos e compartilha a mesma imagem entre consultas, evitando decodificar a pasta inteira a cada sprite.
 
-A arte foi gerada para o projeto. Prompts e saídas estão em [generation.json](../assets/watercolor/generation.json), [generation-sprint2.json](../assets/watercolor/generation-sprint2.json) e [generation-pilot-sprint2.json](../assets/watercolor/generation-pilot-sprint2.json). Os [créditos](../assets/watercolor/CREDITOS.txt) acompanham o pacote e a licença do projeto. A referência visual é interpretada como cenário de jogo em camadas; não se trata de um mundo 3D livre.
+A arte foi gerada para o projeto. Prompts e saídas estão em [generation.json](../../assets/watercolor/generation.json), [generation-sprint2.json](../../assets/watercolor/generation-sprint2.json) e [generation-pilot-sprint2.json](../../assets/watercolor/generation-pilot-sprint2.json). Os [créditos](../../assets/watercolor/CREDITOS.txt) acompanham o pacote e a licença do projeto. A referência visual é interpretada como cenário de jogo em camadas; não se trata de um mundo 3D livre.
 
 ## Validação
 
@@ -66,7 +66,7 @@ A arte foi gerada para o projeto. Prompts e saídas estão em [generation.json](
 | Executável / Manaus | 7,46 ms | 9,77 ms |
 | Executável / Petrolina | 5,29 ms | 6,96 ms |
 
-Medições incluem atualização/desenho/apresentação em SDL dummy neste computador, após os primeiros dez quadros de cada voo. Não incluem inferência contínua da webcam. O primeiro carregamento de imagens tem custo adicional; estes valores não garantem 60 fps em qualquer equipamento. Dados: [validacao-sprint2.json](validacao-sprint2.json).
+Medições incluem atualização/desenho/apresentação em SDL dummy neste computador, após os primeiros dez quadros de cada voo. Não incluem inferência contínua da webcam. O primeiro carregamento de imagens tem custo adicional; estes valores não garantem 60 fps em qualquer equipamento. Dados: [validacao-sprint2.json](validacoes/validacao-sprint2.json).
 
 As capturas são do Pygame real, com perfil sintético e SDL dummy. A gravação local de cada cidade contém 12 segundos de jogo em 20 quadros/s. O tempo de renderização é medido separadamente. Self-test com `--exigir-camera` carrega o modelo e cria o detector de pose, mas não abre webcam física.
 

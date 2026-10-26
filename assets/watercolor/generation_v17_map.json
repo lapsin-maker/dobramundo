@@ -1,0 +1,9 @@
+{
+  "asset": "map_pigment_v17.png",
+  "tool": "built-in image_gen",
+  "intent": "Watercolor pigment texture; clipped to code-defined geography, never a map source",
+  "prompt": "Use case: illustration-story. Asset type: square watercolor pigment texture for a children's game map of Brazilian biomes, to be clipped and colorized by game code. Create ONE seamless-looking square sheet completely filled with delicate handcrafted watercolor on warm off-white cold-pressed paper. Rich organic watery blooms, granulating pigments, gentle uneven brush edges and translucent layered washes, sophisticated storybook watercolor matching a paper-airplane ecological adventure. Mostly neutral warm ivory with softly mottled pale blue, pale gold and pale moss pigment variation; use moderately visible natural paper fibers and uneven pigment density, enough to read after color tint. The artwork must fill the whole canvas edge to edge. This is a texture, NOT a map: no land silhouette, no coast, no letters, no icons, no borders, no drop shadow, no objects, no recognizable repeating circles, no vector shapes, no UI. Balanced light midtones, no harsh black or white patches. Native 1024 square or higher.",
+  "date": "2026-10-25",
+  "integration": "Dobramundo 1.7",
+  "license": "Project CC BY 4.0; see CREDITOS.txt"
+}

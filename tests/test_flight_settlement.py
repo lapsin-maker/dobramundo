@@ -13,8 +13,18 @@ from dobramundo.scenes.options import OptionsScene
 from dobramundo.scenes.result import ResultScene, apply_run
 
 
+def _start_interactive_flight(app, scene):
+    app.go(scene)
+    app.step(1 / 60, [])
+    while app.view.warmup_pending:
+        app.view.step_warm_up(100.0)
+    app.step(1 / 60, [])
+    assert scene.started
+
+
 def test_interromper_voo_credita_parcial_uma_vez_e_abre_resultado(app):
     scene = FlightScene(app, "amazonia")
+    scene.started = True
     scene.run.resources["papel"] = 3
     scene.run.score = 120
     scene.run.add_restoration(2 * ERA_SPAN)
@@ -23,6 +33,7 @@ def test_interromper_voo_credita_parcial_uma_vez_e_abre_resultado(app):
 
     assert isinstance(app.next_scene, ResultScene)
     assert scene.run.interrupted and scene.run.finished
+    app.step(1 / 60, [])
     assert app.profile.recursos["papel"] == 3
     assert app.profile.pontos == 120
     assert app.profile.estrelas["amazonia"] == 2  # parcial não concede a terceira estrela
@@ -62,6 +73,7 @@ def test_repetir_settlement_e_notificacao_nao_duplica(app, monkeypatch):
     run.resources["vidro"] = 4
     scene = FlightScene(app, "amazonia")
     scene.run = run
+    scene.started = True
 
     scene.settle_on_close()
     apply_run(app.profile, run)
@@ -75,8 +87,7 @@ def test_repetir_settlement_e_notificacao_nao_duplica(app, monkeypatch):
 
 def test_fechamento_normal_liquida_voo_em_andamento(app):
     scene = FlightScene(app, "amazonia")
-    app.go(scene)
-    app.step(1 / 60, [])
+    _start_interactive_flight(app, scene)
     scene.run.resources["vidro"] = 2
     scene.run.score = 80
 
@@ -101,9 +112,23 @@ def test_fechamento_com_voo_pendente_antes_de_entrar_nao_registra_partida(app):
     assert app.profile.recursos["papel"] == 0
 
 
+def test_fechamento_durante_warmup_nao_registra_voo_ou_recursos(app):
+    scene = FlightScene(app, "amazonia")
+    scene.run.resources["papel"] = 3
+    app.go(scene)
+    app.step(1 / 60, [])  # cena entrou, mas ainda não processou quadro interativo
+    assert not scene.started
+
+    app.shutdown()
+
+    assert app.profile.voos == 0
+    assert app.profile.historico == []
+    assert app.profile.recursos["papel"] == 0
+
+
 def test_recalibrar_trocar_segmento_para_opcoes_liquida_parcial_uma_vez(app):
     flight = FlightScene(app, "amazonia")
-    flight.enter()
+    _start_interactive_flight(app, flight)
     flight.run.resources["papel"] = 2
     flight.run.score = 40
     calibration = CalibrationScene(app, return_to=flight)
@@ -124,7 +149,7 @@ def test_recalibrar_trocar_segmento_para_opcoes_liquida_parcial_uma_vez(app):
 
 def test_fechar_jogo_enquanto_calibra_liquida_voo_de_retorno(app):
     flight = FlightScene(app, "amazonia")
-    flight.enter()
+    _start_interactive_flight(app, flight)
     flight.run.resources["vidro"] = 3
     flight.run.score = 75
     app.scene = CalibrationScene(app, return_to=flight)
@@ -145,7 +170,7 @@ def test_resultado_oferece_retry_quando_save_falha(app, monkeypatch):
     run = make_run()
     run.resources["papel"] = 5
     result = ResultScene(app, run)
-    result.build()
+    result.enter()
     assert app.save_failed
     assert any(button.key == "retry_save" for button in result.menu.buttons)
     for index, button in enumerate(result.menu.buttons):
@@ -156,6 +181,42 @@ def test_resultado_oferece_retry_quando_save_falha(app, monkeypatch):
     assert all(button.key != "retry_save" for button in result.menu.buttons)
     assert app.profile.recursos["papel"] == 5
     assert app.profile.voos == 1
+
+
+def test_result_preview_is_read_only_until_enter(app, monkeypatch):
+    notices = []
+    monkeypatch.setattr(app, "on_flight", notices.append)
+    run = make_run()
+    run.resources["papel"] = 4
+    run.score = 75
+    result = ResultScene(app, run)
+
+    result.build()
+    result.draw(app.canvas)
+
+    assert app.profile.recursos["papel"] == 0
+    assert app.profile.pontos == 0 and app.profile.voos == 0
+    assert app.profile.historico == []
+    assert run.settlement is None
+    assert notices == []
+
+
+def test_result_pending_on_close_settles_once(app, monkeypatch):
+    notices = []
+    monkeypatch.setattr(app, "on_flight", notices.append)
+    run = make_run()
+    run.finished = True
+    run.interrupted = True
+    run.resources["vidro"] = 2
+    result = ResultScene(app, run)
+    app.go(result)
+
+    app.shutdown()
+
+    assert app.profile.recursos["vidro"] == 2
+    assert app.profile.voos == 1 and len(app.profile.historico) == 1
+    assert app.profile.historico[0]["interrompida"] == 1
+    assert len(notices) == 1
 
 
 def test_historico_antigo_sem_marcador_de_interrupcao_continua_valido(app, data_dir):

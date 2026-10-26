@@ -1,6 +1,6 @@
 # Análise consolidada — estado de implementação
 
-Esta lista atualiza as prioridades após as entregas P0/P1/P2 no código da versão 1.6.0. “Implementado” descreve código e validação técnica, não aceite de participantes. As evidências, condições e limites estão na [entrega 1.6](ENTREGA_1_6.md), no [relatório de desempenho](validacao-v1.6/desempenho.md) e na [simulação econômica](validacao-v1.6/economia/sintese.md).
+Esta lista atualiza as prioridades após as entregas P0/P1/P2 no código da versão 1.6.0. “Implementado” descreve código e validação técnica, não aceite de participantes. As evidências, condições e limites estão na [entrega 1.6](ENTREGA_1_6.md), no [relatório de desempenho](../validacao-v1.6/desempenho.md) e na [simulação econômica](../validacao-v1.6/economia/sintese.md).
 
 A análise e o inventário completos que precederam a sprint estão preservados em [ANALISE_BASE_1_5.md](ANALISE_BASE_1_5.md); esta atualização resume estado e pendências sem apagar proveniência nem o backlog histórico.
 
@@ -26,7 +26,7 @@ As prioridades foram liquidação de recompensa, fechamento normal, falhas de c�
 - Implementados: exploração sem eliminação, limites curtos, assistência previsível, sementes para replay, recuperação de perfil e perfis desktop compartilhados com dados anônimos.
 - Implementados: seleção de missões conforme entidades no percurso, registro explícito do resíduo coletado para o balanço e fábrica de cenas injetável.
 - Validação pendente: duração confortável, compreensão da assistência, economia percebida e fluxo sem dependência de leitura.
-- Aceite presencial: webcam, seis controles, projeção no chão a 2–3 m, movimento reduzido, alto contraste, sessões curtas e troca de piloto. Ver [roteiro presencial](VALIDACAO_PRESENCIAL.md).
+- Aceite presencial: webcam, seis controles, projeção no chão a 2–3 m, movimento reduzido, alto contraste, sessões curtas e troca de piloto. Ver [roteiro presencial](../VALIDACAO_PRESENCIAL.md).
 
 ## P2 — arquitetura e processo
 

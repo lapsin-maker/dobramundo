@@ -211,13 +211,15 @@ def test_fallbacks_sao_silhuetas_vazadas_e_alvos_de_texto_cabem(monkeypatch):
     assert low.get_at((80, 80)).a == 0
     assert gate.get_at((80, 90)).a == 0
 
-    from dobramundo.scenes.flight import FlightScene
+    from dobramundo.ui.theme import elide_text
 
-    assert FlightScene._fit_banner_text(
+    font = pygame.font.Font(None, 24)
+    label = elide_text(
         "Instrução extremamente longa para testar o limite sem ultrapassar a faixa superior do voo",
-        pygame.font.Font(None, 24),
+        font,
         210,
     )
+    assert label and font.size(label)[0] <= 210
 
 
 def test_banner_longo_fica_na_faixa_e_movimento_reduzido_remove_fade(app):
@@ -231,7 +233,7 @@ def test_banner_longo_fica_na_faixa_e_movimento_reduzido_remove_fade(app):
     scene.draw_banners(screen)
     bounds = screen.get_bounding_rect(min_alpha=1)
     assert bounds.left >= 0 and bounds.right <= WIDTH
-    assert bounds.top >= 150 and bounds.bottom < 240
+    assert bounds.top >= HEIGHT - 90 and bounds.bottom <= HEIGHT
 
     first = pygame.image.tobytes(screen, "RGBA")
     scene.banners[0].ttl = 0.1

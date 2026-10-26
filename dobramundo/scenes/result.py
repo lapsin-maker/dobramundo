@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
 import pygame
 
 from .. import config as C
@@ -12,43 +10,11 @@ from ..content.items import WASTE_TYPES
 from ..content.progress import PART_BY_KEY, VILLAGE_UPGRADES, can_afford, missing
 from ..engine.village_art import village_prop
 from ..game.run import FlightRun
+from ..game.settlement import apply_run, notify_settlement
 from ..ui import theme as T
 from ..ui.widgets import row, star
 from .base import Scene
 from .village import VILLAGE_REQUESTS
-
-
-def apply_run(profile, run: FlightRun) -> dict:
-    """Leva o voo para o perfil: recursos, pontos, estrelas e recorde. Devolve o resumo."""
-    if run.settlement is not None:
-        return dict(run.settlement)
-    key = run.biome.key
-    best_before = profile.estrelas.get(key, 0)
-    for waste, amount in run.resources.items():
-        profile.recursos[waste] = profile.recursos.get(waste, 0) + amount
-    profile.pontos += run.score
-    profile.voos += 1
-    profile.voos_fase[key] = profile.voos_fase.get(key, 0) + 1
-    entry = run.summary()
-    entry["data"] = datetime.now().isoformat(timespec="seconds")
-    entry["controle"] = profile.controle
-    profile.historico = (profile.historico + [entry])[-C.HISTORY_LIMIT :]
-    if run.stars > best_before:
-        profile.estrelas[key] = run.stars
-    record_key = f"{key}:{run.mode}"
-    new_record = run.score > profile.recordes.get(record_key, 0)
-    if new_record:
-        profile.recordes[record_key] = run.score
-    run.settlement = {"new_stars": max(0, run.stars - best_before), "new_record": new_record}
-    return dict(run.settlement)
-
-
-def notify_settlement(app, run: FlightRun) -> None:
-    """Notifica o cartucho uma vez, inclusive se o processo fechar durante um voo."""
-    if run.settlement_callback_sent or not run.settlement:
-        return
-    app.on_flight(app.profile.historico[-1])
-    run.settlement_callback_sent = True
 
 
 def movement_line(run: FlightRun) -> str:
@@ -68,13 +34,29 @@ class ResultScene(Scene):
     def __init__(self, app, run: FlightRun) -> None:
         super().__init__(app)
         self.run = run
-        self.summary = apply_run(app.profile, run)
-        app.save()
-        notify_settlement(app, run)
+        self.summary = dict(run.settlement or {"new_stars": 0, "new_record": False})
         biome = run.biome
         facts = texts.BIOME_FACTS.get(biome.key, ())
         self.fact = facts[app.profile.voos % len(facts)] if facts else ""
         self.music = f"musica_{biome.music}_{min(2, run.stage) + 1}"
+
+    def enter(self) -> None:
+        """Assenta o voo quando o resultado passa a ser a cena ativa, nunca ao criar preview."""
+        if self.run.settlement is None:
+            self.summary = apply_run(self.app.profile, self.run)
+            self.app.save()
+            notify_settlement(self.app, self.run)
+            facts = texts.BIOME_FACTS.get(self.run.biome.key, ())
+            self.fact = facts[self.app.profile.voos % len(facts)] if facts else ""
+        else:
+            self.summary = dict(self.run.settlement)
+        super().enter()
+
+    def settle_on_close(self) -> None:
+        """Um resultado pendente no fechamento também preserva suas recompensas."""
+        apply_run(self.app.profile, self.run)
+        self.app.save()
+        notify_settlement(self.app, self.run)
 
     def build(self) -> None:
         count = 3 if self.app.save_failed else 2
@@ -95,7 +77,12 @@ class ResultScene(Scene):
                 self.goto("melhorias", tab="vila", initial_key=key)
 
         buttons = [
-            self.button(rects[0], texts.UI["tentar_de_novo"] if self.run.game_over else "Voar de novo", self.again),
+            self.button(
+                rects[0],
+                texts.UI["tentar_de_novo"] if self.run.game_over else "Voar de novo",
+                self.again,
+                sublabel="Nova decolagem · progresso mantido",
+            ),
             self.button(
                 rects[-1],
                 village_label,
@@ -156,7 +143,7 @@ class ResultScene(Scene):
         elif run.game_over:
             title = "Seu avião precisa de reparos"
         elif run.timeout:
-            title = "Tempo combinado: voo guardado"
+            title = "Tempo combinado: voo terminado"
         elif run.interrupted:
             title = "Voo encerrado por agora"
         else:
@@ -200,28 +187,30 @@ class ResultScene(Scene):
                 movement,
                 (card.centerx, card.top + 178),
                 T.SIZES["small"],
-                T.TEAL,
+                T.MUTED_STRONG,
                 True,
                 "midtop",
             )
-        details = [f"Semente {run.seed}"]
         if run.world.challenge_theme is not None:
-            details.append(run.world.challenge_theme.title)
+            details = [run.world.challenge_theme.title, f"Semente {run.seed}"]
+        else:
+            details = []
         if run.session_limit_s:
             details.append(f"tempo combinado {run.session_limit_s // 60} min")
         if run.exploration:
             details.append("Explorar")
         if run.predictable_assistance:
-            details.append("assistência previsível")
-        self.text.blit(
-            screen,
-            "  ·  ".join(details),
-            (card.centerx, card.top + 199),
-            T.SIZES["small"],
-            T.TEAL,
-            True,
-            "midtop",
-        )
+            details.append("Com apoio")
+        if details:
+            self.text.blit(
+                screen,
+                "  ·  ".join(details),
+                (card.centerx, card.top + 199),
+                T.SIZES["small"],
+                T.MUTED_STRONG,
+                True,
+                "midtop",
+            )
         self.text.blit(screen, "Recursos para a vila", (card.left + 38, card.top + 222), T.SIZES["body"], T.NAVY, True)
         cells = row(pygame.Rect(card.left + 32, card.top + 251, card.width - 64, 66), 4, 12)
         for waste, rect in zip(WASTE_TYPES, cells):
@@ -237,7 +226,7 @@ class ResultScene(Scene):
                 T.INK,
                 True,
             )
-            self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 39), T.SIZES["small"], T.MUTED)
+            self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 37), T.SIZES["small"] + 2, T.INK, True)
         self.draw_next_build(screen, pygame.Rect(card.left + 32, card.top + 331, 468, 92))
         self.draw_missing_parts(screen, pygame.Rect(card.left + 520, card.top + 331, card.width - 552, 92))
         if self.app.save_failed:
@@ -253,7 +242,7 @@ class ResultScene(Scene):
                 "center",
             )
         else:
-            self.text.blit(screen, "Curiosidade", (card.left + 38, card.top + 428), T.SIZES["small"], T.TEAL, True)
+            self.text.blit(screen, "Curiosidade", (card.left + 38, card.top + 428), T.SIZES["small"], T.INK, True)
             self.text.paragraph(
                 screen,
                 self.fact,
@@ -261,6 +250,7 @@ class ResultScene(Scene):
                 T.SIZES["small"],
                 T.INK,
                 spacing=1.1,
+                bold=True,
             )
         self.draw_menu(screen)
 
@@ -276,7 +266,7 @@ class ResultScene(Scene):
                 "Todos os espaços ganharam vida.",
                 (rect.left + 68, rect.top + 48),
                 T.SIZES["small"],
-                T.MUTED,
+                T.MUTED_STRONG,
             )
             return
         icon = village_prop(next_build.key, self.app.assets.sprite("watercolor", "village_props"))
@@ -290,7 +280,7 @@ class ResultScene(Scene):
             True,
         )
         request = VILLAGE_REQUESTS.get(next_build.key, "A vila pede ajuda!")
-        self.text.blit(screen, request, (rect.left + 132, rect.top + 38), T.SIZES["small"], T.TEAL)
+        self.text.blit(screen, request, (rect.left + 132, rect.top + 38), T.SIZES["small"], T.MUTED_STRONG)
         shortfall = missing(profile.recursos, next_build.cost)
         if not shortfall:
             self.text.blit(
@@ -302,7 +292,7 @@ class ResultScene(Scene):
                 True,
             )
             return
-        self.text.blit(screen, "Materiais", (rect.left + 132, rect.top + 62), T.SIZES["small"], T.ORANGE, True)
+        self.text.blit(screen, "Faltam", (rect.left + 132, rect.top + 62), T.SIZES["small"], T.INK, True)
         x = rect.left + 226
         for waste in WASTE_TYPES:
             needed = next_build.cost.get(waste.key, 0)
@@ -312,12 +302,12 @@ class ResultScene(Scene):
             if icon is not None:
                 screen.blit(self.scaled(icon, (24, 24), ("next-build-waste", waste.key)), (x, rect.top + 68))
             have = profile.recursos.get(waste.key, 0)
-            color = T.GREEN if have >= needed else T.ORANGE
+            color = T.GREEN if have >= needed else T.INK
             self.text.blit(
                 screen,
-                f"{have}/{needed}",
-                (x + 25, rect.top + 71),
-                15,
+                str(max(0, needed - have)),
+                (x + 25, rect.top + 67),
+                T.SIZES["small"],
                 color,
                 True,
             )

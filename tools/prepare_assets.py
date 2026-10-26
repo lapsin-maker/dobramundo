@@ -37,6 +37,23 @@ PLANE_ATLASES = (
     "planes_menu_c",
 )
 PREPARED_SIZES.update({name: (768, 512) for name in PLANE_ATLASES})
+MENU_BACKDROPS = (
+    "story_city",
+    "story_newspaper",
+    "story_launch",
+    "story_fold",
+    "village_industrial_v3",
+    "village_transition_v3",
+    "village_final",
+    "village_start",
+    "village_start_v2",
+    "village_intermediate",
+    "village_clean",
+    "travel_amazonia",
+    "travel_caatinga",
+)
+PREPARED_SIZES.update({name: (C.WIDTH, C.HEIGHT) for name in MENU_BACKDROPS})
+PREPARED_SIZES["map_pigment_v17"] = (768, 768)
 BACKDROP_SIZE = (C.WIDTH + 32, C.HEIGHT)
 
 ATLAS_LAYOUTS = {
@@ -118,7 +135,7 @@ def build_manifest(generate: bool = True) -> dict:
         if path.stem in PREPARED_SIZES:
             output_path = OUTPUT / path.name
             target = PREPARED_SIZES[path.stem]
-            is_backdrop = path.stem in BACKDROPS
+            is_backdrop = path.stem in BACKDROPS or path.stem in MENU_BACKDROPS
             record["runtime_variant"] = {
                 "file": f"watercolor_prepared/{path.name}",
                 "dimensions": list(target),

@@ -115,11 +115,10 @@ def test_importa_o_save_do_prototipo(tmp_path):
     assert profile.aviao == "crane" and profile.plane_color("crane") == "azul"
 
 
-def test_caatinga_abre_com_uma_estrela_em_manaus():
+def test_biomas_implementados_estao_abertos_desde_o_inicio():
     profile = Profile()
-    assert profile.unlocked("amazonia") and not profile.unlocked("caatinga")
-    profile.estrelas["amazonia"] = 1
-    assert profile.unlocked("caatinga")
+    assert profile.unlocked("amazonia") and profile.unlocked("caatinga")
+    assert not profile.unlocked("pantanal")
 
 
 def test_resultado_leva_o_voo_para_o_perfil():

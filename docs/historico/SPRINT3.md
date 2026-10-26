@@ -34,7 +34,7 @@ Em **Opções**, ajuste a permanência da personalização separadamente da nave
 - `engine/regional_life.py` mantém os encontros decorativos fora das entidades de jogo. O retorno após um obstáculo usa distância percorrida, inclusive para permanecer parado na pausa.
 - `input/pose.py` mantém mapeamento independente de OpenCV/MediaPipe e aceita testes com pontos simulados. `input/camera.py` expõe resolução negociada, sem persistir quadros.
 - `pedidos_vila`, `permanencia_editor` e `escala_contraste` são normalizados no perfil. Perfis antigos recebem padrões sem perder progresso.
-- [Manifesto da arte](../assets/watercolor/generation-sprint3.json) registra os 11 arquivos, prompts e origens. Os PNGs anteriores são conservados como referência/fallback; nenhuma dependência de IA é necessária em execução.
+- [Manifesto da arte](../../assets/watercolor/generation-sprint3.json) registra os 11 arquivos, prompts e origens. Os PNGs anteriores são conservados como referência/fallback; nenhuma dependência de IA é necessária em execução.
 
 ## Validação e limites
 

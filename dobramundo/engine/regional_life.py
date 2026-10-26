@@ -13,13 +13,22 @@ from .sprites import SpriteCache, project
 class RegionalLife:
     PERIOD = 3600.0
 
-    def __init__(self, assets):
+    def __init__(self, assets, defer: bool = False):
         self.frames = []
         self.cache = SpriteCache()
         self._world = None
         self._distance = 0.0
         self._quiet = 1.0
-        atlas = assets.sprite("watercolor", "fauna_sprint3")
+        self.assets = assets
+        self._prepared = False
+        if not defer:
+            self.prepare()
+
+    def prepare(self):
+        if self._prepared:
+            return
+        self._prepared = True
+        atlas = self.assets.sprite("watercolor", "fauna_sprint3")
         if atlas is not None:
             w, h = atlas.get_size()
             for index in range(6):
@@ -27,7 +36,7 @@ class RegionalLife:
                 cell = atlas.subsurface((col * w // 3, row * h // 2, w // 3, h // 2))
                 bounds = cell.get_bounding_rect(min_alpha=40)
                 self.frames.append(display_format(cell.subsurface(bounds).copy(), True) if bounds.w else None)
-        assets.release_folder("watercolor", ("fauna_sprint3",))
+        self.assets.release_folder("watercolor", ("fauna_sprint3",))
 
     @staticmethod
     def quiet_share(world):

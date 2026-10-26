@@ -2,6 +2,16 @@
 
 Este documento descreve o código do pacote `dobramundo/` como ele está no repositório. A visão de jogo está no GDD (`docs/GDD_Dobramundo_v10.pdf`), e o uso do projeto está no `README.md`.
 
+## Estado atual — versão 1.7
+
+O perfil e as migrações estão em `profile_model.py`; `persistence.py` cuida do armazenamento, rejeita revisões antigas e preserva arquivos de versões futuras. No desktop, `instance_lock.py` impede duas instâncias de usar o mesmo diretório de dados. O console conserva a persistência fornecida pelo SDK.
+
+`game/settlement.py` concentra a liquidação idempotente. `FlightScene` só inicia a sessão depois do preparo e `ResultScene` aplica os efeitos ao entrar ou fechar, sem gravação no construtor. `transformacao_cidades` preserva o maior progresso de cada bioma. Uma nova decolagem restaura vidas e velocidade inicial; não restaura posição ou entidades do voo anterior. O fluxo inicial consulta `abertura_vista` e apresenta o jornal pulável após a montagem do piloto.
+
+`scenes/flight_hud.py` contém a apresentação do voo. `RenderContext` explicita as entradas da composição de fundo. As superfícies derivadas compartilham um orçamento de 192 MiB em `engine/cache.py`; arte base, buffers ativos e RSS são medidos separadamente. O preparo inclui mipmaps do terreno e a aparência selecionada. A geometria invariável das linhas do chão é reutilizada, e cada linha de saída tem sua própria amostra de textura.
+
+`InputFrame` acompanha a mesma sequência consumida até o canvas e a apresentação desktop. Essa telemetria não mede o atraso físico do sensor ou do projetor. `tools/runtime_assets.py` fornece o inventário comum dos pacotes, com uma variante por imagem utilizada. Os protocolos e resultados atuais estão em [validação 1.7](validacao-v1.7/README.md); as seções de versões anteriores abaixo registram a evolução e devem ser lidas junto destas mudanças.
+
 ## 1. Camadas
 
 O pacote se divide em camadas com dependências em um sentido só: cada camada usa as de baixo, e nenhuma usa as de cima.
@@ -125,13 +135,13 @@ ResultScene
 | `foco_ok` | direção | Som `sfx_desvio_ok`, legenda "Boa!" |
 | `foco_quase` | direção | Som `sfx_desvio_quase`, legenda "Quase!" |
 
-Ao fim do voo, `run.finished` vira verdadeiro (por game over ou por 3 segundos depois de 100%), e `FlightScene.update` abre o `ResultScene`. No resultado, `apply_run` leva recursos, pontos, estrelas e recorde ao perfil.
+Ao fim do voo, `run.finished` vira verdadeiro (por game over, limite ou 3 segundos depois do primeiro cruzamento de 100%), e `FlightScene.update` abre o `ResultScene`. `game/settlement.py` leva recursos, transformação, pontos, estrelas e recorde ao perfil de modo idempotente. O construtor da tela não grava: seus efeitos ficam em `enter` e no hook de fechamento. O HUD fica em `scenes/flight_hud.py`; ele não decide recompensas.
 
 ## 5. Transformação: do horizonte ao avião
 
 O estado da cidade está em `World` (`game/world.py`), em dois valores:
 
-- `restoration`: o valor real, de 0 a 100. Coletas e reparos o aumentam. Ele define a velocidade, o estágio da jogabilidade e as estrelas.
+- `restoration`: o valor real da cidade, de 0 a 100. Coletas e reparos o aumentam; ele define o estágio e as estrelas. Ao liquidar o voo, o perfil guarda o máximo já atingido por cidade. A velocidade usa `FlightRun.local_restoration`, reiniciado em cada partida, para não penalizar a criança por ter transformado a cidade.
 - `visual`: segue `restoration` com uma constante de tempo de 2,8 segundos (`ease_visual`). Ele define as cores, o céu, o chão e a pista.
 
 O mundo é uma fila de trechos de 100 unidades (`segments`), que avançam em direção ao avião. Os trechos mais distantes ficam na neblina. Por isso a transformação começa lá:
@@ -189,7 +199,7 @@ O desenho é pesado, então cada tipo de dado tem um cache com limite.
 | `Scene.scaled` | `scenes/base.py` | Miniaturas dos menus, guardadas no `SpriteCache.scaled` |
 | `brazil_map` | `scenes/map.py` | Mapa do Brasil, pintado uma vez |
 
-`WorldView.warm_tasks` monta, em segundo plano e em fatias, os mips de cenário, obstáculos, resíduos e power-ups, além das silhuetas. Assim o voo não engasga na primeira vez que um sprite aparece.
+`WorldView.warm_tasks` cria uma fila de tarefas nomeadas sem executá-las. O caminho aquarelado prepara apenas seus fundos, terreno, células de margem e detalhes regionais; o caminho procedural prepara seus próprios sprites. O voo mostra a prontidão e aguarda a fila antes de atualizar regras. O orçamento é conferido entre tarefas, não interrompe uma tarefa individual; tempos e estouros ficam expostos para medição, sem prometer um limite rígido de 1,5 ms.
 
 ## 8. Piloto em camadas e anchors.json
 
@@ -217,7 +227,9 @@ A pintura legada do avião usa a camada `paint` e seu mapa UV, em que o verde (G
 
 ## 9. Perfis, persistência e migração
 
-`Profile` em `persistence.py` mantém o formato JSON legado (`dobramundo_perfil.json`) como slot `principal`, preservando migrações anteriores. No desktop, um índice (`profiles.json`) registra até oito slots e os demais arquivos ficam em `profiles/`; cada slot contém progresso, personalização, opções e consentimento. Os cartões são anônimos (“Piloto 1” etc.) e a prévia não ativa nem regrava o slot. O console T-TEA continua usando o armazenamento por jogador do SDK, sem substituí-lo por perfis desktop.
+`Profile`, `Options`, validação e migração ficam em `profile_model.py`, reexportados por `persistence.py` para manter os imports existentes. O arquivo JSON legado (`dobramundo_perfil.json`) continua como slot `principal`. No desktop, um índice (`profiles.json`) registra até oito slots e os demais arquivos ficam em `profiles/`; cada slot contém progresso, personalização, opções e consentimento. Os cartões são anônimos (“Piloto 1” etc.) e a prévia não ativa nem regrava o slot. O console T-TEA continua usando o armazenamento por jogador do SDK, sem substituí-lo por perfis desktop.
+
+O esquema 2 acrescenta `transformacao_cidades` e `apoio_escolhido`. Migrações são explícitas, repetíveis e nunca rebaixam versões futuras. A leitura desktop guarda a revisão esperada do arquivo; uma gravação de snapshot antigo falha em vez de apagar mudanças posteriores. `instance_lock.py` protege todo o diretório do desktop por lock do sistema operacional, inclusive índice e backups; encerramento inesperado libera o lock. Esse módulo não entra no cartucho.
 
 - **Gravação:** arquivo temporário, flush/fsync e substituição atômica. Antes de substituir um perfil ou índice válido, rotaciona até duas cópias `.bak`/`.bak.1` validadas. O limite é recuperação de arquivo: não é journal nem checkpoint de execução.
 - **Leitura e recuperação:** valida tipos e normaliza faixas; arquivo ausente ou inválido tenta cópias anteriores. Índices recuperáveis podem restaurar slots órfãos válidos sem ativá-los automaticamente. Arquivo corrompido é preservado com sufixo `.corrompido`; erro de leitura bloqueia gravação ao slot na sessão para evitar sobrescrever dados que não foram lidos.
@@ -274,9 +286,9 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 ## Pontos de atenção
 
 - Se o JSON do perfil estiver ilegível, `load_profile` guarda o arquivo como `dobramundo_perfil.corrompido.json` e recomeça com o perfil padrão (e a importação do protótipo).
-- A história é opcional em Opções > "Ver a abertura". O treino de primeiro voo usa `tutorial_visto`, que só é marcado ao concluir/pular; voltar ao mapa mantém o treino pendente.
+- A história aparece após o piloto enquanto `abertura_vista` for falso, com Pular, e pode ser revista em Opções. O treino de primeiro voo usa `tutorial_visto`, que só é marcado ao concluir/pular; voltar ao mapa mantém o treino pendente.
 - O mapa (`scenes/map.py`) tem posições fixas para duas fases; uma terceira fase pede reorganizar os botões.
-- O `Dobramundo.spec` empacota as extensões `.png`, `.json`, `.ogg`, `.wav`, `.task`, `.ico`, `.ttf` e `.txt` de `assets/`; se uma fonte faltar, `theme.load_font` cai para `SysFont` e o visual do texto muda.
+- `Dobramundo.spec` e `build_cartridge.py` compartilham `tools/runtime_assets.py`: inventário de execução que verifica hashes e escolhe a variante preparada ou o original, sem duplicá-los. Fontes/licenças são preservadas; se uma fonte faltar, `theme.load_font` cai para `SysFont` e o visual muda.
 - `tools/stylize.py` sobrescreve os PNG de `assets/`; o git guarda os originais.
 
 ## Mudanças da versão 1.1
@@ -312,7 +324,7 @@ O exemplo abaixo usa um bioma chamado `cerrado`, com a sigla `CE_` para os sprit
 
 `engine/painted_route.py` projeta terreno e margens usando a distância do mundo; `engine/watercolor.py` compõe o horizonte e escolhe o cenário procedural de reserva quando o pacote está incompleto. O piloto usa `engine/painted_pilot.py`, os aviões usam `engine/painted_planes.py`, e `engine/pilot.py` integra o personagem às vistas. As camadas low-poly e `engine/paper_pilot.py` permanecem para compatibilidade e fallback.
 
-`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. A abertura narrativa é opcional. Implementação, capturas e validação anteriores: [DIRECAO_AQUARELA.md](DIRECAO_AQUARELA.md) e [ENTREGA_SPRINT2.md](ENTREGA_SPRINT2.md).
+`engine/village_art.py`, `scenes/village.py` e `scenes/upgrades.py` compõem a vila em três estágios e mostram a instalação das obras. `scenes/tutorial.py` oferece treino opcional no primeiro voo e pode ser reaberto por Opções. A abertura narrativa é opcional. Implementação, capturas e validação anteriores: [DIRECAO_AQUARELA.md](historico/DIRECAO_AQUARELA.md) e [ENTREGA_SPRINT2.md](historico/ENTREGA_SPRINT2.md).
 
 ## Sprint 3: controle, legibilidade e vida
 
@@ -320,7 +332,7 @@ O fluxo de primeira execução prepara aviso/calibração, oferece treino opcion
 
 `input/pose.py` usa nariz e orelhas compensadas para cabeça, rejeita leituras envelhecidas e permite alcances direcionais calibrados em sessão. O cursor sem leitura retorna `None`; eixos antigos não alimentam a velocidade do voo. `engine/accessible_view.py` aplica zoom uniforme do mundo; `screen_point` mantém setas e tutorial alinhados com a imagem ampliada, sem alterar a física. O fundo de alto contraste é atenuado em baixa resolução antes dos objetos interativos.
 
-`engine/painted_route.py` dissolve as formas das margens entre estágios, mantendo posição/distância. `engine/regional_life.py` desenha fauna decorativa atenuada perto de desafios, sem criar entidades. `engine/pilot.py` cacheia expressões. `scenes/village.py` mantém pedidos por obra e encena usos cotidianos. `audio.py` reserva dois canais de efeitos e prioriza uma fanfarra por vez. Os detalhes da implementação e o aceite presencial restante estão em [SPRINT3.md](SPRINT3.md).
+`engine/painted_route.py` dissolve as formas das margens entre estágios, mantendo posição/distância. `engine/regional_life.py` desenha fauna decorativa atenuada perto de desafios, sem criar entidades. `engine/pilot.py` cacheia expressões. `scenes/village.py` mantém pedidos por obra e encena usos cotidianos. `audio.py` reserva dois canais de efeitos e prioriza uma fanfarra por vez. Os detalhes da implementação e o aceite presencial restante estão em [SPRINT3.md](historico/SPRINT3.md).
 
 ## Histórico — versão 1.4
 
@@ -333,7 +345,7 @@ Os itens abaixo registram a implementação anterior à sprint aquarelada. Os fl
 - **Céu** (`engine/sky.py`): `draw_sun`, `paper_cloud` e `tint_panorama`, que tinge o panorama com `polluted_haze` do bioma.
 - **Fases** (`content/biomes.py`, `engine/world_view.py`): `industrial_mid` intercala peças regionais a cada duas do kit; `industrial_skyline` alimenta o horizonte (`skyline_base("back")`); `WorldView.margins` monta quarteirões com vãos; `Beam` tem cor, e `WorldView.splash` desenha o respingo.
 - **Piloto** (`content/pilot.py`, `tools/lowpoly/pilot.py`, `engine/pilot.py`, `scenes/pilot.py`): proporções de criança, novas opções, contorno `ink_outline`, a tela com balão de fala, o botão "Surpresa!" e o campo `piloto_montado` no perfil.
-- **Fluxo inicial** (`core.first_scene`): piloto, abertura, aviso, calibração e vila.
+- **Fluxo inicial** (`core.first_scene`): aviso, calibração quando necessária, piloto, abertura pulável e vila; etapas já concluídas são omitidas.
 - **Abertura em páginas** (`scenes/intro.py`): `PAGES` define quatro páginas, com viradas de `TURN_S`; a dobradura usa `FOLD_STEPS` numa mesa de papel, e o rastro usa as cores de `TRAIL`, as da logo.
 - **Voo, opções e padrões**: HUD mais fino em `scenes/flight.py`; `DEFAULT_PATTERN = "liso"` em `content/planes.py`; permanência padrão de 2,0 s, com faixa de 1,0 a 3,5 s em `persistence.py` e `scenes/options.py`.
 
@@ -364,4 +376,4 @@ A câmera desktop mantém a fonte enquanto ela encerra, permite reabertura poste
 
 `plane_stats` entrega o mesmo conforto independentemente das peças. Os campos/níveis existentes são preservados para progressão e terceira estrela. A calibração e a zona morta não são modificadas por compras.
 
-[Análise consolidada](ANALISE_CONSOLIDADA.md), [notas da entrega 1.6](ENTREGA_1_6.md) e [roteiro presencial](VALIDACAO_PRESENCIAL.md) detalham o escopo e os limites. A [entrega 1.5](ENTREGA_1_5.md) é histórica.
+[Análise consolidada](historico/ANALISE_CONSOLIDADA.md), [notas da entrega 1.6](historico/ENTREGA_1_6.md) e [roteiro presencial](VALIDACAO_PRESENCIAL.md) detalham o escopo e os limites. A [entrega 1.5](historico/ENTREGA_1_5.md) é histórica.

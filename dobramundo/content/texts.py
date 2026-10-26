@@ -251,7 +251,7 @@ STAGE_NAMES = (
 )
 
 STAGE_MESSAGES = (
-    "Fumaça, concreto e ferrugem. Cada coleta ajuda a mudar isso.",
+    "Voar ajuda a recuperar. Coletar acelera e traz recursos.",
     "A natureza volta a aparecer entre os prédios.",
     "Energia limpa e natureza integradas à vida da cidade.",
 )

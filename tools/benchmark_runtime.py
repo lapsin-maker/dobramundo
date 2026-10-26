@@ -67,18 +67,6 @@ def stats(values: list) -> dict:
     }
 
 
-def instrument(obj, name: str, samples: dict, key: str) -> None:
-    original = getattr(obj, name)
-
-    def measured(*args, **kwargs):
-        start = time.perf_counter()
-        result = original(*args, **kwargs)
-        samples.setdefault(key, []).append((time.perf_counter() - start) * 1000)
-        return result
-
-    setattr(obj, name, measured)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
@@ -89,8 +77,19 @@ def main() -> int:
         "--camera", action="store_true", help="abre webcam local para medir CPU concorrente; sem salvar vídeo"
     )
     parser.add_argument("--device", type=int, default=0)
+    parser.add_argument(
+        "--camera-control",
+        action="store_true",
+        help="usa a leitura real da webcam no controle e mede sua sequência consumida",
+    )
+    parser.add_argument("--window", action="store_true", help="apresenta uma janela real em vez de SDL dummy")
     parser.add_argument("--empty-pilot", action="store_true", help="reproduz a carga sem avatar do benchmark 1.5")
+    parser.add_argument("--biome", choices=("all", "amazonia", "caatinga"), default="all")
+    parser.add_argument("--contrast", choices=("both", "no", "yes"), default="both")
     args = parser.parse_args()
+    if args.camera_control:
+        args.camera = True
+        args.paced = True
     if args.frames < 1:
         parser.error("--frames deve ser maior que zero")
     args.out.mkdir(parents=True, exist_ok=True)
@@ -100,8 +99,11 @@ def main() -> int:
         PYGAME_HIDE_SUPPORT_PROMPT="1",
         DOBRAMUNDO_DATA_DIR=str(args.out / "perfil-benchmark"),
     )
+    if args.window:
+        os.environ.pop("SDL_VIDEODRIVER", None)
     import pygame
 
+    from dobramundo import __version__
     from dobramundo.app import App
     from dobramundo.content.biomes import BIOMES
     from dobramundo.game.run import FlightRun
@@ -120,6 +122,7 @@ def main() -> int:
     memory_after = resident_bytes()
     watercolor = [(path, surf) for path, surf in app.assets._loaded.items() if "watercolor" in path]
     report = {
+        "version": __version__,
         "conditions": "CPU; SDL dummy; no camera; 1100x650; fresh process; 60 warmup frames per case",
         "pacing": "60 fps target, sleep excluded from frame timings" if args.paced else "uncapped stress",
         "python": platform.python_version(),
@@ -152,15 +155,36 @@ def main() -> int:
             "read-return to present-call completion; excludes sensor buffering and physical display latency"
         )
     app.save = lambda: None
-    samples = {}
-    instrument(app.view, "background", samples, "background")
-    instrument(app.view.watercolor, "backdrop", samples, "horizon")
-    instrument(app.view.watercolor.route.ground, "paint", samples, "ground")
-    instrument(app.view, "desaturate", samples, "desaturate")
-    instrument(app.view, "draw_run", samples, "world")
-    instrument(app, "present", samples, "present")
-    for city in ("amazonia", "caatinga"):
-        for contrast in (False, True):
+    if args.camera_control:
+        app.input.source = camera
+        app.profile.controle = "cabeca"
+        app.input.set_segment("cabeca")
+        report["conditions"] += "; real camera samples consumed by head control; visibility/calibration reported"
+    if args.window:
+        report["conditions"] = report["conditions"].replace("SDL dummy", "native window")
+    from dobramundo.engine.painted_route import PaintedGround
+    from tools.frame_profiler import FrameProfiler
+
+    profiler = FrameProfiler()
+    samples = profiler.samples
+    profiler.instrument(app.view, "background", "background")
+    profiler.instrument(app.view.watercolor, "backdrop", "horizon")
+    profiler.instrument(PaintedGround, "paint", "ground")
+    profiler.instrument(app.view, "desaturate", "desaturate")
+    profiler.instrument(app.view, "draw_run", "world")
+    profiler.instrument(app.view, "_draw_run", "entities_and_effects")
+    profiler.instrument(app.view, "draw_player", "plane")
+    profiler.instrument(app.view.watercolor.route, "draw", "route_and_banks")
+    profiler.instrument(FlightRun, "update", "rules_update")
+    profiler.instrument(FlightScene, "draw_hud", "hud")
+    profiler.instrument(FlightScene, "draw", "scene")
+    profiler.instrument(app, "advance", "canvas")
+    profiler.instrument(app.input, "update", "input")
+    profiler.instrument(app, "present", "present")
+    cities = ("amazonia", "caatinga") if args.biome == "all" else (args.biome,)
+    contrasts = (False, True) if args.contrast == "both" else (args.contrast == "yes",)
+    for city in cities:
+        for contrast in contrasts:
             setup_started = time.perf_counter()
             scene = FlightScene(app, city)
             scene.run = FlightRun(BIOMES[city], "normal", {}, seed=7, intro=False)
@@ -172,16 +196,38 @@ def main() -> int:
             values = []
             warmup_values = []
             camera_age = []
-            samples.clear()
-            for frame in range(args.frames + 60):
+            consumed = {}
+            usable_frames = 0
+            sequences = set()
+            profiler.clear()
+            frame = 0
+            preparation = []
+            first_interactive_ms = None
+            loading_started = time.perf_counter()
+            loading_elapsed_ms = 0.0
+            iterations = 0
+            while frame < args.frames + 60:
+                iterations += 1
+                if iterations > args.frames + 1860:
+                    raise RuntimeError("O preparo do voo não terminou")
                 if frame == 60:
-                    samples.clear()
+                    profiler.clear()
                 # A continuous, deterministic trip through both stage changes.
                 target_restoration = min(95, 5 + frame * 90 / max(1, args.frames + 59))
                 scene.run.add_restoration(target_restoration - scene.run.restoration)
+                was_preparing = app.next_scene is not None or getattr(app.view, "warmup_pending", False)
                 start = time.perf_counter()
                 app.step(1 / 60, [])
                 elapsed_ms = (time.perf_counter() - start) * 1000
+                preparing = was_preparing or getattr(app.view, "warmup_pending", False)
+                if preparing:
+                    preparation.append(elapsed_ms)
+                    if args.paced:
+                        time.sleep(max(0.0, 1 / 60 - (time.perf_counter() - start)))
+                    continue
+                if first_interactive_ms is None:
+                    first_interactive_ms = elapsed_ms
+                    loading_elapsed_ms = (time.perf_counter() - loading_started) * 1000
                 if frame < 60:
                     warmup_values.append(elapsed_ms)
                 if frame >= 60:
@@ -190,20 +236,44 @@ def main() -> int:
                         captured_at = camera.snapshot_with_metadata()[3]
                         if captured_at is not None:
                             camera_age.append((time.monotonic() - captured_at) * 1000)
+                    body = app.input.body
+                    if args.camera_control and body is not None and body.presented_frame is not None:
+                        stamp = body.presented_frame
+                        sequences.add(stamp.sequence)
+                        usable_frames += int(stamp.usable)
+                        for metric, value in stamp.milliseconds().items():
+                            consumed.setdefault(metric, []).append(value)
                 if args.paced:
                     time.sleep(max(0.0, 1 / 60 - (time.perf_counter() - start)))
+                frame += 1
             label = city + ("_contrast" if contrast else "_normal")
             report["flights"][label] = {
                 "frame": stats(values),
                 "scene_setup_ms": round(scene_setup_ms, 3),
                 "warmup": stats(warmup_values),
-                "first_frame_ms": round(warmup_values[0], 3),
+                "first_preparation_frame_ms": round(preparation[0], 3) if preparation else None,
+                "first_interactive_frame_ms": round(first_interactive_ms, 3),
+                "preparation_frames": len(preparation),
+                "preparation_frame_cost": stats(preparation) if preparation else None,
+                "time_until_first_interactive_ms": round(loading_elapsed_ms, 3),
+                "preparation_tasks": list(app.view.warmup_timings),
                 "frames_measured": len(values),
                 "within_60fps_budget_fraction": round(sum(v <= 1000 / 60 for v in values) / len(values), 4),
                 "components": {k: stats(v) for k, v in samples.items()},
+                "components_exclusive": {k: stats(v) for k, v in profiler.exclusive.items()},
                 "rss_bytes": resident_bytes(),
                 "renderer_caches": app.view.cache_stats(),
             }
+            if args.camera_control:
+                report["flights"][label]["consumed_control"] = {
+                    "timings": {k: stats(v) for k, v in consumed.items()},
+                    "unique_sequences": len(sequences),
+                    "usable_frames": usable_frames,
+                    "fraction_usable": usable_frames / max(1, len(values)),
+                    "basis": (
+                        "same consumed sequence through canvas and present call; excludes sensor and display delay"
+                    ),
+                }
             if camera is not None:
                 report["flights"][label]["latest_camera_result_age_at_present"] = stats(camera_age)
                 report["flights"][label]["camera"] = camera.diagnostics()

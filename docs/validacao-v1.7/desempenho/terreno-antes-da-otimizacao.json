@@ -1,0 +1,49 @@
+{
+  "baseline_ref": "12dda71",
+  "camera": false,
+  "display": "SDL dummy software surface 1100x650",
+  "frames_per_case": 80,
+  "measurement": "painted_ground_only",
+  "results": {
+    "amazonia:baseline": {
+      "distinct_vertical_transitions": 326,
+      "first_frame_ms": 16.513,
+      "frames": 80,
+      "identical_adjacent_rows": 0.2471,
+      "max_ms": 16.513,
+      "median_ms": 7.915,
+      "p95_ms": 12.153,
+      "sampled_rows": 434
+    },
+    "amazonia:current": {
+      "distinct_vertical_transitions": 326,
+      "first_frame_ms": 17.114,
+      "frames": 80,
+      "identical_adjacent_rows": 0.2471,
+      "max_ms": 17.114,
+      "median_ms": 7.223,
+      "p95_ms": 11.175,
+      "sampled_rows": 434
+    },
+    "caatinga:baseline": {
+      "distinct_vertical_transitions": 326,
+      "first_frame_ms": 7.846,
+      "frames": 80,
+      "identical_adjacent_rows": 0.2471,
+      "max_ms": 7.846,
+      "median_ms": 2.587,
+      "p95_ms": 4.161,
+      "sampled_rows": 434
+    },
+    "caatinga:current": {
+      "distinct_vertical_transitions": 326,
+      "first_frame_ms": 7.934,
+      "frames": 80,
+      "identical_adjacent_rows": 0.2471,
+      "max_ms": 7.934,
+      "median_ms": 2.367,
+      "p95_ms": 3.56,
+      "sampled_rows": 434
+    }
+  }
+}

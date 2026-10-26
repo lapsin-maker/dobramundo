@@ -104,4 +104,6 @@ def test_piloto_em_voo_fica_no_cockpit_sem_pernas_penduradas(app):
         if plane.get_at((x, y)) != mounted.get_at((x, y))
     ]
     assert changed
-    assert max(y for _x, y in changed) < plane.get_height() * 0.40
+    # A pose sentada maior continua dentro do cockpit, sem pernas fora da fuselagem.
+    assert max(y for _x, y in changed) < plane.get_height() * 0.55
+    assert max(y for _x, y in changed) - min(y for _x, y in changed) > plane.get_height() * 0.20

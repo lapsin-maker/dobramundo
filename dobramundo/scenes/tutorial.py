@@ -159,14 +159,13 @@ class TutorialScene(Scene):
         super().__init__(app)
         self.next_scene = next_scene
         self.return_to = return_to
-        self.run = FlightRun(BIOMES["amazonia"], app.profile.modo, app.profile.pecas, focus=False)
+        self.run = FlightRun(BIOMES["amazonia"], app.profile.modo, app.profile.pecas, focus=False, spawn_enabled=False)
         self.run.invincible = True
         self.run.player.x = 0.0
         self.run.player.y = C.REST_ALTITUDE
         self.run.player.vx = self.run.player.vy = 0.0
         self.run.world.entities.clear()
         self.run.world.pending_lessons.clear()
-        self.run.world.spawn_pattern = lambda _z: None  # type: ignore[method-assign]
         self.step_index = 0
         self.trial: Optional[Trial] = None
         self.feedback = 0.0

@@ -225,8 +225,8 @@ def test_fase_termina_depois_do_voo_final(run):
 
 
 @pytest.mark.parametrize("mode", ["normal", "dificil"])
-def test_fase_dura_alguns_minutos(mode):
-    """Equilíbrio: pegando 4 de cada 10 resíduos, a fase leva de 2,5 a 6 minutos."""
+def test_controlador_ideal_ve_transformacao_em_voo_curto(mode):
+    """Controlador com teleporte não prevê crianças; protege contra progresso ínfimo ou instantâneo."""
     import random
 
     run = make_run(mode=mode, clear=False)
@@ -241,4 +241,5 @@ def test_fase_dura_alguns_minutos(mode):
                     run.player.x, run.player.y = entity.x, min(C.MAX_ALTITUDE, entity.y)
         run.update(1 / 30)
         t += 1 / 30
-    assert 150 <= t <= 360, f"{mode}: {t / 60:.1f} min"
+    assert 10 <= t <= 120, f"{mode}: {t / 60:.1f} min"
+    assert run.complete and run.restoration == 100

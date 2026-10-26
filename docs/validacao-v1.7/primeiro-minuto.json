@@ -1,0 +1,151 @@
+{
+  "profile": "synthetic",
+  "conditions": "60 seconds of real FlightRun updates; entities removed before each update to isolate recovery without collections/collisions; renderer used only at sampled times; no user data",
+  "flights": {
+    "amazonia": [
+      {
+        "seconds": 0,
+        "restoration": 5.0,
+        "visual": 5.0,
+        "stars": 0,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "amazonia-00s-sem-coletas.png"
+      },
+      {
+        "seconds": 15,
+        "restoration": 20.0,
+        "visual": 17.221,
+        "stars": 0,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "amazonia-15s-sem-coletas.png"
+      },
+      {
+        "seconds": 30,
+        "restoration": 35.0,
+        "visual": 32.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "amazonia-30s-sem-coletas.png"
+      },
+      {
+        "seconds": 45,
+        "restoration": 50.0,
+        "visual": 47.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "amazonia-45s-sem-coletas.png"
+      },
+      {
+        "seconds": 60,
+        "restoration": 65.0,
+        "visual": 62.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "amazonia-60s-sem-coletas.png"
+      }
+    ],
+    "caatinga": [
+      {
+        "seconds": 0,
+        "restoration": 5.0,
+        "visual": 5.0,
+        "stars": 0,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "caatinga-00s-sem-coletas.png"
+      },
+      {
+        "seconds": 15,
+        "restoration": 20.0,
+        "visual": 17.221,
+        "stars": 0,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "caatinga-15s-sem-coletas.png"
+      },
+      {
+        "seconds": 30,
+        "restoration": 35.0,
+        "visual": 32.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "caatinga-30s-sem-coletas.png"
+      },
+      {
+        "seconds": 45,
+        "restoration": 50.0,
+        "visual": 47.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "caatinga-45s-sem-coletas.png"
+      },
+      {
+        "seconds": 60,
+        "restoration": 65.0,
+        "visual": 62.208,
+        "stars": 1,
+        "resources": {
+          "papel": 0,
+          "plastico": 0,
+          "metal": 0,
+          "vidro": 0
+        },
+        "collected": 0,
+        "file": "caatinga-60s-sem-coletas.png"
+      }
+    ]
+  },
+  "status": "ok"
+}

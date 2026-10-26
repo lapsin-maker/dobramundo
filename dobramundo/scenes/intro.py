@@ -234,7 +234,7 @@ class IntroScene(Scene):
         image.set_alpha(255)
 
     def caption(self, screen: pygame.Surface, text: str, sub: str = "") -> None:
-        width = self.text.font(T.SIZES["hero"], hand=True).size(text)[0] + 70
+        width = self.font("hero", hand=True).size(text)[0] + 70
         box = pygame.Rect(0, 0, max(520, width), 112 if sub else 74)
         box.center = (C.WIDTH // 2, C.HEIGHT - (80 if sub else 72))
         T.panel(screen, box, T.PAPER, T.NAVY, 240, 18, 3)
