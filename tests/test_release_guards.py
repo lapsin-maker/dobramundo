@@ -9,18 +9,98 @@ import pytest
 from PIL import Image
 
 from dobramundo import __version__
+from dobramundo.content import texts
 from dobramundo.selftest import REQUIRED_SPRITES, check_report
 from tools.package_release import (
     assert_clean_checkout,
     assert_tracked_inputs,
     github_run_id,
     portable_sources,
+    validate_cartridge_manifest,
     validate_cartridge_sources,
     validate_tar,
     verified_build,
     write_batch,
 )
 from tools.visual_regression import compare
+
+
+def _built_cartridge_manifest():
+    # TSDK compiles ttea.toml to this root JSON; authored TOML is not shipped.
+    return {
+        "id": "dobramundo",
+        "version": __version__,
+        "entrypoint": "dobramundo.cartridge:Dobramundo",
+        "format_version": 1,
+        "game_api": 1,
+        "builder": {"version": "0.1.0"},
+        "build": {"source_commit": "a" * 40, "dirty": False},
+        "requires_ttea": ">=2.0,<3",
+        "tracking_profile": "body",
+        "resolution": [1100, 650],
+        "assets": ["assets"],
+        "licenses": ["LICENSE", "CREDITOS.md"],
+        "name": {"pt-BR": "Dobramundo", "en": "Dobramundo"},
+        "description": {"pt-BR": texts.TAGLINE, "en": "Fold the paper, fly and transform the city."},
+    }
+
+
+def test_release_accepts_tsdk_built_manifest_without_authored_toml(tmp_path):
+    path = tmp_path / "game.ttea"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(_built_cartridge_manifest()))
+    with zipfile.ZipFile(path) as archive:
+        assert "ttea.toml" not in archive.namelist()
+        assert validate_cartridge_manifest(archive, "a" * 40)["version"] == __version__
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"version": "0.0.0"},
+        {"id": "other-game"},
+        {"entrypoint": "other.game:Game"},
+        {"format_version": 2},
+        {"game_api": True},
+        {"build": {"source_commit": "b" * 40, "dirty": False}},
+        {"build": {"source_commit": "a" * 40, "dirty": True}},
+        {"build": None},
+        {"build": {"source_commit": "a" * 40, "dirty": False, "extra": True}},
+        {"builder": {"version": "not a version"}},
+        {"builder": {"version": "0.1.0", "extra": True}},
+        {"assets": ["missing-assets"]},
+        {"tracking_profile": "face"},
+        {"extra": True},
+    ],
+)
+def test_release_rejects_wrong_cartridge_identity_or_provenance(tmp_path, change):
+    manifest = _built_cartridge_manifest()
+    manifest.update(change)
+    path = tmp_path / "game.ttea"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("manifest.json", json.dumps(manifest))
+    with zipfile.ZipFile(path) as archive, pytest.raises(ValueError):
+        validate_cartridge_manifest(archive, "a" * 40)
+
+
+def test_release_rejects_duplicate_json_keys(tmp_path):
+    path = tmp_path / "game.ttea"
+    payload = json.dumps(_built_cartridge_manifest())
+    payload = payload[:-1] + ', "version": "' + __version__ + '"}'
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("manifest.json", payload)
+    with zipfile.ZipFile(path) as archive, pytest.raises(ValueError, match="duplicada"):
+        validate_cartridge_manifest(archive, "a" * 40)
+
+
+@pytest.mark.parametrize("names", [("ttea.toml",), ("manifest.json", "manifest.json")])
+def test_release_requires_unique_built_manifest(tmp_path, names):
+    path = tmp_path / "game.ttea"
+    with zipfile.ZipFile(path, "w") as archive:
+        for name in names:
+            archive.writestr(name, json.dumps(_built_cartridge_manifest()))
+    with zipfile.ZipFile(path) as archive, pytest.raises(ValueError, match="manifest.json"):
+        validate_cartridge_manifest(archive, "a" * 40)
 
 
 def test_build_guard_requires_native_detector(tmp_path):
