@@ -19,11 +19,18 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Dict, List, Optional
 
+from packaging.version import InvalidVersion, Version
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.8 in the supported CI matrix
+    import tomli as tomllib
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from dobramundo import __version__  # noqa: E402
-from tools.build_cartridge import DESKTOP_ONLY  # noqa: E402
+from tools.build_cartridge import DESKTOP_ONLY, MANIFEST  # noqa: E402
 from tools.runtime_assets import runtime_assets  # noqa: E402
 
 
@@ -138,6 +145,54 @@ def write_batch(path: Path, content: str) -> None:
     path.write_bytes(normalized.replace("\n", "\r\n").encode("ascii"))
 
 
+def _unique_manifest_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Chave duplicada no manifesto: " + key)
+        result[key] = value
+    return result
+
+
+def validate_cartridge_manifest(archive: zipfile.ZipFile, expected_commit: str) -> dict:
+    """Check the built manifest emitted by TSDK, not the authored ttea.toml."""
+    if archive.namelist().count("manifest.json") != 1:
+        raise ValueError("Cartucho precisa de um manifest.json único na raiz")
+    if archive.getinfo("manifest.json").file_size > 1024 * 1024:
+        raise ValueError("Manifesto do cartucho excede 1 MiB")
+    manifest = json.loads(archive.read("manifest.json"), object_pairs_hook=_unique_manifest_object)
+    if not isinstance(manifest, dict):
+        raise ValueError("Manifesto do cartucho precisa ser um objeto")
+    if manifest.get("version") != __version__:
+        raise ValueError("A versão do cartucho difere da release")
+    authored = tomllib.loads(MANIFEST)["game"]
+    if set(manifest) != set(authored) | {"format_version", "builder", "build"}:
+        raise ValueError("Campos do manifesto diferem do contrato de autoria")
+    # Compare the entire authored contract, including nested value types, without
+    # duplicating TSDK's general-purpose schema or our project's metadata.
+    actual_authored = {key: manifest[key] for key in authored}
+    if json.dumps(actual_authored, sort_keys=True) != json.dumps(authored, sort_keys=True):
+        raise ValueError("Identidade ou formato do cartucho incompatível")
+    if type(manifest["format_version"]) is not int or manifest["format_version"] != 1:
+        raise ValueError("Formato do cartucho incompatível")
+    builder = manifest["builder"]
+    if not isinstance(builder, dict) or set(builder) != {"version"} or not isinstance(builder["version"], str):
+        raise ValueError("Builder do cartucho inválido")
+    try:
+        Version(builder["version"])
+    except InvalidVersion as exc:
+        raise ValueError("Versão do builder inválida") from exc
+    build = manifest.get("build")
+    if (
+        not isinstance(build, dict)
+        or set(build) != {"source_commit", "dirty"}
+        or build["source_commit"] != expected_commit
+        or build["dirty"] is not False
+    ):
+        raise ValueError("Cartucho precisa vir do commit da release, sem alterações locais")
+    return manifest
+
+
 def validate_tar(path: Path) -> None:
     with tarfile.open(path, "r:gz") as archive:
         executable = archive.getmember("Dobramundo/Dobramundo")
@@ -190,11 +245,9 @@ def package(args) -> dict:
     linux_tar = unique(args.linux, "Dobramundo-Linux.tar.gz")
     validate_tar(linux_tar)
     with zipfile.ZipFile(args.cartridge) as archive:
-        if archive.testzip() is not None or "ttea.toml" not in archive.namelist():
+        if archive.testzip() is not None:
             raise ValueError("Cartucho incompleto ou corrompido")
-        manifest_text = archive.read("ttea.toml").decode("utf-8")
-        if re.search(r'^version\s*=\s*"' + re.escape(__version__) + r'"\s*$', manifest_text, re.MULTILINE) is None:
-            raise ValueError("A versão do cartucho difere da release")
+        validate_cartridge_manifest(archive, args.release_commit)
         validate_cartridge_sources(archive, ROOT)
         asset_records = list(runtime_assets(ROOT, console=True))
         expected_asset_names = {"assets/" + relative.as_posix() for _source, relative in asset_records}

@@ -4,7 +4,7 @@ Os ensaios usam perfis sintéticos separados dos dados do jogador. Referência l
 
 ## Cobertura automatizada
 
-- 610 testes de regras, cenas, persistência, câmera simulada e contratos portáteis em Python 3.8 e 3.12. [Execução de integração aprovada](https://github.com/lapsin-maker/dobramundo/actions/runs/40251066416); o manifesto da release identifica também a execução usada para os downloads.
+- 610 testes de regras, cenas, persistência, câmera simulada e contratos portáteis em Python 3.8 e 3.12. [Execução de integração aprovada](https://github.com/lapsin-maker/dobramundo/actions/runs/40253155125). A correção final do empacotador acrescentou 18 casos de manifesto, com 31 testes focados aprovados localmente e conferência do cartucho real. O manifesto da release identifica a execução completa usada para os downloads finais.
 - Self-test: 14 telas, dois voos de 1.200 quadros interativos (20 segundos simulados cada) e carregamento real do detector, sem abrir a webcam. [Resultado da fonte](self-test.json). Os executáveis têm relatórios próprios no manifesto da release.
 - Cartucho: check/build do TSDK local e renderização do estágio isolado, sem procurar imagens no checkout: nove menus e dois voos com 900 passos, incluindo preparação. [Resultado](cartucho.json).
 - 35 capturas finais sem falha de geometria dos botões; quatro referências de menus com diferença de pixels igual a zero. A checagem de botões não substitui a revisão humana dos textos. [Capturas](capturas.json), [comparação](regressao-visual.json).

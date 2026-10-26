@@ -45,6 +45,8 @@ No chão, a zona central de 15–85% agora alcança a tela inteira. A mira à fr
 
 As funções auxiliares sem uso foram removidas. A busca de rota separa agrupamento de ameaças e cálculo de células seguras; seus testes preservam os intervalos e predicados de segurança. O modelo de perfil saiu de `persistence.py`. Fontes e ajuste de texto usam os helpers compartilhados nos caminhos alterados.
 
+O empacotador verifica o `manifest.json` compilado pelo TSDK contra o contrato de autoria em `ttea.toml`. Confere versão, commit limpo, campos e tipos, além dos bytes de fontes e imagens; rejeita chaves duplicadas e procedência divergente. O TOML de autoria não precisa estar no cartucho distribuído.
+
 As notas das entregas anteriores estão em [histórico](historico/README.md). O README e a descrição do repositório explicam o jogo em linguagem direta. Onze branches já mescladas foram removidas após conferência dos commits; suas alterações continuam na história da main e dos pull requests.
 
 ## Evidências e limites
