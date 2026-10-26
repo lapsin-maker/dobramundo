@@ -41,7 +41,7 @@ A versão atual tem duas fases, cada uma numa cidade brasileira do seu bioma:
 
 - Manaus e Petrolina estão abertas desde o primeiro voo; a criança escolhe a ordem das visitas.
 - Cerrado, Mata Atlântica, Pantanal e Pampa aparecem no mapa como "Em breve".
-- A paisagem de cada fase tem três estágios: cidade industrial (dieselpunk), despertar ecológico e cidade solarpunk. Eles se sucedem aos 33,3% e aos 66,7% de transformação.
+- A paisagem de cada fase tem três estágios: cidade industrial (dieselpunk), despertar ecológico e cidade solarpunk. Os marcos de estrelas/estágio ficam em 33,3% e 66,7%; a mistura visual da aquarela começa após os 5% iniciais e antecipa gradualmente essas mudanças.
 - No estágio industrial, peças regionais (guindaste, termelétrica e contêineres em Manaus; torres de transmissão, caixas d'água e galpões em Petrolina) se misturam às estruturas do kit, e silhuetas da cidade regional aparecem no horizonte.
 - O céu das fases poluídas é tingido pelo bioma: cinza e úmido em Manaus, ocre e seco em Petrolina.
 - Na direção aquarelada, água/solo avançam em perspectiva e as peças regionais se aproximam pelas margens. O cenário procedural de reserva usa quarteirões com vãos entre eles.
