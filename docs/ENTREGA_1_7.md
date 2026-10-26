@@ -6,6 +6,10 @@ Perfis anteriores recuperam o maior avanço registrado no histórico. Quando só
 
 Na primeira execução, a criança monta seu piloto, acompanha a história do jornal e chega à vila. A história tem **Pular** e pode ser revista. Os primeiros três voos oferecem apoio, respeitando uma escolha feita no menu. Fechar durante a preparação do cenário não consome um desses voos.
 
+Manaus e Petrolina estão abertas desde o começo. A recuperação avança 1 ponto percentual por segundo de voo ativo, além das coletas: começa a aparecer cedo e fica guardada no mesmo percentual mostrado pela interface. Pausas e preparação não contam, e esse avanço não dá recursos ou velocidade extra. O cenário inicial reforça estruturas e poluição industrial nas margens; a mistura da aquarela começa após os 5% iniciais.
+
+No chão, a zona central de 15–85% agora alcança a tela inteira. A mira à frente perde intensidade nas bordas, preservando os quatro cantos. No TSDK atual, o marcador acompanha o alvo real, inclusive em menus com outro segmento escolhido; a perda de leitura esconde o marcador e suspende a seleção.
+
 ## O que mudou na experiência
 
 - **Escolhas mais claras:** Opções tem quatro grupos — Controle, Superfície, Som e Acessibilidade. O editor conserva o tempo de permanência mais lento e a exigência de sair do alvo antes de repetir.

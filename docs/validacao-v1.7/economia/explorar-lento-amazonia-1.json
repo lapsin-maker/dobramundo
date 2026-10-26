@@ -28,28 +28,28 @@
   },
   "mean_resources_by_mode": {
     "normal": {
-      "papel": 9.333333333333334,
-      "plastico": 2.6666666666666665,
+      "papel": 5.333333333333333,
+      "plastico": 4.0,
       "metal": 7.333333333333333,
-      "vidro": 4.666666666666667
+      "vidro": 6.0
     },
     "dificil": {
-      "papel": 13.666666666666666,
-      "plastico": 22.666666666666668,
-      "metal": 13.666666666666666,
-      "vidro": 15.0
+      "papel": 12.0,
+      "plastico": 21.0,
+      "metal": 11.666666666666666,
+      "vidro": 11.666666666666666
     }
   },
   "city_completion_by_mode": {
     "normal": {
-      "flight_index": null,
-      "active_minutes_until_complete": null,
-      "city_after_sequence": 73.5,
+      "flight_index": 2,
+      "active_minutes_until_complete": 1.02,
+      "city_after_sequence": 100.0,
       "sequence_flights": 3
     },
     "dificil": {
       "flight_index": 1,
-      "active_minutes_until_complete": 0.75,
+      "active_minutes_until_complete": 0.68,
       "city_after_sequence": 100.0,
       "sequence_flights": 3
     }
@@ -80,11 +80,14 @@
       "seconds_active": 45.017,
       "seconds_wall": 45.017,
       "max_player_displacement": 233.927,
-      "stage_times_s": [],
-      "restoration": 28.5,
+      "stage_times_s": [
+        19.333,
+        41.15
+      ],
+      "restoration": 73.52,
       "city_restoration_at_start": 5.0,
       "local_restoration": 11.9,
-      "stars": 0,
+      "stars": 2,
       "resources": {
         "papel": 8,
         "plastico": 4,
@@ -117,38 +120,36 @@
       "biome": "amazonia",
       "mode": "normal",
       "seed": 2,
-      "seconds_active": 45.017,
-      "seconds_wall": 45.017,
-      "max_player_displacement": 233.135,
-      "stage_times_s": [
-        6.35
-      ],
-      "restoration": 51.0,
-      "city_restoration_at_start": 28.5,
-      "local_restoration": 10.9,
-      "stars": 1,
+      "seconds_active": 15.983,
+      "seconds_wall": 15.983,
+      "max_player_displacement": 221.775,
+      "stage_times_s": [],
+      "restoration": 100.0,
+      "city_restoration_at_start": 73.52,
+      "local_restoration": 8.54,
+      "stars": 2,
       "resources": {
-        "papel": 8,
+        "papel": 4,
         "plastico": 4,
         "metal": 4,
-        "vidro": 4
+        "vidro": 0
       },
-      "resource_total": 20,
-      "collected": 5,
-      "hits": 4,
+      "resource_total": 12,
+      "collected": 3,
+      "hits": 0,
       "max_lives": 5,
-      "lives_left": 1,
-      "completed": false,
+      "lives_left": 5,
+      "completed": true,
       "game_over": false,
-      "interrupted": true,
+      "interrupted": false,
       "session_timeout": false,
       "pause_count": 0,
       "pause_seconds": 0.0,
       "controller_counts": {
-        "decisoes_perdidas": 6,
-        "sem_rota_simplificada": 1,
-        "nao_tentadas": 14,
-        "alvos_de_coleta": 8
+        "decisoes_perdidas": 1,
+        "sem_rota_simplificada": 0,
+        "nao_tentadas": 5,
+        "alvos_de_coleta": 4
       },
       "exploration": true,
       "assistance": true,
@@ -162,21 +163,19 @@
       "seconds_active": 45.017,
       "seconds_wall": 45.017,
       "max_player_displacement": 221.775,
-      "stage_times_s": [
-        25.833
-      ],
-      "restoration": 73.5,
-      "city_restoration_at_start": 51.0,
-      "local_restoration": 10.9,
+      "stage_times_s": [],
+      "restoration": 100.0,
+      "city_restoration_at_start": 100.0,
+      "local_restoration": 12.08,
       "stars": 2,
       "resources": {
-        "papel": 12,
-        "plastico": 0,
+        "papel": 4,
+        "plastico": 4,
         "metal": 8,
-        "vidro": 0
+        "vidro": 8
       },
-      "resource_total": 20,
-      "collected": 5,
+      "resource_total": 24,
+      "collected": 6,
       "hits": 3,
       "max_lives": 5,
       "lives_left": 2,
@@ -187,9 +186,9 @@
       "pause_count": 0,
       "pause_seconds": 0.0,
       "controller_counts": {
-        "decisoes_perdidas": 7,
+        "decisoes_perdidas": 9,
         "sem_rota_simplificada": 1,
-        "nao_tentadas": 9,
+        "nao_tentadas": 12,
         "alvos_de_coleta": 5
       },
       "exploration": true,
@@ -201,28 +200,28 @@
       "biome": "amazonia",
       "mode": "dificil",
       "seed": 1,
-      "seconds_active": 45.017,
-      "seconds_wall": 45.017,
+      "seconds_active": 40.567,
+      "seconds_wall": 40.567,
       "max_player_displacement": 233.72,
       "stage_times_s": [
-        19.783,
-        38.567
+        11.067,
+        25.167
       ],
       "restoration": 100.0,
       "city_restoration_at_start": 5.0,
-      "local_restoration": 14.21,
+      "local_restoration": 11.18,
       "stars": 2,
       "resources": {
-        "papel": 13,
-        "plastico": 27,
-        "metal": 22,
-        "vidro": 21
+        "papel": 8,
+        "plastico": 22,
+        "metal": 16,
+        "vidro": 11
       },
-      "resource_total": 83,
-      "collected": 65,
+      "resource_total": 57,
+      "collected": 45,
       "hits": 5,
       "max_lives": 5,
-      "lives_left": 2,
+      "lives_left": 1,
       "completed": true,
       "game_over": false,
       "interrupted": false,
@@ -230,10 +229,10 @@
       "pause_count": 0,
       "pause_seconds": 0.0,
       "controller_counts": {
-        "decisoes_perdidas": 20,
+        "decisoes_perdidas": 16,
         "sem_rota_simplificada": 6,
-        "nao_tentadas": 56,
-        "alvos_de_coleta": 37
+        "nao_tentadas": 49,
+        "alvos_de_coleta": 33
       },
       "exploration": true,
       "assistance": true,

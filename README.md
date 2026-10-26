@@ -22,9 +22,9 @@ Já jogou a versão 1.5 pelo lançador? O atalho **Continuar-perfil-1.5.bat** ab
 
 Crie seu piloto, acompanhe a história do jornal e entre na vila. A história pode ser pulada e vista novamente. A aparência começa neutra, pronta para escolher pele, cabelos, olhos, roupa, óculos, aparelho auditivo, cadeira de rodas ou andador.
 
-Na vila, você pode **voar**, entrar no **hangar**, mudar o **piloto** e **cuidar da comunidade**. Ela começa colorida, industrial e poluída; as obras trazem água limpa, natureza, energia e alimentos. Os voos visitam a Amazônia e a Caatinga, com referências de Manaus e Petrolina.
+Na vila, você pode **voar**, entrar no **hangar**, mudar o **piloto** e **cuidar da comunidade**. Ela começa colorida, industrial e poluída; as obras trazem água limpa, natureza, energia e alimentos. Manaus e Petrolina estão disponíveis desde o começo, para visitar a Amazônia e a Caatinga na ordem que preferir.
 
-A transformação das cidades fica guardada entre os voos. Uma cidade recuperada continua solarpunk — um lugar em que pessoas, construções e natureza convivem. Voar de novo começa outra viagem, sem apagar essa transformação nem duplicar recompensas.
+A transformação avança durante o voo ativo; coletar resíduos acelera a recuperação e traz recursos para construir. O avanço fica guardado entre os voos. Uma cidade recuperada continua solarpunk — um lugar em que pessoas, construções e natureza convivem. Voar de novo começa outra viagem, sem apagar essa transformação nem duplicar recompensas.
 
 Nos primeiros voos, o apoio oferece mais vidas e proteção. Você pode mudar essa escolha. Também há **Explorar**, sem eliminação por batidas, e voos com duração combinada.
 

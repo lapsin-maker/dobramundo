@@ -424,6 +424,7 @@ class World:
         self.route_planner = RoutePlanner(mode)
         self.restoration = C.START_RESTORATION  # transformação real (jogabilidade)
         self.visual = C.START_RESTORATION  # transformação desenhada (alcança a real aos poucos)
+        self.spawn_restoration = C.START_RESTORATION  # avanço de voo ganho; não inclui recuperação passiva
         self.segments: List[float] = []
         self.segment_base = 0
         self.entities: List[Entity] = []
@@ -466,6 +467,7 @@ class World:
     def set_restoration(self, value: float) -> None:
         """Atribuição direta (início, testes): o cenário fica no estado final na hora."""
         self.restoration = clamp(float(value), 0.0, 100.0)
+        self.spawn_restoration = self.restoration
         self.visual = self.restoration
         self.green_since = {}
         self.solar_since = {}
@@ -477,8 +479,10 @@ class World:
                 self.solar_since[seg] = -1e12
 
     # ------------------------------------------------------- transformação
-    def add_restoration(self, amount: float) -> None:
+    def add_restoration(self, amount: float, *, earned: bool = True) -> None:
         self.restoration = clamp(self.restoration + amount, 0.0, 100.0)
+        if earned:
+            self.spawn_restoration = clamp(self.spawn_restoration + amount, 0.0, 100.0)
 
     @property
     def stage(self) -> int:
@@ -519,6 +523,12 @@ class World:
         if self.visual < C.SOLAR_START_RESTORATION:
             return 0.0
         return smoothstep((self.visual - C.SOLAR_START_RESTORATION) / C.SOLAR_SWEEP_RESTORATION)
+
+    def spawn_solar_share(self) -> float:
+        """Share de ameaças solares baseado apenas no progresso ganho em jogo."""
+        if self.spawn_restoration < C.SOLAR_START_RESTORATION:
+            return 0.0
+        return smoothstep((self.spawn_restoration - C.SOLAR_START_RESTORATION) / C.SOLAR_SWEEP_RESTORATION)
 
     def _sweep(self, since: Dict[int, float], rank, share: float) -> None:
         for seg in [s for s in since if s < self.segment_base]:
@@ -563,7 +573,7 @@ class World:
         seg = self.segment_at(z)
         if seg is None:
             seg = self.segment_base + len(self.segments)
-        return seg in self.solar_since or self.solar_rank(seg) < self.solar_share()
+        return self.solar_rank(seg) < self.spawn_solar_share()
 
     def stage_flags(self):
         """Por trecho: (chão verde, estágio solarpunk), calculados uma vez por quadro."""

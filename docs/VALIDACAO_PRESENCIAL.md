@@ -22,7 +22,10 @@ nome ou diagnóstico da criança nesta ficha.
 | Webcam | Virar cabeça e sair/voltar ao enquadramento; retirar/reconectar cabo pelo operador | Sem movimento fantasma, interface responsiva, reabertura única, recalibração clara | Pendente físico |
 | Exploração e assistência | Erros, pausas e término curto | Ajuda permanece previsível; sem eliminação no modo exploração; conquistas preservadas | Pendente com participante |
 | Menus | Escolher aparência, trocar opções e retirar o cursor | Nenhuma confirmação involuntária em sequência; alvo e progresso de permanência compreensíveis | Pendente com participante |
+| Cantos no chão | Aproximar um pé de cada borda com o outro mais para dentro; apontar aos quatro cantos e voltar ao centro | Cursor chega aos botões extremos sem exigir ambos os pés fora da projeção; indicador coincide com seleção; perda de leitura suspende permanência | Pendente console/webcam |
+| Primeira visita às cidades | Abrir mapa com piloto novo e zero estrelas | Manaus e Petrolina podem ser escolhidas em qualquer ordem | Pendente com participante |
 | Transformação | Estado industrial colorido, etapa intermediária, solarpunk | Participante reconhece a relação entre coleta/obra e a mudança na vila | Pendente com participante |
+| Ritmo da paisagem | Observar 15, 30 e 60 segundos ativos, com poucas coletas e com pausas | Mudança de poluição/natureza já perceptível durante o primeiro minuto; pausa e preparação não avançam a transformação | Pendente com participante |
 | Continuidade entre voos | Encerrar aos 30–60 s e decolar de novo | A paisagem mantém o progresso, vidas recomeçam e a criança entende que iniciou outro voo | Pendente com participante |
 | História inicial | Criar piloto, acompanhar/pular jornal, reabrir o jogo | Ordem compreensível, Pular acessível e história não se repete sem pedido | Pendente com participante |
 | Alto contraste ampliado | Escalas 1,0, 1,3 e 1,6, avião nos quatro extremos | Indicadores de borda antecipam ameaças sem distrair ou esconder o caminho | Pendente com participante |

@@ -109,9 +109,8 @@ class Profile:
         return sum(self.estrelas.values())
 
     def unlocked(self, biome: str) -> bool:
-        """A Caatinga abre com 1 estrela em Manaus (a primeira fase está sempre aberta)."""
-        index = BIOME_ORDER.index(biome)
-        return index == 0 or self.estrelas.get(BIOME_ORDER[index - 1], 0) >= 1
+        """Os biomas implementados ficam disponíveis desde o início."""
+        return biome in BIOME_ORDER
 
     # ------------------------------------------------------------ validação
     def normalize(self) -> Profile:

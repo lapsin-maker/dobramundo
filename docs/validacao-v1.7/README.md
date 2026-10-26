@@ -10,6 +10,7 @@ Os ensaios usam perfis sintéticos separados dos dados do jogador. Referência l
 - 35 capturas finais sem falha de geometria dos botões; quatro referências de menus com diferença de pixels igual a zero. A checagem de botões não substitui a revisão humana dos textos. [Capturas](capturas.json), [comparação](regressao-visual.json).
 - 12 sequências de emendas/mudanças de estágio e oito pares de obras antes/depois. Distâncias e mistura do horizonte e das margens são registradas no [manifesto visual](jornadas.json). O retorno do último ao primeiro quadro de um GIF é uma repetição do arquivo, não uma emenda do jogo.
 - 108 voos sintéticos em três cenários parametrizados, dois modos e dois biomas. [Economia e transformação](economia.md).
+- Alcance dos quatro extremos e alinhamento do marcador com as classes reais do TSDK instalado, em Python 3.14.8/pygame-ce 2.5.8. [Relatório do cursor](cursor-sdk.json). Usa coordenadas sintéticas, sem comprovar alcance físico de uma pessoa.
 
 ## Protocolo de desempenho
 

@@ -17,12 +17,13 @@ from helpers import FakeSource, landmarks
 from dobramundo import __version__
 from dobramundo import config as C
 from dobramundo.engine.orientation import game_to_screen, orient, rotate_point, screen_to_game, unrotate_point
-from dobramundo.input.console import TrackingSource, body_points
-from dobramundo.input.floor import TARGETS, FloorMap, apply, feet_point, homography
+from dobramundo.input.console import TrackingSource, body_points, floor_indicator_position, floor_position
+from dobramundo.input.floor import TARGETS, FloorMap, apply, expand_reach, feet_point, homography
 from dobramundo.input.hub import RECENTER_S, InputHub
 from dobramundo.input.pose import SEGMENTS, AxisMapper, BodyControl, FloorControl
 from dobramundo.persistence import Profile
 from dobramundo.scenes.projection import SHOW_TARGETS_S, ProjectionScene
+from dobramundo.ui.widgets import Button, Menu
 
 ROOT = Path(__file__).resolve().parent.parent
 ROTACOES = (0, 90, 180, 270)
@@ -115,6 +116,177 @@ def test_locator_com_alvos_iguais_a_camera():
     )
 
 
+@pytest.mark.parametrize(
+    "point, expected",
+    [
+        ((0.15, 0.15), (0.0, 0.0)),
+        ((0.85, 0.15), (1.0, 0.0)),
+        ((0.85, 0.85), (1.0, 1.0)),
+        ((0.15, 0.85), (0.0, 1.0)),
+        ((0.5, 0.5), (0.5, 0.5)),
+    ],
+)
+def test_alcance_expandido_mantem_centro_e_leva_marcadores_aos_cantos(point, expected):
+    assert expand_reach(point) == pytest.approx(expected)
+    locate = FloorMap(TARGETS).locator(0, False, 0.0)
+    landmarks_at_point = _pontos_corpo({29: point, 31: point, 30: point, 32: point})
+    assert locate(landmarks_at_point) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("rotation", ROTACOES)
+@pytest.mark.parametrize("mirrored", (False, True))
+def test_quatro_cantos_com_offset_maximo_preservam_o_alcance(rotation, mirrored):
+    locate = FloorMap(TARGETS).locator(rotation, mirrored, 0.35)
+    corners = ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))
+    for marker, corner in zip(TARGETS, corners):
+        camera_point = rotate_point(*marker, rotation, mirrored)
+        points = _pontos_corpo({29: camera_point, 31: camera_point, 30: camera_point, 32: camera_point})
+        assert locate(points) == pytest.approx(corner)
+
+
+def test_alcance_do_console_admite_um_pe_na_borda_sem_perder_o_centro():
+    left = type("Foot", (), {"x": 0.75, "y": 0.5, "visibility": 0.9})()
+    right = type("Foot", (), {"x": 1.0, "y": 0.5, "visibility": 0.9})()
+    tracking = type(
+        "Frame",
+        (),
+        {
+            "missing": False,
+            "stale": False,
+            "feet": {"left": left, "right": right},
+            "out_of_area": {"left": False, "right": True},
+            "control_target": None,
+            "control_target_active": False,
+        },
+    )()
+    assert floor_position(tracking) == pytest.approx((1.0, 0.5))
+    tracking.feet = {
+        "left": type("Foot", (), {"x": 0.49, "y": 0.49, "visibility": 0.9})(),
+        "right": type("Foot", (), {"x": 0.51, "y": 0.51, "visibility": 0.9})(),
+    }
+    tracking.out_of_area = {"left": False, "right": False}
+    assert floor_position(tracking) == pytest.approx((0.5, 0.5))
+
+
+def test_alcance_do_console_preserva_alvo_offset_e_recusa_dois_pes_fora():
+    foot = type("Foot", (), {"x": 0.5, "y": 0.5, "visibility": 0.9})()
+    target = type("Target", (), {"x": 0.5, "y": 0.38})()
+    tracking = type(
+        "Frame",
+        (),
+        {
+            "missing": False,
+            "stale": False,
+            "feet": {"left": foot, "right": foot},
+            "out_of_area": {"left": False, "right": False},
+            "control_target": target,
+            "control_target_active": True,
+        },
+    )()
+    assert floor_position(tracking) == pytest.approx((0.5, 0.38))
+    foot.y = 0.85
+    target.y = 0.73
+    assert floor_position(tracking) == pytest.approx((0.5, 1.0))
+    tracking.control_target = None
+    assert floor_position(tracking) is None  # target inválido não reutiliza a média bruta
+    tracking.out_of_area = {"left": True, "right": True}
+    assert floor_position(tracking) is None
+
+
+def test_alcance_do_console_tem_fallback_para_tracking_frame_antigo():
+    foot = type("Foot", (), {"x": 0.5, "y": 0.5, "visibility": 0.9})()
+    legacy = type(
+        "LegacyFrame",
+        (),
+        {
+            "missing": False,
+            "stale": False,
+            "feet": {"left": foot, "right": foot},
+            "out_of_area": {"left": False, "right": False},
+        },
+    )()
+    assert floor_position(legacy) == pytest.approx((0.5, 0.5))
+
+
+def test_floorcontrol_filtra_jitter_e_reverte_da_borda_oposta():
+    control = FloorControl(FakeSource(), lambda _landmarks: None)
+    edge = expand_reach((0.875, 0.5))
+    for _ in range(16):
+        control.feed(edge, 1 / 30)
+    assert control.position()[0] > 0.99
+    for point in ((0.49, 0.5), (0.51, 0.5)) * 8:
+        control.feed(point, 1 / 30)
+    assert control.position()[0] == pytest.approx(0.5, abs=0.03)
+    for _ in range(16):
+        control.feed(expand_reach((0.125, 0.5)), 1 / 30)
+    assert control.axes()[0] < -0.99
+
+
+@pytest.mark.parametrize(
+    "x, expected_x, key",
+    [(0.0, 0, "left"), (1.0, C.WIDTH - 1, "right")],
+)
+def test_cursor_de_pes_alcanca_e_aciona_botoes_nas_duas_bordas(x, expected_x, key):
+    source = FakeSource()
+    hub = InputHub()
+    hub.source_factory = lambda: source
+    point = [x, 0.5]
+    hub.set_floor(lambda _landmarks: tuple(point), "edge")
+    hub.set_segment("pes")
+    for _ in range(3):
+        source.show(_pontos_corpo(PES))
+        hub.update(1 / 30)
+    pointer = hub.body_pointer()
+    assert pointer is not None and pointer[0] == expected_x
+
+    hits = []
+    menu = Menu(
+        [
+            Button(pygame.Rect(0, 0, 150, C.HEIGHT), "left", lambda: hits.append("left"), key="left"),
+            Button(
+                pygame.Rect(C.WIDTH - 150, 0, 150, C.HEIGHT),
+                "right",
+                lambda: hits.append("right"),
+                key="right",
+            ),
+        ]
+    )
+    assert menu.update(0.1, pointer, 0.1)
+    assert hits == [key]
+
+
+def test_perda_dos_pes_nao_completa_permanencia_do_cursor():
+    source = FakeSource()
+    hub = InputHub()
+    hub.source_factory = lambda: source
+    hub.set_floor(lambda points: (0.5, 0.5) if points is not None else None, "loss")
+    hub.set_segment("pes")
+    hits = []
+    menu = Menu([Button(pygame.Rect(0, 0, C.WIDTH, C.HEIGHT), "alvo", lambda: hits.append("alvo"))])
+
+    source.show(_pontos_corpo(PES))
+    hub.update(1 / 30)
+    pointer = hub.body_pointer()
+    assert pointer is not None
+    menu.update(0.2, pointer, 0.5)
+
+    source.show(None)
+    hub.update(1 / 30)
+    assert hub.body_pointer() is None
+    menu.update(0.4, hub.body_pointer(), 0.5)
+    assert hits == []
+
+
+def test_marcador_de_voo_some_quando_os_dois_pes_estao_fora():
+    body = FloorControl(FakeSource(), lambda _points: None)
+    body.point = (0.92, 0.5)  # posição anterior continua guardada no controle
+    body.visible = False  # o quadro atual informou ambos os pés fora da área
+    assert floor_indicator_position(body) is None
+
+    body.visible = True
+    assert floor_indicator_position(body) == pytest.approx((0.92, 0.5))
+
+
 def test_locator_sobe_com_o_cursor_a_frente():
     locate = FloorMap(TARGETS).locator(0, False, 0.1)
     pes = {29: (0.5, 0.5), 31: (0.5, 0.5), 30: (0.5, 0.5), 32: (0.5, 0.5)}
@@ -132,7 +304,7 @@ def test_locator_devolve_none_fora_da_projecao():
 def test_locator_com_rotacao_180_inverte_a_posicao():
     locate = FloorMap(TARGETS).locator(180, False, 0.0)
     pes = {29: (0.3, 0.4), 31: (0.3, 0.4), 30: (0.3, 0.4), 32: (0.3, 0.4)}
-    assert locate(_pontos_corpo(pes)) == pytest.approx((0.7, 0.6))
+    assert locate(_pontos_corpo(pes)) == pytest.approx((0.7857142857, 0.6428571429))
 
 
 # ------------------------------------------------------------------ pose

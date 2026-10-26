@@ -39,7 +39,7 @@ A versão atual tem duas fases, cada uma numa cidade brasileira do seu bioma:
 | Amazônia | Manaus (AM) | Estabilizador, nível 1 |
 | Caatinga | Petrolina (PE) | Leme, nível 1, e Quilha, nível 1 |
 
-- Petrolina abre quando a criança conquista pelo menos 1 estrela em Manaus.
+- Manaus e Petrolina estão abertas desde o primeiro voo; a criança escolhe a ordem das visitas.
 - Cerrado, Mata Atlântica, Pantanal e Pampa aparecem no mapa como "Em breve".
 - A paisagem de cada fase tem três estágios: cidade industrial (dieselpunk), despertar ecológico e cidade solarpunk. Eles se sucedem aos 33,3% e aos 66,7% de transformação.
 - No estágio industrial, peças regionais (guindaste, termelétrica e contêineres em Manaus; torres de transmissão, caixas d'água e galpões em Petrolina) se misturam às estruturas do kit, e silhuetas da cidade regional aparecem no horizonte.
@@ -93,11 +93,13 @@ Sem apoio, a criança tem três vidas e 1,25 segundo de proteção após cada co
 
 ### Transformação e estrelas
 
-A transformação de uma cidade nova começa em 5% e fica guardada no perfil ao terminar ou encerrar um voo. A próxima decolagem continua desse percentual, com vidas e velocidade inicial renovadas. A posição do avião e os obstáculos da partida anterior não são retomados. Ao atingir os limiares, a criança ganha estrelas:
+A transformação de uma cidade nova começa em 5%, em uma paisagem industrial e poluída. Ela avança durante o voo ativo, e as coletas aceleram a recuperação. Preparação, menus e pausas não transformam a cidade. O avanço fica guardado no perfil ao terminar ou encerrar um voo; a próxima decolagem continua desse percentual, com vidas e velocidade inicial renovadas. A posição do avião e os obstáculos da partida anterior não são retomados. Recursos e pontos continuam vindo das ações do jogo, não da passagem do tempo. Ao atingir os limiares, a criança ganha estrelas:
 
 - 1 estrela aos 33,3%, no despertar ecológico;
 - 2 estrelas aos 66,7%, na cidade solarpunk;
 - 3 estrelas com a cidade completa (100%), desde que as peças exigidas pela fase estejam instaladas no avião. Sem elas, a conclusão rende 2 estrelas, e a tela de resultado indica quais peças faltam.
+
+A recuperação pelo voo acrescenta 1 ponto percentual por segundo ativo, sem aumentar a velocidade ou a frequência de obstáculos. Sem coletar, uma cidade nova passa por cerca de 20%, 35% e 65% após 15, 30 e 60 segundos; coletas antecipam essas etapas. As pinturas se misturam gradualmente, por isso a mudança visual começa antes de uma nova estrela.
 
 Ao chegar pela primeira vez a 100%, o avião segue planando por 3 segundos para a criança ver a cidade. É possível voltar a visitar a cidade já transformada: ela permanece solarpunk e o voo não termina imediatamente. Instalar as peças que faltavam permite conquistar a terceira estrela numa nova coleta.
 
@@ -199,11 +201,13 @@ Em Opções, a opção **Controle do avião** escolhe o modo:
 
 ### Pés sobre a projeção
 
-Com a superfície **Chão** e o segmento **Pés**, o avião e o cursor seguem onde a criança pisa na imagem projetada. Sem calibração, os pés usam a posição relativa à postura neutra, como os demais segmentos. Para a calibração, use **Opções > Projeção e chão** (só no executável):
+Com a superfície **Chão** e o segmento **Pés**, o avião e o cursor acompanham a posição dos pés. Uma zona confortável, entre 15% e 85% da projeção, cobre a tela inteira: não é preciso levar o centro dos dois pés até a borda física para selecionar um botão extremo. Sem calibração, os pés usam a posição relativa à postura neutra, como os demais segmentos. Para a calibração, use **Opções > Projeção e chão** (só no executável):
 
 1. Deixe a webcam vendo toda a projeção no chão e escolha "Calibrar os 4 cantos". Os alvos 1, 2, 3 e 4 aparecem a 15% das bordas da imagem.
 2. A câmera tira uma foto. Clique no centro de cada alvo, na ordem 1 (superior esquerdo), 2 (superior direito), 3 (inferior direito) e 4 (inferior esquerdo).
-3. Confira pisando sobre os alvos. "Cursor à frente" (0 a 35%, padrão 12%) desloca o cursor um pouco à frente dos dedos, para ficar visível.
+3. Confira o alcance dos quatro cantos e o retorno ao centro. "Cursor à frente" (0 a 35%, padrão 12%) desloca o cursor no miolo da projeção; esse deslocamento diminui perto das bordas para preservar o alcance dos cantos.
+
+No TSDK com suporte a alvo de controle, a bolinha segue a posição real usada na seleção, incluindo a suavização. Um pé pode ultrapassar a borda enquanto o outro permanece na área; ambos precisam continuar rastreados. Quando ambos ficam fora, a leitura é descartada. Em runtimes antigos sem essa API, o cursor do próprio jogo continua funcional, mas o indicador central de diagnóstico do SDK pode permanecer entre as pegadas.
 
 A câmera estima a posição do pé; ela não detecta o contato com o chão. Passar a imagem de deitada para em pé (90° ou 270°), ou o contrário, apaga a calibração, e o jogo pede para calibrar de novo. Espelhar ou girar 180° não exige nova calibração, mas mover a câmera ou o projetor exige.
 

@@ -3,6 +3,8 @@
 ## 1.7.0 — 2026-10-25
 
 - A transformação de cada cidade continua entre voos. A primeira execução apresenta o piloto, a história com botão Pular e a vila; os primeiros voos oferecem apoio, respeitando uma escolha explícita.
+- Manaus e Petrolina abertas desde o início; recuperação pelo voo ativo, acelerada pelas coletas, e transição visual desde o começo do percurso. Margens industriais reforçadas com infraestrutura e menos vegetação dominante.
+- Cursor dos pés alcança os quatro cantos a partir de uma zona confortável. A mira à frente atenua perto das bordas; o indicador do TSDK atual acompanha a seleção efetiva, com proteção contra leitura ausente.
 - Opções divididas em quatro grupos, textos com mais contraste, piloto mais visível no avião e mapa com pigmento de aquarela. Avisos de recompensa saem do horizonte do voo.
 - Preparo do cenário antes de iniciar a partida, solo com amostragem suave, avisos de ameaças nas bordas da ampliação e orçamento compartilhado de superfícies temporárias.
 - Proteção contra duas instâncias usando os mesmos dados, migração explícita de perfis e preservação de arquivos de versões futuras. Concluir, fechar e repetir uma tela de resultado não duplica recompensas.

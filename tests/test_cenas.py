@@ -142,13 +142,10 @@ def test_comprar_padrao_usa_pontos(app):
     assert "galaxia" not in app.profile.owned_patterns
 
 
-def test_mapa_bloqueia_a_caatinga_sem_estrela(app):
+def test_mapa_disponibiliza_a_caatinga_sem_estrela(app):
     scene = show(app, MapScene(app))
     caatinga = next(b for b in scene.menu.buttons if b.key == "caatinga")
-    assert not caatinga.enabled
-    app.profile.estrelas["amazonia"] = 1
-    scene.build()
-    assert next(b for b in scene.menu.buttons if b.key == "caatinga").enabled
+    assert caatinga.enabled
 
 
 def test_pausa_do_supervisor(app):

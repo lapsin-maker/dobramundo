@@ -131,11 +131,12 @@ def main() -> int:
                     [C.START_RESTORATION] * args.frames,
                 )
                 for stage in (1, 2):
-                    threshold = C.ERA_SPAN * stage
-                    # Include the complete horizon blend plus the delayed near bank.
-                    blend_width = 16 if stage == 1 else 12
+                    start = C.START_RESTORATION if stage == 1 else C.ERA_SPAN
+                    end = C.ERA_SPAN * stage
+                    # Include the early continuous blend and the four-point delay
+                    # of the near bank, with samples outside both endpoints.
                     visual_values = [
-                        threshold - 2 + (blend_width + 12) * index / (args.frames - 1) for index in range(args.frames)
+                        start - 2 + (end - start + 8) * index / (args.frames - 1) for index in range(args.frames)
                     ]
                     render_flight(
                         biome_key,

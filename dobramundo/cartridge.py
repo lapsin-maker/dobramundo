@@ -17,14 +17,16 @@ um evento da sessão. ESC encerra o jogo e P pausa, como em todo cartucho.
 
 from __future__ import annotations
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import pygame
-from ttea.sdk.api import Game, GameContext, feet_centre
+from ttea.sdk.api import Game, GameContext
+from ttea.sdk.tracking import Landmark
 
 from . import config as C
 from .core import GameCore, first_scene
-from .input.console import TrackingSource, body_points
+from .input.console import TrackingSource, body_points, floor_indicator_position, floor_position
+from .input.pose import FloorControl
 from .log import log
 from .persistence import Profile, ProfileError
 from .scenes.flight import FlightScene
@@ -150,20 +152,59 @@ class Dobramundo(Game):
         self.core = ConsoleCore(load_profile(context), context, self.source)
         self.core.go(first_scene(self.core))
         self.lost_time = 0.0
+        self.legacy_cursor: Optional[Tuple[float, float]] = None
 
     def update(self, context: GameContext) -> None:
         tracking = context.tracking
         usable = not (tracking.missing or tracking.stale)
         raw = tracking.observation.landmarks.get("body") if usable else None
         points = None if raw is None else [(p.x, p.y, p.visibility) for p in raw]
-        self.source.push(body_points(points), feet_centre(tracking))
+        self.source.push(body_points(points), floor_position(tracking))
         events = [e for e in context.events if not (e.type == pygame.KEYDOWN and e.key in PLATFORM_KEYS)]
         events = self.to_canvas(context, events)
         for event in events:
             self.core.input.handle_event(event)
         self.core.advance(min(context.dt, C.MAX_DT), events)
+        self.sync_floor_indicator(tracking)
         if not self.core.running:
             context.request_stop()
+
+    def sync_floor_indicator(self, tracking) -> None:
+        """Align the SDK marker with the actual menu cursor or smoothed floor target."""
+        body = self.core.input.body
+        scene = self.core.scene
+        if scene is None:
+            return
+
+        menu_active = bool(scene.menu.buttons)
+        floor_flight = isinstance(body, FloorControl) and not menu_active
+        if not menu_active and not floor_flight:
+            self.legacy_cursor = None
+            return
+
+        if tracking.missing or tracking.stale:
+            point = None
+        elif menu_active:
+            pointer = scene.menu.pointer
+            point = None if pointer is None else (pointer[0] / (C.WIDTH - 1), pointer[1] / (C.HEIGHT - 1))
+        else:
+            point = floor_indicator_position(body)
+
+        try:
+            target_active = tracking.control_target_active
+        except AttributeError:
+            # TSDK antigo: o cursor das telas já é desenhado pelo jogo; em voo
+            # corporal por pés, acrescentamos um marcador próprio sem mutar dados
+            # do rastreamento nem esconder as pegadas legadas.
+            self.legacy_cursor = point if floor_flight else None
+            return
+
+        self.legacy_cursor = None
+        if target_active and point is None:
+            tracking.control_target = None
+        else:
+            tracking.control_target = None if point is None else Landmark(point[0], point[1], visibility=1.0)
+        tracking.control_target_active = True
 
     def to_canvas(self, context: GameContext, events: List[pygame.event.Event]) -> List[pygame.event.Event]:
         """Mouse na superfície do console -> tela lógica do jogo (quando os tamanhos diferem)."""
@@ -183,6 +224,12 @@ class Dobramundo(Game):
             surface.blit(canvas, (0, 0))
         else:
             surface.blit(pygame.transform.smoothscale(canvas, surface.get_size()), (0, 0))
+        if self.legacy_cursor is not None:
+            x, y = self.legacy_cursor
+            center = (round(x * (surface.get_width() - 1)), round(y * (surface.get_height() - 1)))
+            pygame.draw.circle(surface, T.WHITE, center, 18)
+            pygame.draw.circle(surface, T.NAVY, center, 18, 4)
+            pygame.draw.circle(surface, T.ORANGE, center, 6)
         if context.pause_reason == "tracking_loss":
             self.draw_lost(surface)
 

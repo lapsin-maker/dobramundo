@@ -163,6 +163,7 @@ class PaintedRoute:
         self.banks = {}
         self.cache = SpriteCache()
         self.assets = assets
+        self.industrial_art = {}
         self._bank_atlas = None
         self._bank_biome = None
         self._bank_failed = False
@@ -240,6 +241,7 @@ class PaintedRoute:
 
     def release_biome(self, biome: str) -> None:
         self.banks.pop(biome, None)
+        self.industrial_art.clear()
         if self._bank_biome == biome:
             self._bank_atlas = None
             self._bank_biome = None
@@ -252,6 +254,11 @@ class PaintedRoute:
     @staticmethod
     def scenery_index(sequence: int, side: int, stage: int) -> int:
         slot = (sequence + (3 if side > 0 else 0)) % 8
+        if stage == 0:
+            # O trecho industrial mostra primeiro porto e moradias sobre palafitas.
+            # Só dois slots mantêm vegetação de margem; os outros destacam
+            # atividade portuária e estruturas da cidade.
+            return (0, 2, 0, 1, 0, 1, 2, 1)[slot]
         if slot in (1, 3, 6):
             return (2, 6, 7)[slot % 3]  # flora em todos os estágios
         if slot == 7:
@@ -272,27 +279,82 @@ class PaintedRoute:
                     continue
                 index = self.scenery_index(sequence, side, stage)
                 if biome == "amazonia" and index == 3:
-                    # O Teatro é um marco único no horizonte: não reaparece como
-                    # cópias de um prédio a cada volta do percurso.
-                    index = 7
+                    # O Teatro é um marco único no horizonte; a margem industrial
+                    # mantém o porto em vez de repetir sua fachada.
+                    index = 1
                 x = side * (530 + (sequence % 3) * 64)
                 if z >= C.NEAR_CLIP_Z:
                     result.append((z, x, index, side))
                 if not reduced and sequence % 2 == 0 and C.NEAR_CLIP_Z <= z + 95 <= C.FOG_END:
-                    result.append((z + 95, side * 1030, 2 if sequence % 4 else 7, side))
+                    detail = (0 if sequence % 4 else 1) if stage == 0 else (2 if sequence % 4 else 7)
+                    result.append((z + 95, side * 1030, detail, side))
         return sorted(result, reverse=True)
 
     @staticmethod
     def stage_blend(visual: float, z: float) -> tuple:
         """Transformação contínua, chegando do horizonte à margem próxima."""
         delay = 4.0 * (1.0 - clamp(z / C.FOG_END, 0.0, 1.0))
-        if visual < C.ERA_SPAN + delay:
+        first_start = 5.0 + delay
+        first_end = C.ERA_SPAN + delay
+        second_start = first_end
+        second_end = 2 * C.ERA_SPAN + delay
+        if visual < first_start:
             return 0, 0, 0.0
-        if visual < 2 * C.ERA_SPAN + delay:
-            mix = smoothstep(clamp((visual - C.ERA_SPAN - delay) / 16.0, 0.0, 1.0))
+        if visual < first_end:
+            mix = smoothstep(clamp((visual - first_start) / (first_end - first_start), 0.0, 1.0))
             return (1, 1, 0.0) if mix >= 1 else (0, 1, mix)
-        mix = smoothstep(clamp((visual - 2 * C.ERA_SPAN - delay) / 12.0, 0.0, 1.0))
-        return (2, 2, 0.0) if mix >= 1 else (1, 2, mix)
+        if visual < second_end:
+            mix = smoothstep(clamp((visual - second_start) / (second_end - second_start), 0.0, 1.0))
+            return (2, 2, 0.0) if mix >= 1 else (1, 2, mix)
+        return 2, 2, 0.0
+
+    INDUSTRIAL_ART_NAMES = (
+        "steam_pipe_straight",
+        "steam_pipe_corner",
+        "industrial_chimney",
+        "tubos_valvula",
+        "pressure_tank",
+    )
+
+    def prepare_industrial_art(self, name: str) -> None:
+        """Decode one decorative margin element during the named warm-up queue."""
+        if name not in self.INDUSTRIAL_ART_NAMES or name in self.industrial_art:
+            return
+        self.industrial_art[name] = self.assets.scenery_for((name,)).get(name)
+
+    def _draw_industrial_margin(self, screen, world, cam: float) -> None:
+        """Paint cached, non-colliding pipes and stacks outside the flight lane."""
+        progress = smoothstep(clamp((world.visual - 5.0) / (C.ERA_SPAN - 5.0), 0.0, 1.0))
+        opacity = round(255 * (1.0 - progress))
+        if opacity <= 0:
+            return
+        first = math.floor(world.distance / self.SPACING) - 1
+        for sequence in range(first, first + 14):
+            if sequence % 3 != 0:
+                continue
+            name = self.INDUSTRIAL_ART_NAMES[(sequence // 3) % len(self.INDUSTRIAL_ART_NAMES)]
+            sprite = self.industrial_art.get(name)
+            if sprite is None:
+                continue
+            for side in (-1, 1):
+                z = sequence * self.SPACING + 55 - world.distance
+                if not C.NEAR_CLIP_Z + 60 <= z <= C.FOG_END:
+                    continue
+                x = side * (790 + ((sequence // 3) % 2) * 70)
+                sx, sy, scale = project(x, 0.0, z, cam)
+                base_height = 360.0 if name == "industrial_chimney" else 190.0
+                height = max(6, round(base_height * scale / 3) * 3)
+                width = max(6, round(height * sprite.get_width() / sprite.get_height()))
+                if sx + width / 2 < 0 or sx - width / 2 > C.WIDTH:
+                    continue
+                key = ("industrial-margin", name)
+                image = self.cache.get(sprite, key, (width, height), side > 0)
+                level = fog_level(z)
+                if level:
+                    image = self.cache.fogged(image, (key, (width, height), side > 0), level)
+                image.set_alpha(opacity)
+                screen.blit(image, (round(sx - width / 2), round(sy - height)))
+                image.set_alpha(255)
 
     def _bank(self, screen, sprites, biome, placement, cam, opacity=1.0):
         z, x, index, side = placement
@@ -325,6 +387,9 @@ class PaintedRoute:
             return False
         self.ground.paint(screen, world.biome.key, world.distance, cam, fog)
         self.cache.fog_color = fog
+        # Tubos e chaminés ficam fora da faixa jogável e desaparecem conforme a
+        # cidade muda; não compartilham ícones nem hitboxes de resíduos.
+        self._draw_industrial_margin(screen, world, cam)
         # A posição de cada peça é estável em todos os estágios; só sua forma
         # se dissolve para a seguinte. Desenhar não avança relógios ou o mundo.
         stages = [self.placements(world.distance, stage, reduced, world.biome.key) for stage in range(3)]

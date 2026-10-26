@@ -128,6 +128,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             biome_names.add(self.biome.horizon_vehicle[0])
         if biome_names:
             self.assets.release_scenery(biome_names)
+        self.assets.release_scenery(self.watercolor.route.INDUSTRIAL_ART_NAMES)
         if self.biome is not None and self.biome.key == biome_key:
             self.scenery = {}
             self._scenery_loaded = False
@@ -174,6 +175,7 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             self.watercolor.backdrops,
             self.watercolor.composite,
             self.watercolor.route.banks,
+            self.watercolor.route.industrial_art,
             self.watercolor.route.cache.scaled,
             self.watercolor.route.cache.mips,
             self.watercolor.route.cache.outlines,
@@ -274,6 +276,8 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             add("Preparando textura do percurso", route.prepare_ground)
             for index in range(12):
                 add("Preparando margens", lambda i=index: route.prepare_bank(biome.key, i))
+            for name in route.INDUSTRIAL_ART_NAMES:
+                add("Preparando detalhes industriais", lambda n=name: route.prepare_industrial_art(n))
             active_textures = ("green", "negro", "solimoes") if biome.river else ("soil",)
             for name in active_textures:
                 for _level in range(6):
@@ -536,7 +540,9 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
             if context.high_contrast:
                 self.desaturate(screen)
             return
-        a, b, t = world.visual_stage_pair()
+        # Mantém a mesma curva suave do caminho aquarelado: o fallback não deve
+        # revelar um terço de vegetação no primeiro 9% por interpolação linear.
+        a, b, t = self.fallback_stage_looks(world.biome, world.visual)
         top = lerp_color(a.sky_top, b.sky_top, t)
         horizon = lerp_color(a.sky_horizon, b.sky_horizon, t)
         self.sky.update_atmosphere(world.visual, horizon, world.biome.polluted_haze)
@@ -547,6 +553,12 @@ class WorldView(TrackLayer, EntityLayer, PlaneLayer):
         self.draw_track(screen, world, world.stage_flags())
         if context.high_contrast:
             self.desaturate(screen)
+
+    @staticmethod
+    def fallback_stage_looks(biome, visual: float):
+        """Resolve watercolor stage indices to legacy sky looks for fallback."""
+        a_index, b_index, blend = WatercolorWorld.stage_mix(visual)
+        return biome.stages[a_index], biome.stages[b_index], blend / 32.0
 
     def desaturate(self, screen: pygame.Surface) -> None:
         """Fundo em cinza escurecido, processado em um quarto da resolução.

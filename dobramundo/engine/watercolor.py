@@ -67,12 +67,21 @@ class WatercolorWorld:
 
     @staticmethod
     def stage_mix(visual: float) -> tuple[int, int, int]:
-        """Limiar real preservado: indústria < 1/3, despertar até 2/3, solar."""
-        if visual < C.ERA_SPAN:
+        """Mistura cedo e sem salto, preservando o início industrial do voo.
+
+        O primeiro 5% permanece inteiramente industrial. Depois, a passagem para
+        o despertar ocupa o restante do primeiro terço; a passagem solarpunk
+        ocupa o segundo terço. O valor devolvido é uma etapa de 0..32.
+        """
+        if visual < 5.0:
             return 0, 0, 0
+        if visual < C.ERA_SPAN:
+            progress = smoothstep(clamp((visual - 5.0) / (C.ERA_SPAN - 5.0), 0.0, 1.0))
+            return 0, 1, round(progress * 32)
         if visual < 2 * C.ERA_SPAN:
-            return 0, 1, round(smoothstep(clamp((visual - C.ERA_SPAN) / 16, 0, 1)) * 32)
-        return 1, 2, round(smoothstep(clamp((visual - 2 * C.ERA_SPAN) / 12, 0, 1)) * 32)
+            progress = smoothstep(clamp((visual - C.ERA_SPAN) / C.ERA_SPAN, 0.0, 1.0))
+            return 1, 2, round(progress * 32)
+        return 2, 2, 0
 
     def backdrop(
         self, biome: str, visual: float, visible_height: int = C.HEIGHT, load_if_missing: bool = True

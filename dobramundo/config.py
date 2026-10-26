@@ -92,6 +92,8 @@ HISTORY_LIMIT = 60  # voos guardados no histórico do perfil
 # ------------------------------------------------- transformação da cidade
 ERA_SPAN = 100.0 / 3.0  # três estágios do mesmo tamanho (33,3% e 66,7%)
 START_RESTORATION = 5.0
+# Recuperação ambiental contínua durante voo ativo; coletas aceleram o mesmo progresso.
+ACTIVE_RECOVERY_PER_S = 1.0
 # Transformação visual global; a rampa de velocidade usa o ganho local de baixo.
 RESTORATION_PER_TRASH = 1.5  # Difícil
 DIFFICULT_SPEED_RESTORATION_PER_TRASH = 0.115

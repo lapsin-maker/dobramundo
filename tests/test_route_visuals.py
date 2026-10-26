@@ -25,15 +25,28 @@ def _stage_weights(stage_blend, visual, z):
 
 def test_route_stage_blend_is_continuous_and_reaches_horizon_first():
     far, near = C.FOG_END, C.NEAR_CLIP_Z
-    before = _stage_weights(PaintedRoute.stage_blend, C.ERA_SPAN - 1e-5, far)
-    at = _stage_weights(PaintedRoute.stage_blend, C.ERA_SPAN, far)
-    assert before == at
-    far_mix = _stage_weights(PaintedRoute.stage_blend, C.ERA_SPAN + 8, far)[1]
-    near_mix = _stage_weights(PaintedRoute.stage_blend, C.ERA_SPAN + 8, near).get(1, 0.0)
-    assert far_mix == pytest.approx(0.5, abs=0.02)
-    assert near_mix < far_mix
-    far_second = _stage_weights(PaintedRoute.stage_blend, 2 * C.ERA_SPAN + 6, far)[2]
-    near_second = _stage_weights(PaintedRoute.stage_blend, 2 * C.ERA_SPAN + 6, near).get(2, 0.0)
+    far_delay = 4.0 * (1.0 - far / C.FOG_END)
+    near_delay = 4.0 * (1.0 - near / C.FOG_END)
+    far_first_end = C.ERA_SPAN + far_delay
+    near_first_end = C.ERA_SPAN + near_delay
+    assert _stage_weights(PaintedRoute.stage_blend, far_first_end, far) == {1: 1.0}
+    assert _stage_weights(PaintedRoute.stage_blend, near_first_end, near) == {1: 1.0}
+
+    # No perceptible jump at the seam, while depth keeps its small delay.
+    far_before = _stage_weights(PaintedRoute.stage_blend, far_first_end - 1e-5, far)
+    near_before = _stage_weights(PaintedRoute.stage_blend, near_first_end - 1e-5, near)
+    assert far_before[1] == pytest.approx(1.0, abs=1e-8)
+    assert near_before[1] == pytest.approx(1.0, abs=1e-8)
+
+    far_midpoint = 1.5 * C.ERA_SPAN
+    far_second = _stage_weights(PaintedRoute.stage_blend, far_midpoint, far)[2]
+    near_second = _stage_weights(PaintedRoute.stage_blend, far_midpoint, near).get(2, 0.0)
+    assert far_second == pytest.approx(0.5, abs=0.02)
+    assert near_second < far_second
+    far_end = _stage_weights(PaintedRoute.stage_blend, 2 * C.ERA_SPAN, far)
+    assert far_end == {2: 1.0}
+    far_second = _stage_weights(PaintedRoute.stage_blend, 2 * C.ERA_SPAN - 1e-5, far)[2]
+    near_second = _stage_weights(PaintedRoute.stage_blend, 2 * C.ERA_SPAN - 1e-5, near).get(2, 0.0)
     assert near_second < far_second
 
 

@@ -48,6 +48,7 @@ class FlightRun:
         city_restoration: float = C.START_RESTORATION,
         starting_stars: int = 0,
         spawn_enabled: bool = True,
+        active_recovery: bool = True,
     ) -> None:
         self.biome = biome
         self.mode = mode
@@ -83,6 +84,7 @@ class FlightRun:
         )
         self.player = Player(plane_stats(self.parts), maneuvers)
         self.exploration = bool(exploration)
+        self.active_recovery = bool(active_recovery and spawn_enabled)
         self.predictable_assistance = bool(predictable_assistance)
         self.max_lives = C.ASSISTED_MAX_LIVES if self.predictable_assistance else C.MAX_LIVES
         self.invulnerable_duration = C.ASSISTED_INVULNERABLE_S if self.predictable_assistance else C.INVULNERABLE_S
@@ -153,10 +155,10 @@ class FlightRun:
         events, self.events = self.events, []
         return events
 
-    def add_restoration(self, amount: float, speed_amount: Optional[float] = None) -> None:
+    def add_restoration(self, amount: float, speed_amount: Optional[float] = None, *, earned: bool = True) -> None:
         """Transforma a cidade e publica mudança de estágio, estrelas e fase completa."""
         previous = self.world.restoration
-        self.world.add_restoration(amount)
+        self.world.add_restoration(amount, earned=earned)
         speed_gain = amount if speed_amount is None else speed_amount
         self.local_restoration = min(100.0, self.local_restoration + max(0.0, speed_gain))
         stage = self.world.stage
@@ -170,6 +172,13 @@ class FlightRun:
         if previous < 100.0 <= self.world.restoration and not self.complete:
             self.complete = True
             self.emit("complete", self.stars)
+
+    def add_active_recovery(self, dt: float) -> None:
+        """Recupera a cidade enquanto este voo está ativo, sem dar recursos ou acelerar o avião."""
+        if self.world.restoration >= 100.0:
+            return
+        if self.active_recovery and dt > 0.0:
+            self.add_restoration(C.ACTIVE_RECOVERY_PER_S * dt, speed_amount=0.0, earned=False)
 
     def collect_waste(self, entity: Entity) -> None:
         if entity.collected:
@@ -265,6 +274,7 @@ class FlightRun:
                 return
             real_dt = min(real_dt, remaining)
         self.flight_time += real_dt
+        self.add_active_recovery(real_dt)
         player = self.player
         aim = None if target is None else player.command_target(*target)
         command = target if target is not None else (ix, iy)
