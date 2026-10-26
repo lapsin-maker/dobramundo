@@ -53,7 +53,7 @@ Os resultados medidos ficam em [validação 1.7](validacao-v1.7/README.md). Os t
 
 O limite de cache não é um limite de memória total do processo. A medição da câmera começa no retorno da captura e termina na chamada de apresentação; não inclui atraso do sensor nem do projetor. Repetir usa a mesma semente e as mesmas escolhas, com a transformação já conquistada; não reconstrói uma partida interrompida.
 
-Os 72 mil quadros do ensaio prolongado terminaram sem falha e com cache dentro do orçamento. **As metas de desempenho ainda não passaram integralmente:** o p95 excede 16,67 ms em parte das condições com câmera/alto contraste, e a entrada fria da Amazônia excedeu a meta de 50 ms. A implementação e a medição dos itens R01/R02 estão entregues; esses dois alvos de aceite permanecem em aberto. Consulte os [números e limites](validacao-v1.7/desempenho.md) antes de escolher o equipamento da sessão.
+Os 72 mil quadros do ensaio prolongado terminaram sem falha e com cache dentro do orçamento. **A meta de 60 FPS ainda não passou integralmente:** o p95 excede 16,67 ms em parte das condições com câmera/alto contraste. Nas 20 entradas frias da rodada final, o primeiro quadro ficou abaixo de 50 ms nos dois biomas; esse resultado não garante o mesmo limite sob outra carga. A implementação e a medição dos itens R01/R02 estão entregues, com o alvo de quadros do R01 ainda em aberto. Consulte os [números e limites](validacao-v1.7/desempenho.md) antes de escolher o equipamento da sessão.
 
 ## Arte e procedência
 

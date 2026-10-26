@@ -14,12 +14,12 @@
   ],
   "flights": {
     "amazonia": {
-      "active_seconds": 14.83333333333365,
-      "distance": 2594.5493090277782
+      "active_seconds": 14.750000000000313,
+      "distance": 2580.213645833333
     },
     "caatinga": {
-      "active_seconds": 14.783333333333648,
-      "distance": 2585.9478590277777
+      "active_seconds": 14.683333333333643,
+      "distance": 2568.7483777777775
     }
   }
 }
