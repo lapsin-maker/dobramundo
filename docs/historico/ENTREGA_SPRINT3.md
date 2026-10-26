@@ -8,7 +8,7 @@ Prévia de 25/10/2026. [Baixar os pacotes](https://github.com/lapsin-maker/dobra
 2. O lançador usa `%LOCALAPPDATA%\Dobramundo-Aquarela-Sprint3`, separado do perfil anterior. Assim é possível testar o piloto neutro e a vila inicial sem apagar progresso. Abrir o executável diretamente usa o perfil padrão.
 3. Extraia **Dobramundo-Sprint3-Galeria.zip** e abra **galeria.html** junto da pasta `galeria-media`. As gravações começam apenas quando acionadas. Há dois percursos de 96 segundos e dois trechos de voo de 10 segundos.
 4. **Dobramundo-Sprint3.ttea** é o cartucho validado pelo TSDK. A execução no console físico ainda precisa ser ensaiada.
-5. **SHA256SUMS.txt** acompanha os três pacotes. Tamanhos, hashes e condições estão também em [validacao-sprint3.json](../validacao-sprint3.json).
+5. **SHA256SUMS.txt** acompanha os três pacotes. Tamanhos, hashes e condições estão também em [validacao-sprint3.json](validacoes/validacao-sprint3.json).
 
 Os pacotes executáveis foram produzidos do código `87813ed8001195796c1a19a2d02239d26b7bfb45`. Os commits posteriores de entrega apenas acrescentam documentação e evidências. A versão interna continua 1.4.0; a identificação desta prévia é a tag `sprint3-controle-e-vida-2026-10-25` e o `BUILD-INFO.json` do pacote Windows.
 

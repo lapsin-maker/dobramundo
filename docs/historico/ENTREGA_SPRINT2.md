@@ -33,7 +33,7 @@ Para conferir um download no PowerShell:
 Get-FileHash -Algorithm SHA256 .\Dobramundo-Aquarela-Sprint2-Windows.zip
 ```
 
-Passaram 365 testes locais, lint, self-tests de 1.200 quadros por cidade na fonte e no executável e o CI em Python 3.8/3.12. Os 28 PNGs aquarelados do bundle conferem com a fonte por SHA-256. Resultados e condições das medições: [direção e validação](DIRECAO_AQUARELA.md) e [dados estruturados](../validacao-sprint2.json).
+Passaram 365 testes locais, lint, self-tests de 1.200 quadros por cidade na fonte e no executável e o CI em Python 3.8/3.12. Os 28 PNGs aquarelados do bundle conferem com a fonte por SHA-256. Resultados e condições das medições: [direção e validação](DIRECAO_AQUARELA.md) e [dados estruturados](validacoes/validacao-sprint2.json).
 
 O self-test carrega o detector de pose, mas não abre uma câmera física. Projeção a 2–3 m, rastreamento contínuo e experiência com crianças ainda precisam de avaliação presencial. A release não inclui um novo cartucho `.ttea`; a auditoria automatizada não equivale à execução no console físico.
 

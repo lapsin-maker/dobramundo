@@ -19,7 +19,7 @@ from .content.planes import (
     PLANE_KEYS,
     PLANE_PATTERN_KEYS,
 )
-from .content.progress import MAX_PART_LEVEL, PART_KEYS, VILLAGE_KEYS
+from .content.progress import MAX_PART_LEVEL, PART_KEYS, STAR_THRESHOLDS, VILLAGE_KEYS
 
 SCHEMA_VERSION = 2
 GAME_MODES = ("normal", "dificil")
@@ -241,6 +241,31 @@ class FutureProfileError(ProfileError):
     """Versão posterior: o arquivo deve permanecer intacto e somente para leitura."""
 
 
+def _legacy_city_progress(data: dict) -> Dict[str, float]:
+    """Recover recorded progress; stars provide only their proven lower bound."""
+    progress: Dict[str, float] = {}
+    stars = data.get("estrelas", {})
+    if isinstance(stars, dict):
+        for biome in BIOME_ORDER:
+            count = stars.get(biome)
+            if type(count) is int and 1 <= count <= 3:
+                progress[biome] = STAR_THRESHOLDS[count - 1]
+    history = data.get("historico", [])
+    if isinstance(history, (list, tuple)):
+        for entry in history:
+            if not isinstance(entry, dict):
+                continue
+            biome, value = entry.get("fase"), entry.get("transformacao")
+            if (
+                biome in BIOME_ORDER
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(value)
+            ):
+                progress[biome] = max(progress.get(biome, 0.0), min(100.0, max(0.0, float(value))))
+    return progress
+
+
 def migrate_profile(data: dict) -> dict:
     """Migra cópia do documento antigo; nunca reinterpreta uma versão futura."""
     version = data.get("versao", 1)
@@ -250,7 +275,7 @@ def migrate_profile(data: dict) -> dict:
         raise FutureProfileError("este piloto foi salvo por uma versão mais nova do Dobramundo")
     result = dict(data)
     if version == 1:
-        result.setdefault("transformacao_cidades", {})
+        result.setdefault("transformacao_cidades", _legacy_city_progress(result))
         # Em perfis anteriores, conservar a escolha de assistência já configurada.
         result.setdefault("apoio_escolhido", int(result.get("voos", 0) or 0) > 0)
         result["versao"] = 2

@@ -66,7 +66,7 @@ A arte foi gerada para o projeto. Prompts e saídas estão em [generation.json](
 | Executável / Manaus | 7,46 ms | 9,77 ms |
 | Executável / Petrolina | 5,29 ms | 6,96 ms |
 
-Medições incluem atualização/desenho/apresentação em SDL dummy neste computador, após os primeiros dez quadros de cada voo. Não incluem inferência contínua da webcam. O primeiro carregamento de imagens tem custo adicional; estes valores não garantem 60 fps em qualquer equipamento. Dados: [validacao-sprint2.json](../validacao-sprint2.json).
+Medições incluem atualização/desenho/apresentação em SDL dummy neste computador, após os primeiros dez quadros de cada voo. Não incluem inferência contínua da webcam. O primeiro carregamento de imagens tem custo adicional; estes valores não garantem 60 fps em qualquer equipamento. Dados: [validacao-sprint2.json](validacoes/validacao-sprint2.json).
 
 As capturas são do Pygame real, com perfil sintético e SDL dummy. A gravação local de cada cidade contém 12 segundos de jogo em 20 quadros/s. O tempo de renderização é medido separadamente. Self-test com `--exigir-camera` carrega o modelo e cria o detector de pose, mas não abre webcam física.
 

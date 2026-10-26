@@ -6,5 +6,6 @@ Estas notas preservam as decisões e os resultados de versões anteriores. Não 
 - [Direção de aquarela](DIRECAO_AQUARELA.md).
 - [Entrega 1.5](ENTREGA_1_5.md), [entrega 1.6](ENTREGA_1_6.md) e [plano P1/P2](SPRINT_P1_P2.md).
 - [Segunda sprint](ENTREGA_SPRINT2.md); [terceira sprint](ENTREGA_SPRINT3.md) e [plano](SPRINT3.md).
+- [Relatórios JSON de validação](validacoes/README.md) das entregas 1.5.0, aquarela e sprints 2 e 3.
 
 As tags de cada versão preservam os caminhos antigos para consulta dos links históricos.

@@ -49,6 +49,30 @@ def test_stale_profile_cannot_overwrite_newer_resources(data_dir):
     assert P.save_profile(a)
 
 
+def test_migration_recovers_recorded_city_progress_without_inventing_completion():
+    old = {
+        "versao": 1,
+        "estrelas": {"amazonia": 2, "caatinga": 1},
+        "historico": [
+            {"fase": "amazonia", "transformacao": 88.4},
+            {"fase": "caatinga", "transformacao": 42},
+            {"fase": "amazonia", "transformacao": float("nan")},
+            {"fase": "desconhecida", "transformacao": 100},
+        ],
+    }
+    migrated = migrate_profile(old)
+    assert migrated["transformacao_cidades"] == {"amazonia": 88.4, "caatinga": 42.0}
+    assert migrate_profile(migrated) == migrated
+    assert "transformacao_cidades" not in old
+
+
+def test_migration_uses_only_the_stage_proven_by_old_stars_when_history_is_absent():
+    from dobramundo.content.progress import STAR_THRESHOLDS
+
+    profile = P.Profile.from_dict({"versao": 1, "estrelas": {"amazonia": 3, "caatinga": 2}})
+    assert profile.transformacao_cidades == {"amazonia": 100.0, "caatinga": STAR_THRESHOLDS[1]}
+
+
 CHILD = """
 from pathlib import Path
 import sys

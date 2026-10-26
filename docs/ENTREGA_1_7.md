@@ -2,6 +2,8 @@
 
 A transformação conquistada fica guardada em cada cidade. Um voo curto deixa de apagar o avanço anterior: na próxima decolagem, a paisagem continua de onde estava, com vidas e velocidade inicial renovadas. Ao terminar o tempo combinado, a tela informa que o voo terminou e mostra o que foi conquistado.
 
+Perfis anteriores recuperam o maior avanço registrado no histórico. Quando só há estrelas, a migração conserva o estágio mínimo que elas comprovam; duas estrelas, por exemplo, não são tratadas automaticamente como 100% de transformação.
+
 Na primeira execução, a criança monta seu piloto, acompanha a história do jornal e chega à vila. A história tem **Pular** e pode ser revista. Os primeiros três voos oferecem apoio, respeitando uma escolha feita no menu. Fechar durante a preparação do cenário não consome um desses voos.
 
 ## O que mudou na experiência
