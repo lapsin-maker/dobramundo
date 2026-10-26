@@ -49,6 +49,8 @@ Os resultados medidos ficam em [validação 1.7](validacao-v1.7/README.md). Os t
 
 O limite de cache não é um limite de memória total do processo. A medição da câmera começa no retorno da captura e termina na chamada de apresentação; não inclui atraso do sensor nem do projetor. Repetir usa a mesma semente e as mesmas escolhas, com a transformação já conquistada; não reconstrói uma partida interrompida.
 
+Os 72 mil quadros do ensaio prolongado terminaram sem falha e com cache dentro do orçamento. **As metas de desempenho ainda não passaram integralmente:** o p95 excede 16,67 ms em parte das condições com câmera/alto contraste, e a entrada fria da Amazônia excedeu a meta de 50 ms. A implementação e a medição dos itens R01/R02 estão entregues; esses dois alvos de aceite permanecem em aberto. Consulte os [números e limites](validacao-v1.7/desempenho.md) antes de escolher o equipamento da sessão.
+
 ## Arte e procedência
 
 A textura nova do mapa foi gerada pela ferramenta integrada `image_gen` e aplicada às máscaras geográficas existentes. O arquivo de edição é [map_pigment_v17.png](../assets/watercolor/map_pigment_v17.png); o [prompt completo e a procedência](../assets/watercolor/generation_v17_map.json) acompanham a imagem. A versão preparada do pacote tem 768 × 768 px. As demais alterações desta entrega usam composição e os assets já disponíveis.

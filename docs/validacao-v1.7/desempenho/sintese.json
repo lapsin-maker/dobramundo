@@ -1,0 +1,403 @@
+{
+  "code_commit": "4c3987ecfdff0a61396a9d8cb3e0d2340b4113c5",
+  "runtime": {
+    "runtime-1": {
+      "amazonia_normal": {
+        "median_ms": 10.617,
+        "p95_ms": 15.14,
+        "p99_ms": 18.258,
+        "max_ms": 22.545
+      },
+      "amazonia_contrast": {
+        "median_ms": 14.906,
+        "p95_ms": 21.068,
+        "p99_ms": 25.056,
+        "max_ms": 28.569
+      },
+      "caatinga_normal": {
+        "median_ms": 7.033,
+        "p95_ms": 9.956,
+        "p99_ms": 11.439,
+        "max_ms": 12.461
+      },
+      "caatinga_contrast": {
+        "median_ms": 11.244,
+        "p95_ms": 16.431,
+        "p99_ms": 22.89,
+        "max_ms": 31.113
+      }
+    },
+    "runtime-2": {
+      "amazonia_normal": {
+        "median_ms": 10.721,
+        "p95_ms": 15.925,
+        "p99_ms": 20.752,
+        "max_ms": 24.782
+      },
+      "amazonia_contrast": {
+        "median_ms": 14.243,
+        "p95_ms": 21.36,
+        "p99_ms": 27.808,
+        "max_ms": 37.129
+      },
+      "caatinga_normal": {
+        "median_ms": 7.51,
+        "p95_ms": 11.882,
+        "p99_ms": 14.226,
+        "max_ms": 15.348
+      },
+      "caatinga_contrast": {
+        "median_ms": 12.26,
+        "p95_ms": 20.117,
+        "p99_ms": 25.107,
+        "max_ms": 32.584
+      }
+    },
+    "runtime-3": {
+      "amazonia_normal": {
+        "median_ms": 10.931,
+        "p95_ms": 15.075,
+        "p99_ms": 17.034,
+        "max_ms": 19.73
+      },
+      "amazonia_contrast": {
+        "median_ms": 14.796,
+        "p95_ms": 20.107,
+        "p99_ms": 22.665,
+        "max_ms": 26.702
+      },
+      "caatinga_normal": {
+        "median_ms": 7.147,
+        "p95_ms": 9.886,
+        "p99_ms": 12.171,
+        "max_ms": 16.557
+      },
+      "caatinga_contrast": {
+        "median_ms": 10.798,
+        "p95_ms": 15.068,
+        "p99_ms": 18.701,
+        "max_ms": 21.234
+      }
+    },
+    "camera-1": {
+      "amazonia_normal": {
+        "median_ms": 12.922,
+        "p95_ms": 19.328,
+        "p99_ms": 25.076,
+        "max_ms": 31.024
+      },
+      "amazonia_contrast": {
+        "median_ms": 18.203,
+        "p95_ms": 25.361,
+        "p99_ms": 28.527,
+        "max_ms": 53.239
+      },
+      "caatinga_normal": {
+        "median_ms": 7.836,
+        "p95_ms": 11.613,
+        "p99_ms": 13.351,
+        "max_ms": 15.436
+      },
+      "caatinga_contrast": {
+        "median_ms": 12.594,
+        "p95_ms": 17.409,
+        "p99_ms": 20.617,
+        "max_ms": 22.299
+      }
+    },
+    "camera-2": {
+      "amazonia_normal": {
+        "median_ms": 12.297,
+        "p95_ms": 17.519,
+        "p99_ms": 23.404,
+        "max_ms": 35.79
+      },
+      "amazonia_contrast": {
+        "median_ms": 32.368,
+        "p95_ms": 81.591,
+        "p99_ms": 182.415,
+        "max_ms": 343.482
+      },
+      "caatinga_normal": {
+        "median_ms": 21.992,
+        "p95_ms": 92.955,
+        "p99_ms": 217.297,
+        "max_ms": 387.667
+      },
+      "caatinga_contrast": {
+        "median_ms": 24.638,
+        "p95_ms": 41.919,
+        "p99_ms": 66.551,
+        "max_ms": 114.308
+      }
+    },
+    "camera-3": {
+      "amazonia_normal": {
+        "median_ms": 19.773,
+        "p95_ms": 25.892,
+        "p99_ms": 32.579,
+        "max_ms": 96.18
+      },
+      "amazonia_contrast": {
+        "median_ms": 23.579,
+        "p95_ms": 31.663,
+        "p99_ms": 36.465,
+        "max_ms": 72.838
+      },
+      "caatinga_normal": {
+        "median_ms": 9.671,
+        "p95_ms": 15.336,
+        "p99_ms": 23.289,
+        "max_ms": 74.521
+      },
+      "caatinga_contrast": {
+        "median_ms": 12.302,
+        "p95_ms": 17.321,
+        "p99_ms": 20.494,
+        "max_ms": 26.09
+      }
+    }
+  },
+  "cold": {
+    "amazonia": {
+      "first_p95_ms": 72.792,
+      "first_max_ms": 72.792,
+      "preparation_median_ms": 582.6795,
+      "max_task_ms": 136.57089999469463
+    },
+    "caatinga": {
+      "first_p95_ms": 45.12,
+      "first_max_ms": 45.12,
+      "preparation_median_ms": 533.367,
+      "max_task_ms": 92.53899999021087
+    }
+  },
+  "source_hashes": {
+    "dobramundo/engine/painted_route.py": "39522899713a7a1d4d8f4db6efdb6fc8f1d061fa0b1f7c989e30ff783b061ec3",
+    "dobramundo/engine/world_view.py": "85f29cb55846b48178c240e1587f44fddbde430a0b4f5fa53754edf4e336e6dc",
+    "dobramundo/scenes/flight.py": "49b775d2c55391a16a30daf6ac2054c9d16ed9e02ef6d54d70da8839f4c90bdf",
+    "tools/benchmark_runtime.py": "f47363e3d8dcd1329e9e6aadc79ae0938aa73eab898b61fe6cef4cf1c0df836f",
+    "tools/soak_runtime.py": "8e6e3f98d8f579ba67446e02dcd300094a3c310dc0b116770a6e1b7a11ac025b"
+  },
+  "soak": {
+    "rss_final_mib": 570.3046875,
+    "rss_max_mib": 617.0546875,
+    "rss_last_ten_range_mib": [
+      563.828125,
+      617.0546875
+    ],
+    "cache_max_mib": 191.99299240112305,
+    "active_seconds": 1200.0,
+    "wall_seconds": 801.453
+  },
+  "control": {
+    "amazonia_normal": {
+      "timings": {
+        "capture_to_consume": {
+          "median_ms": 31.0,
+          "p95_ms": 47.0,
+          "p99_ms": 47.0,
+          "max_ms": 47.0
+        },
+        "consume_to_canvas": {
+          "median_ms": 16.0,
+          "p95_ms": 47.0,
+          "p99_ms": 78.0,
+          "max_ms": 79.0
+        },
+        "canvas_to_present": {
+          "median_ms": 0.0,
+          "p95_ms": 15.0,
+          "p99_ms": 16.0,
+          "max_ms": 16.0
+        },
+        "capture_to_present": {
+          "median_ms": 47.0,
+          "p95_ms": 78.0,
+          "p99_ms": 94.0,
+          "max_ms": 94.0
+        }
+      },
+      "unique_sequences": 155,
+      "usable_frames": 0,
+      "fraction_usable": 0.0,
+      "basis": "same consumed sequence through canvas and present call; excludes sensor and display delay"
+    },
+    "amazonia_contrast": {
+      "timings": {
+        "capture_to_consume": {
+          "median_ms": 31.0,
+          "p95_ms": 47.0,
+          "p99_ms": 47.0,
+          "max_ms": 47.0
+        },
+        "consume_to_canvas": {
+          "median_ms": 31.0,
+          "p95_ms": 47.0,
+          "p99_ms": 78.0,
+          "max_ms": 78.0
+        },
+        "canvas_to_present": {
+          "median_ms": 0.0,
+          "p95_ms": 16.0,
+          "p99_ms": 16.0,
+          "max_ms": 16.0
+        },
+        "capture_to_present": {
+          "median_ms": 62.0,
+          "p95_ms": 79.0,
+          "p99_ms": 94.0,
+          "max_ms": 110.0
+        }
+      },
+      "unique_sequences": 168,
+      "usable_frames": 0,
+      "fraction_usable": 0.0,
+      "basis": "same consumed sequence through canvas and present call; excludes sensor and display delay"
+    },
+    "caatinga_normal": {
+      "timings": {
+        "capture_to_consume": {
+          "median_ms": 31.0,
+          "p95_ms": 32.0,
+          "p99_ms": 47.0,
+          "max_ms": 47.0
+        },
+        "consume_to_canvas": {
+          "median_ms": 16.0,
+          "p95_ms": 47.0,
+          "p99_ms": 63.0,
+          "max_ms": 63.0
+        },
+        "canvas_to_present": {
+          "median_ms": 0.0,
+          "p95_ms": 16.0,
+          "p99_ms": 16.0,
+          "max_ms": 16.0
+        },
+        "capture_to_present": {
+          "median_ms": 47.0,
+          "p95_ms": 78.0,
+          "p99_ms": 94.0,
+          "max_ms": 94.0
+        }
+      },
+      "unique_sequences": 154,
+      "usable_frames": 0,
+      "fraction_usable": 0.0,
+      "basis": "same consumed sequence through canvas and present call; excludes sensor and display delay"
+    },
+    "caatinga_contrast": {
+      "timings": {
+        "capture_to_consume": {
+          "median_ms": 31.0,
+          "p95_ms": 47.0,
+          "p99_ms": 47.0,
+          "max_ms": 47.0
+        },
+        "consume_to_canvas": {
+          "median_ms": 16.0,
+          "p95_ms": 47.0,
+          "p99_ms": 63.0,
+          "max_ms": 78.0
+        },
+        "canvas_to_present": {
+          "median_ms": 0.0,
+          "p95_ms": 16.0,
+          "p99_ms": 16.0,
+          "max_ms": 16.0
+        },
+        "capture_to_present": {
+          "median_ms": 47.0,
+          "p95_ms": 93.0,
+          "p99_ms": 109.0,
+          "max_ms": 110.0
+        }
+      },
+      "unique_sequences": 160,
+      "usable_frames": 0,
+      "fraction_usable": 0.0,
+      "basis": "same consumed sequence through canvas and present call; excludes sensor and display delay"
+    }
+  },
+  "native_window_camera": {
+    "native-camera-1": {
+      "amazonia_normal": {
+        "median_ms": 14.835,
+        "p95_ms": 22.753,
+        "p99_ms": 24.88,
+        "max_ms": 30.792
+      },
+      "amazonia_contrast": {
+        "median_ms": 19.921,
+        "p95_ms": 36.053,
+        "p99_ms": 46.397,
+        "max_ms": 50.408
+      },
+      "caatinga_normal": {
+        "median_ms": 13.349,
+        "p95_ms": 18.84,
+        "p99_ms": 23.961,
+        "max_ms": 30.786
+      },
+      "caatinga_contrast": {
+        "median_ms": 18.808,
+        "p95_ms": 33.272,
+        "p99_ms": 56.509,
+        "max_ms": 96.352
+      }
+    },
+    "native-camera-2": {
+      "amazonia_normal": {
+        "median_ms": 13.526,
+        "p95_ms": 20.629,
+        "p99_ms": 29.174,
+        "max_ms": 86.252
+      },
+      "amazonia_contrast": {
+        "median_ms": 19.449,
+        "p95_ms": 30.806,
+        "p99_ms": 43.736,
+        "max_ms": 77.299
+      },
+      "caatinga_normal": {
+        "median_ms": 10.273,
+        "p95_ms": 18.192,
+        "p99_ms": 29.323,
+        "max_ms": 60.224
+      },
+      "caatinga_contrast": {
+        "median_ms": 16.176,
+        "p95_ms": 28.079,
+        "p99_ms": 43.613,
+        "max_ms": 177.291
+      }
+    },
+    "native-camera-3": {
+      "amazonia_normal": {
+        "median_ms": 15.422,
+        "p95_ms": 24.787,
+        "p99_ms": 26.527,
+        "max_ms": 29.225
+      },
+      "amazonia_contrast": {
+        "median_ms": 20.544,
+        "p95_ms": 30.008,
+        "p99_ms": 35.225,
+        "max_ms": 44.645
+      },
+      "caatinga_normal": {
+        "median_ms": 10.725,
+        "p95_ms": 16.816,
+        "p99_ms": 19.002,
+        "max_ms": 20.653
+      },
+      "caatinga_contrast": {
+        "median_ms": 15.373,
+        "p95_ms": 23.821,
+        "p99_ms": 26.196,
+        "max_ms": 27.937
+      }
+    }
+  }
+}

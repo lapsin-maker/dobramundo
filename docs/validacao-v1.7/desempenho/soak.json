@@ -1,0 +1,1602 @@
+{
+  "version": "1.7.0",
+  "cycles": [
+    {
+      "cycle": 0,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 529027072,
+      "loaded_surface_bytes": 44752248,
+      "loaded_images": 11,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 364066056,
+        "surface_bytes_by_owner": {
+          "assets": 83809864,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 37643492,
+          "world_transient": 34533784,
+          "sky": 10904400,
+          "ground": 3537584,
+          "watercolor": 107844212,
+          "plane_skin": 37416964,
+          "paper_items": 21324536
+        },
+        "cache_items": {
+          "scaled": 92,
+          "mips": 18,
+          "outlines": 0,
+          "rotations": 180,
+          "ground_groups": 16,
+          "asset_images": 11
+        },
+        "aggregate_cache_bytes": 195903652,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 200682,
+          "get_misses": 20971,
+          "evictions": 19790,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 16.375,
+        "p95_ms": 16.375,
+        "p99_ms": 16.375,
+        "max_ms": 16.375
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.868,
+      "p95_ms": 15.329,
+      "p99_ms": 18.136,
+      "max_ms": 25.299
+    },
+    {
+      "cycle": 1,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 482402304,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 283215100,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27169376,
+          "world_transient": 16554536,
+          "sky": 0,
+          "ground": 3537584,
+          "watercolor": 120522408,
+          "plane_skin": 43018516,
+          "paper_items": 25429240
+        },
+        "cache_items": {
+          "scaled": 55,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 76,
+          "ground_groups": 16,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 176338744,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 278386,
+          "get_misses": 33582,
+          "evictions": 32193,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 24,
+      "preparation_frames": 14,
+      "preparation_frame_cost": {
+        "median_ms": 7.982,
+        "p95_ms": 64.691,
+        "p99_ms": 64.691,
+        "max_ms": 64.691
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 6.004,
+      "p95_ms": 9.342,
+      "p99_ms": 11.37,
+      "max_ms": 14.557
+    },
+    {
+      "cycle": 2,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 581066752,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 345239184,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 45725432,
+          "world_transient": 20211672,
+          "sky": 10904400,
+          "ground": 10017456,
+          "watercolor": 112680784,
+          "plane_skin": 47188552,
+          "paper_items": 25405060
+        },
+        "cache_items": {
+          "scaled": 128,
+          "mips": 38,
+          "outlines": 1,
+          "rotations": 76,
+          "ground_groups": 48,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201301072,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 361077,
+          "get_misses": 47474,
+          "evictions": 45975,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 32.604,
+        "p95_ms": 32.604,
+        "p99_ms": 32.604,
+        "max_ms": 32.604
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 13.306,
+      "p95_ms": 21.386,
+      "p99_ms": 24.508,
+      "max_ms": 30.915
+    },
+    {
+      "cycle": 3,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 544489472,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 292765016,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29803296,
+          "world_transient": 26761544,
+          "sky": 946000,
+          "ground": 4879536,
+          "watercolor": 116593756,
+          "plane_skin": 48977576,
+          "paper_items": 17819868
+        },
+        "cache_items": {
+          "scaled": 88,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 149,
+          "ground_groups": 18,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 182540404,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 445362,
+          "get_misses": 64329,
+          "evictions": 62570,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 11,
+      "preparation_frame_cost": {
+        "median_ms": 15.822,
+        "p95_ms": 71.3,
+        "p99_ms": 71.3,
+        "max_ms": 71.3
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.938,
+      "p95_ms": 14.784,
+      "p99_ms": 18.008,
+      "max_ms": 22.225
+    },
+    {
+      "cycle": 4,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 607469568,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 336808868,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 41909324,
+          "world_transient": 19504056,
+          "sky": 8088400,
+          "ground": 11553968,
+          "watercolor": 119006280,
+          "plane_skin": 41081112,
+          "paper_items": 22559900
+        },
+        "cache_items": {
+          "scaled": 118,
+          "mips": 32,
+          "outlines": 0,
+          "rotations": 75,
+          "ground_groups": 64,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 197197576,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 523337,
+          "get_misses": 77283,
+          "evictions": 75291,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 19,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 17.661,
+        "p95_ms": 17.661,
+        "p99_ms": 17.661,
+        "max_ms": 17.661
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 10.055,
+      "p95_ms": 14.019,
+      "p99_ms": 16.405,
+      "max_ms": 20.213
+    },
+    {
+      "cycle": 5,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 575176704,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 306282752,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29735840,
+          "world_transient": 43462408,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 116565140,
+          "plane_skin": 42804412,
+          "paper_items": 25633608
+        },
+        "cache_items": {
+          "scaled": 93,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 238,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 196079148,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 591964,
+          "get_misses": 88880,
+          "evictions": 86817,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 12,
+      "preparation_frame_cost": {
+        "median_ms": 16.451,
+        "p95_ms": 88.688,
+        "p99_ms": 88.688,
+        "max_ms": 88.688
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 6.335,
+      "p95_ms": 9.926,
+      "p99_ms": 40.588,
+      "max_ms": 59.896
+    },
+    {
+      "cycle": 6,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 621486080,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 343744868,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 45298492,
+          "world_transient": 27755160,
+          "sky": 10904400,
+          "ground": 8498864,
+          "watercolor": 116060608,
+          "plane_skin": 40022200,
+          "paper_items": 22099316
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 39,
+          "outlines": 1,
+          "rotations": 127,
+          "ground_groups": 40,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201257924,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 682415,
+          "get_misses": 104285,
+          "evictions": 101939,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 35.123,
+        "p95_ms": 35.123,
+        "p99_ms": 35.123,
+        "max_ms": 35.123
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 16.086,
+      "p95_ms": 29.603,
+      "p99_ms": 35.13,
+      "max_ms": 74.325
+    },
+    {
+      "cycle": 7,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 577548288,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 306862796,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29803296,
+          "world_transient": 38386760,
+          "sky": 946000,
+          "ground": 3319472,
+          "watercolor": 120116328,
+          "plane_skin": 42025192,
+          "paper_items": 25282308
+        },
+        "cache_items": {
+          "scaled": 88,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 218,
+          "ground_groups": 14,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 196776920,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 781391,
+          "get_misses": 125518,
+          "evictions": 122942,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 22,
+      "preparation_frames": 11,
+      "preparation_frame_cost": {
+        "median_ms": 23.533,
+        "p95_ms": 89.16,
+        "p99_ms": 89.16,
+        "max_ms": 89.16
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 11.313,
+      "p95_ms": 16.804,
+      "p99_ms": 21.149,
+      "max_ms": 53.503
+    },
+    {
+      "cycle": 8,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 631222272,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 343713372,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 45030076,
+          "world_transient": 19770936,
+          "sky": 10904400,
+          "ground": 9851056,
+          "watercolor": 112806876,
+          "plane_skin": 46934548,
+          "paper_items": 25309652
+        },
+        "cache_items": {
+          "scaled": 153,
+          "mips": 39,
+          "outlines": 0,
+          "rotations": 76,
+          "ground_groups": 48,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201319244,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 857289,
+          "get_misses": 138357,
+          "evictions": 135682,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 20,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 19.866,
+        "p95_ms": 19.866,
+        "p99_ms": 19.866,
+        "max_ms": 19.866
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 10.399,
+      "p95_ms": 14.76,
+      "p99_ms": 17.459,
+      "max_ms": 22.505
+    },
+    {
+      "cycle": 9,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 583925760,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 289182968,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27169376,
+          "world_transient": 19770936,
+          "sky": 946000,
+          "ground": 4572336,
+          "watercolor": 116531644,
+          "plane_skin": 48723572,
+          "paper_items": 24485664
+        },
+        "cache_items": {
+          "scaled": 55,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 76,
+          "ground_groups": 22,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 178952916,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 923048,
+          "get_misses": 148954,
+          "evictions": 146149,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 23,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 11.881,
+        "p95_ms": 66.84,
+        "p99_ms": 66.84,
+        "max_ms": 66.84
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 6.34,
+      "p95_ms": 10.011,
+      "p99_ms": 12.079,
+      "max_ms": 18.76
+    },
+    {
+      "cycle": 10,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 640159744,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 342150968,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42649436,
+          "world_transient": 40838216,
+          "sky": 7040000,
+          "ground": 2162864,
+          "watercolor": 116073304,
+          "plane_skin": 45792360,
+          "paper_items": 14488960
+        },
+        "cache_items": {
+          "scaled": 90,
+          "mips": 33,
+          "outlines": 1,
+          "rotations": 207,
+          "ground_groups": 4,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201056744,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1016095,
+          "get_misses": 166007,
+          "evictions": 163026,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 23,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 27.886,
+        "p95_ms": 27.886,
+        "p99_ms": 27.886,
+        "max_ms": 27.886
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 13.0,
+      "p95_ms": 17.621,
+      "p99_ms": 20.826,
+      "max_ms": 25.015
+    },
+    {
+      "cycle": 11,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 599793664,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 303973940,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29754912,
+          "world_transient": 37400952,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 119693328,
+          "plane_skin": 44789128,
+          "paper_items": 24254276
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 180,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 193821872,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1106610,
+          "get_misses": 185655,
+          "evictions": 182342,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 24,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 15.067,
+        "p95_ms": 68.209,
+        "p99_ms": 68.209,
+        "max_ms": 68.209
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.432,
+      "p95_ms": 13.844,
+      "p99_ms": 16.667,
+      "max_ms": 25.491
+    },
+    {
+      "cycle": 12,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 613965824,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 335019968,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42757212,
+          "world_transient": 28479192,
+          "sky": 8088400,
+          "ground": 15334576,
+          "watercolor": 115623864,
+          "plane_skin": 32409508,
+          "paper_items": 19221388
+        },
+        "cache_items": {
+          "scaled": 90,
+          "mips": 33,
+          "outlines": 0,
+          "rotations": 150,
+          "ground_groups": 82,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 193894608,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1186412,
+          "get_misses": 198404,
+          "evictions": 194942,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 23,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 15.081,
+        "p95_ms": 15.081,
+        "p99_ms": 15.081,
+        "max_ms": 15.081
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 8.933,
+      "p95_ms": 12.351,
+      "p99_ms": 15.768,
+      "max_ms": 25.881
+    },
+    {
+      "cycle": 13,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 578506752,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 294185528,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29798176,
+          "world_transient": 32837256,
+          "sky": 0,
+          "ground": 5629104,
+          "watercolor": 120648444,
+          "plane_skin": 41081112,
+          "paper_items": 17207996
+        },
+        "cache_items": {
+          "scaled": 114,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 200,
+          "ground_groups": 22,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 185820976,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1262235,
+          "get_misses": 209091,
+          "evictions": 205334,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 18,
+      "preparation_frames": 11,
+      "preparation_frame_cost": {
+        "median_ms": 16.437,
+        "p95_ms": 72.447,
+        "p99_ms": 72.447,
+        "max_ms": 72.447
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 5.495,
+      "p95_ms": 10.091,
+      "p99_ms": 39.904,
+      "max_ms": 55.769
+    },
+    {
+      "cycle": 14,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 641404928,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 342044716,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42454728,
+          "world_transient": 37538088,
+          "sky": 7040000,
+          "ground": 3865776,
+          "watercolor": 113042724,
+          "plane_skin": 47188552,
+          "paper_items": 17809020
+        },
+        "cache_items": {
+          "scaled": 110,
+          "mips": 33,
+          "outlines": 1,
+          "rotations": 198,
+          "ground_groups": 16,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201296652,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1352766,
+          "get_misses": 223476,
+          "evictions": 219536,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 21,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 21.86,
+        "p95_ms": 21.86,
+        "p99_ms": 21.86,
+        "max_ms": 21.86
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 12.505,
+      "p95_ms": 17.771,
+      "p99_ms": 21.793,
+      "max_ms": 28.674
+    },
+    {
+      "cycle": 15,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 587526144,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 287843924,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27700256,
+          "world_transient": 20214232,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 118782688,
+          "plane_skin": 48977576,
+          "paper_items": 24087828
+        },
+        "cache_items": {
+          "scaled": 57,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 76,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 179358908,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1439953,
+          "get_misses": 241745,
+          "evictions": 237612,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 19,
+      "preparation_frames": 16,
+      "preparation_frame_cost": {
+        "median_ms": 36.657,
+        "p95_ms": 331.48,
+        "p99_ms": 331.48,
+        "max_ms": 331.48
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.431,
+      "p95_ms": 13.401,
+      "p99_ms": 16.287,
+      "max_ms": 19.237
+    },
+    {
+      "cycle": 16,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 632365056,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 342172540,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 41393112,
+          "world_transient": 39322536,
+          "sky": 7040000,
+          "ground": 1097904,
+          "watercolor": 115951488,
+          "plane_skin": 45538356,
+          "paper_items": 18723316
+        },
+        "cache_items": {
+          "scaled": 114,
+          "mips": 30,
+          "outlines": 0,
+          "rotations": 225,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 200911228,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1523011,
+          "get_misses": 255066,
+          "evictions": 250791,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 13,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 12.608,
+        "p95_ms": 12.608,
+        "p99_ms": 12.608,
+        "max_ms": 12.608
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.646,
+      "p95_ms": 15.536,
+      "p99_ms": 21.241,
+      "max_ms": 36.752
+    },
+    {
+      "cycle": 17,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 589623296,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 279574772,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27169376,
+          "world_transient": 19770936,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 120784024,
+          "plane_skin": 44535124,
+          "paper_items": 19233968
+        },
+        "cache_items": {
+          "scaled": 55,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 76,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 171171004,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1590383,
+          "get_misses": 265482,
+          "evictions": 261031,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 17,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 15.301,
+        "p95_ms": 72.53,
+        "p99_ms": 72.53,
+        "max_ms": 72.53
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 5.542,
+      "p95_ms": 8.151,
+      "p99_ms": 9.763,
+      "max_ms": 13.096
+    },
+    {
+      "cycle": 18,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 628273152,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 337928456,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 43043772,
+          "world_transient": 20211672,
+          "sky": 8088400,
+          "ground": 15680688,
+          "watercolor": 112540772,
+          "plane_skin": 40022200,
+          "paper_items": 25235124
+        },
+        "cache_items": {
+          "scaled": 130,
+          "mips": 34,
+          "outlines": 1,
+          "rotations": 76,
+          "ground_groups": 84,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 197262152,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1686203,
+          "get_misses": 282334,
+          "evictions": 277786,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 24,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 22.283,
+        "p95_ms": 22.283,
+        "p99_ms": 22.283,
+        "max_ms": 22.283
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 12.586,
+      "p95_ms": 18.658,
+      "p99_ms": 62.528,
+      "max_ms": 85.101
+    },
+    {
+      "cycle": 19,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 582688768,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 296545208,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29645296,
+          "world_transient": 25792344,
+          "sky": 0,
+          "ground": 9369264,
+          "watercolor": 118212688,
+          "plane_skin": 41335116,
+          "paper_items": 25207060
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 125,
+          "ground_groups": 44,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 188112064,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1765157,
+          "get_misses": 299328,
+          "evictions": 294554,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 17,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 14.258,
+        "p95_ms": 77.316,
+        "p99_ms": 77.316,
+        "max_ms": 77.316
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.254,
+      "p95_ms": 14.127,
+      "p99_ms": 40.847,
+      "max_ms": 62.212
+    },
+    {
+      "cycle": 20,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 617828352,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 333626720,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 43293932,
+          "world_transient": 19504056,
+          "sky": 8088400,
+          "ground": 7409328,
+          "watercolor": 119863028,
+          "plane_skin": 43648656,
+          "paper_items": 18713492
+        },
+        "cache_items": {
+          "scaled": 132,
+          "mips": 35,
+          "outlines": 0,
+          "rotations": 75,
+          "ground_groups": 40,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 196231548,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1843538,
+          "get_misses": 310864,
+          "evictions": 305810,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 19,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 11.656,
+        "p95_ms": 11.656,
+        "p99_ms": 11.656,
+        "max_ms": 11.656
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 8.979,
+      "p95_ms": 12.6,
+      "p99_ms": 15.399,
+      "max_ms": 18.827
+    },
+    {
+      "cycle": 21,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 591216640,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 307409516,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29785696,
+          "world_transient": 27532184,
+          "sky": 946000,
+          "ground": 7409328,
+          "watercolor": 118676116,
+          "plane_skin": 50595212,
+          "paper_items": 25481540
+        },
+        "cache_items": {
+          "scaled": 91,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 152,
+          "ground_groups": 40,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 197242312,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 1915473,
+          "get_misses": 322044,
+          "evictions": 316953,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 15,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 11.309,
+        "p95_ms": 58.288,
+        "p99_ms": 58.288,
+        "max_ms": 58.288
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 5.531,
+      "p95_ms": 8.29,
+      "p99_ms": 9.742,
+      "max_ms": 12.091
+    },
+    {
+      "cycle": 22,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 647028736,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 347010704,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 33682004,
+          "world_transient": 40410584,
+          "sky": 10904400,
+          "ground": 3219120,
+          "watercolor": 114524104,
+          "plane_skin": 45792360,
+          "paper_items": 25372304
+        },
+        "cache_items": {
+          "scaled": 91,
+          "mips": 10,
+          "outlines": 1,
+          "rotations": 203,
+          "ground_groups": 14,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201000124,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2001642,
+          "get_misses": 337555,
+          "evictions": 332368,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 19,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 20.652,
+        "p95_ms": 20.652,
+        "p99_ms": 20.652,
+        "max_ms": 20.652
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 12.452,
+      "p95_ms": 17.723,
+      "p99_ms": 21.85,
+      "max_ms": 29.154
+    },
+    {
+      "cycle": 23,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 598073344,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 277933632,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27699024,
+          "world_transient": 19940952,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 118442204,
+          "plane_skin": 44789128,
+          "paper_items": 18980980
+        },
+        "cache_items": {
+          "scaled": 57,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 75,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 169545800,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2088999,
+          "get_misses": 353082,
+          "evictions": 347575,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 22,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 14.095,
+        "p95_ms": 60.876,
+        "p99_ms": 60.876,
+        "max_ms": 60.876
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 8.914,
+      "p95_ms": 12.557,
+      "p99_ms": 15.326,
+      "max_ms": 20.239
+    },
+    {
+      "cycle": 24,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 628916224,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 342336592,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42917604,
+          "world_transient": 34733224,
+          "sky": 7040000,
+          "ground": 11275952,
+          "watercolor": 115804288,
+          "plane_skin": 39768196,
+          "paper_items": 17691500
+        },
+        "cache_items": {
+          "scaled": 115,
+          "mips": 33,
+          "outlines": 0,
+          "rotations": 150,
+          "ground_groups": 56,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201182976,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2170833,
+          "get_misses": 365921,
+          "evictions": 360289,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 22,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 13.791,
+        "p95_ms": 13.791,
+        "p99_ms": 13.791,
+        "max_ms": 13.791
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.05,
+      "p95_ms": 12.857,
+      "p99_ms": 16.037,
+      "max_ms": 19.489
+    },
+    {
+      "cycle": 25,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 606040064,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 292602364,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29780064,
+          "world_transient": 31384072,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 121046068,
+          "plane_skin": 41771188,
+          "paper_items": 20539628
+        },
+        "cache_items": {
+          "scaled": 90,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 153,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 184216916,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2241744,
+          "get_misses": 377158,
+          "evictions": 371303,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 22,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 13.547,
+        "p95_ms": 62.323,
+        "p99_ms": 62.323,
+        "max_ms": 62.323
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 5.535,
+      "p95_ms": 8.302,
+      "p99_ms": 9.837,
+      "max_ms": 16.366
+    },
+    {
+      "cycle": 26,
+      "biome": "amazonia",
+      "contrast": true,
+      "rss_bytes": 629456896,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 342253748,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42911520,
+          "world_transient": 29677416,
+          "sky": 7040000,
+          "ground": 6950064,
+          "watercolor": 113280524,
+          "plane_skin": 47188552,
+          "paper_items": 22099844
+        },
+        "cache_items": {
+          "scaled": 89,
+          "mips": 33,
+          "outlines": 1,
+          "rotations": 152,
+          "ground_groups": 30,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 201091284,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2332657,
+          "get_misses": 392839,
+          "evictions": 386790,
+          "live_caches": 24
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 23,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 21.554,
+        "p95_ms": 21.554,
+        "p99_ms": 21.554,
+        "max_ms": 21.554
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 12.82,
+      "p95_ms": 18.634,
+      "p99_ms": 24.1,
+      "max_ms": 31.588
+    },
+    {
+      "cycle": 27,
+      "biome": "caatinga",
+      "contrast": true,
+      "rss_bytes": 605659136,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 288958124,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 27694624,
+          "world_transient": 19940952,
+          "sky": 0,
+          "ground": 1097904,
+          "watercolor": 118838876,
+          "plane_skin": 48977576,
+          "paper_items": 25424752
+        },
+        "cache_items": {
+          "scaled": 56,
+          "mips": 1,
+          "outlines": 1,
+          "rotations": 75,
+          "ground_groups": 0,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 180523028,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2412070,
+          "get_misses": 408355,
+          "evictions": 402215,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 19,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 14.634,
+        "p95_ms": 72.697,
+        "p99_ms": 72.697,
+        "max_ms": 72.697
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.171,
+      "p95_ms": 12.796,
+      "p99_ms": 15.779,
+      "max_ms": 21.392
+    },
+    {
+      "cycle": 28,
+      "biome": "amazonia",
+      "contrast": false,
+      "rss_bytes": 619835392,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 337901552,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 27051220,
+          "world_sprite_cache": 42896348,
+          "world_transient": 19504056,
+          "sky": 8088400,
+          "ground": 15680688,
+          "watercolor": 116136160,
+          "plane_skin": 40427268,
+          "paper_items": 22062804
+        },
+        "cache_items": {
+          "scaled": 133,
+          "mips": 35,
+          "outlines": 0,
+          "rotations": 75,
+          "ground_groups": 84,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 197394672,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2491895,
+          "get_misses": 420530,
+          "evictions": 414173,
+          "live_caches": 23
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 21,
+      "preparation_frames": 1,
+      "preparation_frame_cost": {
+        "median_ms": 12.069,
+        "p95_ms": 12.069,
+        "p99_ms": 12.069,
+        "max_ms": 12.069
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 9.74,
+      "p95_ms": 15.499,
+      "p99_ms": 19.444,
+      "max_ms": 29.246
+    },
+    {
+      "cycle": 29,
+      "biome": "caatinga",
+      "contrast": false,
+      "rss_bytes": 598007808,
+      "loaded_surface_bytes": 46054608,
+      "loaded_images": 114,
+      "renderer_caches": {
+        "unique_retained_surface_bytes": 301959732,
+        "surface_bytes_by_owner": {
+          "assets": 46054608,
+          "scene_sprites": 928832,
+          "world_sprite_cache": 29784464,
+          "world_transient": 31194344,
+          "sky": 0,
+          "ground": 7238832,
+          "watercolor": 121133828,
+          "plane_skin": 43648656,
+          "paper_items": 21976168
+        },
+        "cache_items": {
+          "scaled": 91,
+          "mips": 1,
+          "outlines": 0,
+          "rotations": 152,
+          "ground_groups": 32,
+          "asset_images": 114
+        },
+        "aggregate_cache_bytes": 193455164,
+        "aggregate_cache_limit_bytes": 201326592,
+        "aggregate_cache_metrics": {
+          "get_hits": 2568064,
+          "get_misses": 432757,
+          "evictions": 426227,
+          "live_caches": 22
+        },
+        "estimate": "global cache budget deduplicates backing surfaces; owner estimates may count subsurfaces repeatedly"
+      },
+      "entities": 18,
+      "preparation_frames": 10,
+      "preparation_frame_cost": {
+        "median_ms": 14.242,
+        "p95_ms": 67.687,
+        "p99_ms": 67.687,
+        "max_ms": 67.687
+      },
+      "interactive_frames": 2400,
+      "flight_simulated_seconds": 40.0,
+      "median_ms": 5.813,
+      "p95_ms": 8.937,
+      "p99_ms": 10.973,
+      "max_ms": 19.227
+    }
+  ],
+  "camera": false,
+  "dt_s": 0.016666666666666666,
+  "scope": "synthetic rendering and scene lifecycle; not physical acceptance",
+  "wall_seconds": 801.453,
+  "flight_simulated_seconds": 1200.0,
+  "failures": [],
+  "status": "ok"
+}

@@ -226,7 +226,7 @@ class ResultScene(Scene):
                 T.INK,
                 True,
             )
-            self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 39), T.SIZES["small"], T.MUTED_STRONG)
+            self.text.blit(screen, waste.name, (rect.left + 62, rect.top + 37), T.SIZES["small"] + 2, T.INK, True)
         self.draw_next_build(screen, pygame.Rect(card.left + 32, card.top + 331, 468, 92))
         self.draw_missing_parts(screen, pygame.Rect(card.left + 520, card.top + 331, card.width - 552, 92))
         if self.app.save_failed:
@@ -250,6 +250,7 @@ class ResultScene(Scene):
                 T.SIZES["small"],
                 T.INK,
                 spacing=1.1,
+                bold=True,
             )
         self.draw_menu(screen)
 

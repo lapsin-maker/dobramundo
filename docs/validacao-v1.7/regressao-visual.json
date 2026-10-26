@@ -1,0 +1,22 @@
+{
+  "opcoes-acessibilidade.png": {
+    "ok": true,
+    "mean_absolute_channel_error": 0.0,
+    "fraction_pixels_difference_over_32": 0.0
+  },
+  "opcoes-controle.png": {
+    "ok": true,
+    "mean_absolute_channel_error": 0.0,
+    "fraction_pixels_difference_over_32": 0.0
+  },
+  "opcoes-som.png": {
+    "ok": true,
+    "mean_absolute_channel_error": 0.0,
+    "fraction_pixels_difference_over_32": 0.0
+  },
+  "opcoes-superficie.png": {
+    "ok": true,
+    "mean_absolute_channel_error": 0.0,
+    "fraction_pixels_difference_over_32": 0.0
+  }
+}

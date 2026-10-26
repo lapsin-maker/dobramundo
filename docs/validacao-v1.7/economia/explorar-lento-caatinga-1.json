@@ -1,0 +1,324 @@
+{
+  "model": "dynamic-position-agent-v1",
+  "limitations": [
+    "synthetic controller, not a child or usability study",
+    "approach decisions use simplified one-obstacle route targets",
+    "results do not establish comfort, fairness, or physical reachability"
+  ],
+  "parameters": {
+    "biome": "caatinga",
+    "collect_attempt_probability": 0.35,
+    "deliberate_decision_error_probability": 0.25,
+    "pause_seconds_per_active_minute": 0.0,
+    "interrupt_after_active_seconds": 45.0,
+    "session_limit_seconds": 0,
+    "reaction_seconds": 0.8,
+    "input_latency_seconds": 0.35,
+    "exploration": true,
+    "assistance": false,
+    "assistance_choice_already_made": false,
+    "flight_count_per_mode": 3,
+    "seed_start": 1
+  },
+  "collection_costs": {
+    "papel": 656,
+    "plastico": 824,
+    "metal": 1224,
+    "vidro": 640
+  },
+  "mean_resources_by_mode": {
+    "normal": {
+      "papel": 9.333333333333334,
+      "plastico": 2.6666666666666665,
+      "metal": 7.333333333333333,
+      "vidro": 4.666666666666667
+    },
+    "dificil": {
+      "papel": 14.666666666666666,
+      "plastico": 23.333333333333332,
+      "metal": 16.666666666666668,
+      "vidro": 18.666666666666668
+    }
+  },
+  "city_completion_by_mode": {
+    "normal": {
+      "flight_index": null,
+      "active_minutes_until_complete": null,
+      "city_after_sequence": 73.5,
+      "sequence_flights": 3
+    },
+    "dificil": {
+      "flight_index": 1,
+      "active_minutes_until_complete": 0.75,
+      "city_after_sequence": 100.0,
+      "sequence_flights": 3
+    }
+  },
+  "first_builds_by_mode": {
+    "normal": [
+      {
+        "upgrade": "ponto_troca",
+        "flight_index": 2
+      }
+    ],
+    "dificil": [
+      {
+        "upgrade": "ponto_troca",
+        "flight_index": 1
+      },
+      {
+        "upgrade": "horta",
+        "flight_index": 3
+      }
+    ]
+  },
+  "runs": [
+    {
+      "biome": "caatinga",
+      "mode": "normal",
+      "seed": 1,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 233.927,
+      "stage_times_s": [],
+      "restoration": 28.5,
+      "city_restoration_at_start": 5.0,
+      "local_restoration": 11.9,
+      "stars": 0,
+      "resources": {
+        "papel": 8,
+        "plastico": 4,
+        "metal": 10,
+        "vidro": 10
+      },
+      "resource_total": 32,
+      "collected": 5,
+      "hits": 4,
+      "max_lives": 5,
+      "lives_left": 1,
+      "completed": false,
+      "game_over": false,
+      "interrupted": true,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 9,
+        "sem_rota_simplificada": 1,
+        "nao_tentadas": 14,
+        "alvos_de_coleta": 7
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 1,
+      "default_assistance": true
+    },
+    {
+      "biome": "caatinga",
+      "mode": "normal",
+      "seed": 2,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 233.135,
+      "stage_times_s": [
+        6.35
+      ],
+      "restoration": 51.0,
+      "city_restoration_at_start": 28.5,
+      "local_restoration": 10.9,
+      "stars": 1,
+      "resources": {
+        "papel": 8,
+        "plastico": 4,
+        "metal": 4,
+        "vidro": 4
+      },
+      "resource_total": 20,
+      "collected": 5,
+      "hits": 4,
+      "max_lives": 5,
+      "lives_left": 1,
+      "completed": false,
+      "game_over": false,
+      "interrupted": true,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 6,
+        "sem_rota_simplificada": 1,
+        "nao_tentadas": 14,
+        "alvos_de_coleta": 8
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 2,
+      "default_assistance": true
+    },
+    {
+      "biome": "caatinga",
+      "mode": "normal",
+      "seed": 3,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 221.775,
+      "stage_times_s": [
+        25.833
+      ],
+      "restoration": 73.5,
+      "city_restoration_at_start": 51.0,
+      "local_restoration": 10.9,
+      "stars": 2,
+      "resources": {
+        "papel": 12,
+        "plastico": 0,
+        "metal": 8,
+        "vidro": 0
+      },
+      "resource_total": 20,
+      "collected": 5,
+      "hits": 3,
+      "max_lives": 5,
+      "lives_left": 2,
+      "completed": false,
+      "game_over": false,
+      "interrupted": true,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 7,
+        "sem_rota_simplificada": 1,
+        "nao_tentadas": 9,
+        "alvos_de_coleta": 5
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 3,
+      "default_assistance": true
+    },
+    {
+      "biome": "caatinga",
+      "mode": "dificil",
+      "seed": 1,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 233.72,
+      "stage_times_s": [
+        19.783,
+        38.567
+      ],
+      "restoration": 100.0,
+      "city_restoration_at_start": 5.0,
+      "local_restoration": 14.21,
+      "stars": 2,
+      "resources": {
+        "papel": 13,
+        "plastico": 27,
+        "metal": 22,
+        "vidro": 21
+      },
+      "resource_total": 83,
+      "collected": 65,
+      "hits": 5,
+      "max_lives": 5,
+      "lives_left": 2,
+      "completed": true,
+      "game_over": false,
+      "interrupted": false,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 20,
+        "sem_rota_simplificada": 6,
+        "nao_tentadas": 56,
+        "alvos_de_coleta": 37
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 1,
+      "default_assistance": true
+    },
+    {
+      "biome": "caatinga",
+      "mode": "dificil",
+      "seed": 2,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 231.007,
+      "stage_times_s": [],
+      "restoration": 100.0,
+      "city_restoration_at_start": 100.0,
+      "local_restoration": 11.62,
+      "stars": 2,
+      "resources": {
+        "papel": 12,
+        "plastico": 17,
+        "metal": 11,
+        "vidro": 18
+      },
+      "resource_total": 58,
+      "collected": 52,
+      "hits": 4,
+      "max_lives": 5,
+      "lives_left": 1,
+      "completed": false,
+      "game_over": false,
+      "interrupted": true,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 17,
+        "sem_rota_simplificada": 8,
+        "nao_tentadas": 70,
+        "alvos_de_coleta": 27
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 2,
+      "default_assistance": true
+    },
+    {
+      "biome": "caatinga",
+      "mode": "dificil",
+      "seed": 3,
+      "seconds_active": 45.017,
+      "seconds_wall": 45.017,
+      "max_player_displacement": 233.878,
+      "stage_times_s": [],
+      "restoration": 100.0,
+      "city_restoration_at_start": 100.0,
+      "local_restoration": 13.72,
+      "stars": 2,
+      "resources": {
+        "papel": 19,
+        "plastico": 26,
+        "metal": 17,
+        "vidro": 17
+      },
+      "resource_total": 79,
+      "collected": 67,
+      "hits": 7,
+      "max_lives": 5,
+      "lives_left": 3,
+      "completed": false,
+      "game_over": false,
+      "interrupted": true,
+      "session_timeout": false,
+      "pause_count": 0,
+      "pause_seconds": 0.0,
+      "controller_counts": {
+        "decisoes_perdidas": 35,
+        "sem_rota_simplificada": 12,
+        "nao_tentadas": 76,
+        "alvos_de_coleta": 32
+      },
+      "exploration": true,
+      "assistance": true,
+      "trajectory_index": 3,
+      "default_assistance": true
+    }
+  ]
+}

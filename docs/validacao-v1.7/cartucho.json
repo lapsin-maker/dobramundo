@@ -1,0 +1,25 @@
+{
+  "version": "1.7.0",
+  "status": "ok",
+  "screens": [
+    "abertura",
+    "vila",
+    "mapa",
+    "hangar",
+    "piloto",
+    "melhorias",
+    "opcoes",
+    "preparar",
+    "sobre"
+  ],
+  "flights": {
+    "amazonia": {
+      "active_seconds": 14.83333333333365,
+      "distance": 2594.5493090277782
+    },
+    "caatinga": {
+      "active_seconds": 14.783333333333648,
+      "distance": 2585.9478590277777
+    }
+  }
+}
